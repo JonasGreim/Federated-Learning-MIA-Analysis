@@ -29,3 +29,10 @@ Refer to the [How to Run Simulations](https://flower.ai/docs/framework/how-to-ru
 - Join the Flower community!
   - [Flower Slack](https://flower.ai/join-slack/)
   - [Flower Discuss](https://discuss.flower.ai/)
+
+
+change dataset: (in task)
+- choose huggingface dataset: dataset="uoft-cs/cifar10",
+- check the column names in hugging face: batch["img"] or batch["image"]
+- check if dataset is greyscale or rgb: -> change Net and Compose(ToTensor(), Normalize((0.5 or 0.5,0.5,0.5), ...)
+- check size of dataset -> change Net
