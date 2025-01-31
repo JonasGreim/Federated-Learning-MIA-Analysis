@@ -32,22 +32,7 @@ class Net(nn.Module):
         return self.fc3(x)
 
 
-fds = None  # Cache FederatedDataset
-
-
-def load_data(partition_id: int, num_partitions: int):
-    """Load partition CIFAR10 data."""
-    # Only initialize `FederatedDataset` once
-    global fds
-    if fds is None:
-        partitioner = DirichletPartitioner(num_partitions=num_partitions, partition_by="label", alpha=0.5)  # high alpha -> more balanced partition
-        fds = FederatedDataset(
-            dataset="uoft-cs/cifar10",
-            partitioners={"train": partitioner},
-        )
-    partition = fds.load_partition(partition_id)
-    # Divide data on each node: 80% train, 20% test
-    partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
+def get_transforms():
     pytorch_transforms = Compose(
         [ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
@@ -57,17 +42,38 @@ def load_data(partition_id: int, num_partitions: int):
         batch["img"] = [pytorch_transforms(img) for img in batch["img"]]
         return batch
 
-    partition_train_test = partition_train_test.with_transform(apply_transforms)
+    return apply_transforms
+
+
+fds = None  # Cache FederatedDataset
+
+
+def load_data(partition_id: int, num_partitions: int):
+    """Load partition CIFAR10 data."""
+    # Only initialize `FederatedDataset` once
+    global fds
+    if fds is None:
+        partitioner = DirichletPartitioner(num_partitions=num_partitions, partition_by="label",
+                                           alpha=0.5)  # high alpha -> more balanced partition
+        fds = FederatedDataset(
+            dataset="uoft-cs/cifar10",
+            partitioners={"train": partitioner},
+        )
+    partition = fds.load_partition(partition_id)
+    # Divide data on each node: 80% train, 20% test
+    partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
+
+    partition_train_test = partition_train_test.with_transform(get_transforms())
     trainloader = DataLoader(partition_train_test["train"], batch_size=32, shuffle=True)
     testloader = DataLoader(partition_train_test["test"], batch_size=32)
     return trainloader, testloader
 
 
-def train(net, trainloader, epochs, device):
+def train(net, trainloader, epochs, lr, device):
     """Train the model on the training set."""
     net.to(device)  # move model to GPU if available
     criterion = torch.nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
     net.train()
     running_loss = 0.0
     for _ in range(epochs):

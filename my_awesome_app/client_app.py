@@ -23,6 +23,7 @@ class FlowerClient(NumPyClient):
             self.net,
             self.trainloader,
             self.local_epochs,
+            config['lr'],
             self.device,
         )
         return (

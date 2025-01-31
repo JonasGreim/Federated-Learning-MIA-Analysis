@@ -1,9 +1,42 @@
 """my-awesome-app: A Flower / PyTorch app."""
-
-from flwr.common import Context, ndarrays_to_parameters
+from typing import List, Tuple
+from flwr.common import Context, ndarrays_to_parameters, Metrics
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
-from my_awesome_app.task import Net, get_weights
+from my_awesome_app.task import Net, get_weights, set_weights, test, get_transforms
+from datasets import load_dataset
+from torch.utils.data import DataLoader
+
+
+def get_evaluate_fn(testloader, device):
+    """Return a callback that evaluate the global model"""
+
+    def evaluate(server_round, parameters_ndarray, config):
+        """Evaluate global model using provided centralised testset"""
+        net = Net()
+        set_weights(net, parameters_ndarray)
+        net.to(device)
+        loss, accuracy = test(net, testloader, device)
+        return loss, {"cen_accuracy": accuracy}
+
+    return evaluate
+
+
+def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
+    """callback: how to aggregate metrics sent back from the clients app that evaluate locally the global model into strategy/Server (weight by number of samples)"""
+    # for each metric in the metrics client list
+    accuracies = [num_examples * m["accuracy"] for num_examples, m in metrics]
+    total_examples = sum(num_examples for num_examples, _ in metrics)
+    return {"accuracy": sum(accuracies) / total_examples}  # can add also other metrics
+
+
+def on_fit_config(server_round: int) -> Metrics:
+    """" adjust learning rate based on the server round """
+    lr = 0.01
+    if server_round > 2:
+        lr = 0.005
+    # saved to client config (used in fit method)
+    return {"lr": lr}
 
 
 def server_fn(context: Context):
@@ -15,12 +48,21 @@ def server_fn(context: Context):
     ndarrays = get_weights(Net())
     parameters = ndarrays_to_parameters(ndarrays)
 
+    # load global test set
+    testset = load_dataset("uoft-cs/cifar10")["test"]
+    # preprocessing image data (transform to tensor(hugging dataset) + normalize pixel values)
+    testloader = DataLoader(testset.with_transform(get_transforms()), batch_size=32)
+
     # Define strategy
     strategy = FedAvg(
         fraction_fit=fraction_fit,
-        fraction_evaluate=1.0,
+        # Fraction (0.5) of clients to perform fit in each round -> 100% is too expensive, prevent overfitting, prevent poisons attacks (not consistently integrated)
+        fraction_evaluate=1.0,  # Fraction of clients used during validation
         min_available_clients=2,
         initial_parameters=parameters,
+        evaluate_metrics_aggregation_fn=weighted_average,  # optional, server metrics weighted aggregation function
+        on_fit_config_fn=on_fit_config,  # Function used to configure training (learning rate)
+        evaluate_fn=get_evaluate_fn(testloader, device="cpu"),  # Optional, function used for validation
     )
     config = ServerConfig(num_rounds=num_rounds)
 
