@@ -26,10 +26,13 @@ class FlowerClient(NumPyClient):
             config['lr'],
             self.device,
         )
+
+        # complex_metric = {"a": 123, "b": random(), "mylist": [1, 2, 3, 4]}
+        # complex_metrix_str = json.dumps(complex_metric)
         return (
             get_weights(self.net),
             len(self.trainloader.dataset),
-            {"train_loss": train_loss},
+            {"train_loss": train_loss},  # "my_metric": complex_metrix_str
         )
 
     def evaluate(self, parameters, config):

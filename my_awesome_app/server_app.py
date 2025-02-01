@@ -1,4 +1,5 @@
 """my-awesome-app: A Flower / PyTorch app."""
+import json
 from typing import List, Tuple
 from flwr.common import Context, ndarrays_to_parameters, Metrics
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
@@ -28,6 +29,19 @@ def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
     accuracies = [num_examples * m["accuracy"] for num_examples, m in metrics]
     total_examples = sum(num_examples for num_examples, _ in metrics)
     return {"accuracy": sum(accuracies) / total_examples}  # can add also other metrics
+
+
+# def handle_fit_metrics(metrics: List[Tuple[int, Metrics]]) -> Metrics:
+#     """handle metrics and clients."""
+#     # is called at the end of every client fit round
+#     # iterates over list of (client_id, metrics) tuples -> aggregate clients metrics (max)
+#     b_values = []
+#     for _, m in metrics:
+#         my_metric_str = m["my_metric"]
+#         my_metric = json.loads(my_metric_str)
+#         b_values.append(my_metric["b"])
+#
+#     return {"max_b": max(b_values)}
 
 
 def on_fit_config(server_round: int) -> Metrics:
@@ -63,6 +77,7 @@ def server_fn(context: Context):
         evaluate_metrics_aggregation_fn=weighted_average,  # optional, server metrics weighted aggregation function
         on_fit_config_fn=on_fit_config,  # Function used to configure training (learning rate)
         evaluate_fn=get_evaluate_fn(testloader, device="cpu"),  # Optional, function used for validation
+        #  fit_metrics_aggregation_fn=handle_fit_metrics,  # optional, Metrics aggregation function
     )
     config = ServerConfig(num_rounds=num_rounds)
 
