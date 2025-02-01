@@ -4,6 +4,10 @@ __pycache__/
 *$py.class
 
 .idea
+/wandb
+global_model_round_*
+results.json
+
 
 # Flower directory
 .flwr

@@ -30,6 +30,13 @@ Refer to the [How to Run Simulations](https://flower.ai/docs/framework/how-to-ru
   - [Flower Slack](https://flower.ai/join-slack/)
   - [Flower Discuss](https://discuss.flower.ai/)
 
+setup:
+- git clone
+- use poetry as package manager with python 3.10
+  - poetry install
+- run simulation (with 10 client nodes)
+  - flwr run .
+
 dataset: https://huggingface.co/datasets/uoft-cs/cifar10
 - 10 classes (airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck)
 - trainset of 50k images (80% train, 20% test) (5k images from each class)
@@ -52,4 +59,9 @@ callbacks: (in Strategy FedAvg, serverApp)
 - how to aggregate metrics sent back from the clients app into strategy (weighted_average)
   (it is also possible to evaluate the model globally/centralized on the server app if there is a global evaluation dataset)
 - learning decreases with higher round number (perform fit method in a different way)
-- centralized evaluation on the server app after each global model aggregation round
+- centralized evaluation on the server app after each global model aggregation round 
+
+costume strategy: (global model aggregation)
+- add pytorch model checkpoints for each round 
+- push metrics to wandb (weights and biases) for each round 
+- create json file to store metrics

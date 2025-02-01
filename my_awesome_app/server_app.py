@@ -7,6 +7,7 @@ from flwr.server.strategy import FedAvg
 from my_awesome_app.task import Net, get_weights, set_weights, test, get_transforms
 from datasets import load_dataset
 from torch.utils.data import DataLoader
+from my_awesome_app.my_strategy import CustomFedAvg
 
 
 def get_evaluate_fn(testloader, device):
@@ -59,7 +60,8 @@ def server_fn(context: Context):
     fraction_fit = context.run_config["fraction-fit"]
 
     # Initialize model parameters
-    ndarrays = get_weights(Net())
+    ndarrays = get_weights(
+        Net())  # could load check points model here (global_model_round_1) to resume training on last global model
     parameters = ndarrays_to_parameters(ndarrays)
 
     # load global test set
@@ -68,7 +70,8 @@ def server_fn(context: Context):
     testloader = DataLoader(testset.with_transform(get_transforms()), batch_size=32)
 
     # Define strategy
-    strategy = FedAvg(
+    # strategy = FedAvg(
+    strategy = CustomFedAvg(
         fraction_fit=fraction_fit,
         # Fraction (0.5) of clients to perform fit in each round -> 100% is too expensive, prevent overfitting, prevent poisons attacks (not consistently integrated)
         fraction_evaluate=1.0,  # Fraction of clients used during validation
