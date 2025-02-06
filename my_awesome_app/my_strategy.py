@@ -1,3 +1,5 @@
+import os
+
 from flwr.common import FitRes, Parameters, Scalar, parameters_to_ndarrays
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import FedAvg
@@ -34,7 +36,8 @@ class CustomFedAvg(FedAvg):
         set_weights(model, ndarrays)
 
         # save global model in the standard PyTorch way
-        torch.save(model.state_dict(), f"global_model_round_{server_round}")
+        os.makedirs("model_checkpoints", exist_ok=True)
+        torch.save(model.state_dict(), f"model_checkpoints/global_model_round_{server_round}")
 
         return parameters_aggregated, metrics_aggregated
 
@@ -50,7 +53,8 @@ class CustomFedAvg(FedAvg):
         self.result_to_save[server_round] = my_result
 
         # save metrics as json
-        with open("results.json", 'w') as json_file:
+        os.makedirs("metrics_of_run", exist_ok=True)
+        with open("metrics_of_run/results.json", 'w') as json_file:
             json.dump(self.result_to_save, json_file, indent=4)
 
         # log to W&B (also json metrics)
