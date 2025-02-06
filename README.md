@@ -44,6 +44,19 @@ dataset: https://huggingface.co/datasets/uoft-cs/cifar10
 - 32x32 pixels, 3 channels(rgb)
 - size: 144MB
 
+cluster:
+- 10 clients (super nodes)
+- num-server-rounds = 5 (get slitted on all cpu cores)
+- fraction-fit = 0.5
+- local-epochs = 1
+- explain:
+  - serverApp: client selection, client configuration, result aggregation (short lived process)
+  - SuperLink: forwards task instructions to clients (SuperNodes) and receives task results back 
+  - SuperNode: hold data, asks for tasks, executes tasks(training), and sends results back to the server 
+  - ClientApp: local model training and evaluation, pre- and post-processing (short lived process)
+  - (network communication is taken care of by Flower: SuperLink, SuperNode)
+
+![architectures.png](images/architectures.png)
 
 change dataset: (in task)
 - choose huggingface dataset: dataset="uoft-cs/cifar10",
