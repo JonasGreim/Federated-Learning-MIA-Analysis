@@ -1,5 +1,5 @@
 """my-awesome-app: A Flower / PyTorch app."""
-import json
+import math
 from typing import List, Tuple
 from flwr.common import Context, ndarrays_to_parameters, Metrics
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
@@ -47,9 +47,11 @@ def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
 
 def on_fit_config(server_round: int) -> Metrics:
     """" adjust learning rate based on the server round """
-    lr = 0.01
-    if server_round > 2:
-        lr = 0.005
+    initial_lr = 0.005
+    decay_factor = 0.95
+    min_lr = 0.0001  # Prevent underfitting
+
+    lr = max(initial_lr * math.pow(decay_factor, server_round), min_lr)
     # saved to client config (used in fit method)
     return {"lr": lr}
 

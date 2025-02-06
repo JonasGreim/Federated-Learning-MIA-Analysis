@@ -3,6 +3,7 @@
 from collections import OrderedDict
 
 import torch
+from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
 from flwr_datasets import FederatedDataset
@@ -14,23 +15,42 @@ from torchvision.transforms import Compose, Normalize, ToTensor
 class Net(nn.Module):
     """Model (simple CNN adapted from 'PyTorch: A 60 Minute Blitz')"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
+        # Convolutional Layers
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(32)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(64)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.bn3 = nn.BatchNorm2d(128)
+
+        # Pooling
         self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+
+        # Fully Connected Layers
+        self.fc1 = nn.Linear(128 * 4 * 4, 256)  # Adjust based on image size
+        self.bn4 = nn.BatchNorm1d(256)
+        self.fc2 = nn.Linear(256, 128)
+        self.bn5 = nn.BatchNorm1d(128)
+        self.fc3 = nn.Linear(128, 10)
+
+        # Dropout to prevent overfitting
+        self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        # x = x.view(-1, 16 * 5 * 5)
-        x = torch.flatten(x, 1)  # flatten all dimensions except batch -> tensor [batch_size, 400]
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        return self.fc3(x)
+        """Compute forward pass."""
+        x = self.pool(F.relu(self.bn1(self.conv1(x))))
+        x = self.pool(F.relu(self.bn2(self.conv2(x))))
+        x = self.pool(F.relu(self.bn3(self.conv3(x))))  # Additional Conv Layer
+
+        x = torch.flatten(x, 1)  # Flatten for FC layers
+        x = F.relu(self.bn4(self.fc1(x)))
+        x = self.dropout(x)  # Dropout for regularization
+        x = F.relu(self.bn5(self.fc2(x)))
+        x = self.dropout(x)  # Another dropout layer
+        x = self.fc3(x)  # Output layer
+        return x
 
 
 def get_transforms():
@@ -55,7 +75,7 @@ def load_data(partition_id: int, num_partitions: int):
     global fds
     if fds is None:
         partitioner = DirichletPartitioner(num_partitions=num_partitions, partition_by="label",
-                                           alpha=0.5)  # high alpha -> more balanced partition
+                                           alpha=1)  # high alpha -> more balanced partition
         fds = FederatedDataset(
             dataset="uoft-cs/cifar10",
             partitioners={"train": partitioner},
@@ -73,8 +93,9 @@ def load_data(partition_id: int, num_partitions: int):
 def train(net, trainloader, epochs, lr, device):
     """Train the model on the training set."""
     net.to(device)  # move model to GPU if available
+    net.train()
     criterion = torch.nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr)  # (faster convergence but can overfit)
     net.train()
     running_loss = 0.0
     for _ in range(epochs):
@@ -94,6 +115,7 @@ def train(net, trainloader, epochs, lr, device):
 def test(net, testloader, device):
     """Validate the model on the test set."""
     net.to(device)
+    net.eval()
     criterion = torch.nn.CrossEntropyLoss()
     correct, loss = 0, 0.0
     with torch.no_grad():
