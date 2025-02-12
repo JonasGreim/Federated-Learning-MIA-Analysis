@@ -1,5 +1,7 @@
 """my-awesome-app: A Flower / PyTorch app."""
 import math
+import json
+import os
 from typing import List, Tuple
 from flwr.common import Context, ndarrays_to_parameters, Metrics
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
@@ -32,17 +34,26 @@ def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
     return {"accuracy": sum(accuracies) / total_examples}  # can add also other metrics
 
 
-# def handle_fit_metrics(metrics: List[Tuple[int, Metrics]]) -> Metrics:
-#     """handle metrics and clients."""
-#     # is called at the end of every client fit round
-#     # iterates over list of (client_id, metrics) tuples -> aggregate clients metrics (max)
-#     b_values = []
-#     for _, m in metrics:
-#         my_metric_str = m["my_metric"]
-#         my_metric = json.loads(my_metric_str)
-#         b_values.append(my_metric["b"])
-#
-#     return {"max_b": max(b_values)}
+def handle_fit_metrics(metrics: List[Tuple[int, Metrics]]) -> Metrics:
+    """handle metrics and clients."""
+    # is called at the end of every client fit round
+    # iterates over list of (client_id, metrics) tuples -> aggregate clients metrics (max)
+
+    all_client_loss = []
+    all_client_average_training_accuracy = []
+    for _, m in metrics:
+        print(m)
+        all_client_loss.append(m["train_loss"])
+        all_client_average_training_accuracy.append(m["train_accuracy"])
+        # average of all clients
+        avg_loss = sum(all_client_loss) / len(all_client_loss)
+        avg_training_accuracy = sum(all_client_average_training_accuracy) / len(all_client_average_training_accuracy)
+
+    result = {"avg_client_loss": avg_loss, "avg_training_accuracy": avg_training_accuracy}
+    os.makedirs("metrics_of_run", exist_ok=True)
+    with open("metrics_of_run/client_metrics.json", 'a') as json_file:
+        json_file.write(json.dumps(result) + ",\n")
+    return result
 
 
 def on_fit_config(server_round: int) -> Metrics:
@@ -82,7 +93,7 @@ def server_fn(context: Context):
         evaluate_metrics_aggregation_fn=weighted_average,  # optional, server metrics weighted aggregation function
         on_fit_config_fn=on_fit_config,  # Function used to configure training (learning rate)
         evaluate_fn=get_evaluate_fn(testloader, device="cpu"),  # Optional, function used for validation
-        #  fit_metrics_aggregation_fn=handle_fit_metrics,  # optional, Metrics aggregation function
+        fit_metrics_aggregation_fn=handle_fit_metrics,  # optional, Metrics aggregation function
     )
     config = ServerConfig(num_rounds=num_rounds)
 
