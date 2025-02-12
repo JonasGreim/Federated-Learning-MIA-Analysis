@@ -3,6 +3,7 @@
 from collections import OrderedDict
 
 import torch
+from flwr_datasets.visualization import plot_label_distributions
 from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
@@ -13,7 +14,6 @@ from torchvision.transforms import Compose, Normalize, ToTensor
 
 
 class Net(nn.Module):
-    """Model (simple CNN adapted from 'PyTorch: A 60 Minute Blitz')"""
 
     def __init__(self) -> None:
         super(Net, self).__init__()
@@ -74,12 +74,46 @@ def load_data(partition_id: int, num_partitions: int):
     # Only initialize `FederatedDataset` once
     global fds
     if fds is None:
-        partitioner = DirichletPartitioner(num_partitions=num_partitions, partition_by="label",
-                                           alpha=1)  # high alpha -> more balanced partition
+        # Initialize FederatedDataset with Dirichlet partitioning
         fds = FederatedDataset(
             dataset="uoft-cs/cifar10",
-            partitioners={"train": partitioner},
+            partitioners={
+                "train": DirichletPartitioner(
+                    num_partitions=num_partitions,
+                    partition_by="label",
+                    alpha=0.3,  # Lower alpha -> more imbalanced partitions
+                    seed=42,
+                    min_partition_size=0,
+                ),
+            },
         )
+
+        # Visualize label distribution across partitions
+        partitioner = fds.partitioners["train"]
+        fig, ax, df = plot_label_distributions(
+            partitioner,
+            label_name="label",
+            plot_type="bar",
+            size_unit="absolute",
+            partition_id_axis="x",
+            legend=True,
+            verbose_labels=True,
+            title="Per Partition Labels Distribution",
+        )
+        fig2, ax2, df2 = plot_label_distributions(
+            partitioner,
+            label_name="label",
+            plot_type="heatmap",
+            size_unit="absolute",
+            partition_id_axis="x",
+            legend=True,
+            verbose_labels=True,
+            title="Per Partition Labels Distribution",
+            plot_kwargs={"annot": True},
+        )
+        fig.savefig("metrics_of_run/bar_label_distribution.png", dpi=300)
+        fig2.savefig("metrics_of_run/heatmap_label_distribution.png", dpi=300)
+
     partition = fds.load_partition(partition_id)
     # Divide data on each node: 80% train, 20% test
     partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
@@ -93,7 +127,6 @@ def load_data(partition_id: int, num_partitions: int):
 def train(net, trainloader, epochs, lr, device):
     """Train the model on the training set."""
     net.to(device)  # move model to GPU if available
-    net.train()
     criterion = torch.nn.CrossEntropyLoss().to(device)
     optimizer = torch.optim.Adam(net.parameters(), lr=lr)  # (faster convergence but can overfit)
     net.train()
