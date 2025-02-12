@@ -27,8 +27,6 @@ class FlowerClient(NumPyClient):
             self.device,
         )
 
-        complex_metric = {"train_loss": train_loss, "train_accuracy": train_accuracy}
-        json.dumps(complex_metric)
         return (
             get_weights(self.net),
             len(self.trainloader.dataset),
