@@ -6,6 +6,7 @@ from typing import List, Tuple
 from flwr.common import Context, ndarrays_to_parameters, Metrics
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flwr.server.strategy import FedAvg
+from my_awesome_app.new_strategy import FedCustom
 from my_awesome_app.task import Net, get_weights, set_weights, test, get_transforms
 from datasets import load_dataset
 from torch.utils.data import DataLoader
@@ -95,9 +96,16 @@ def server_fn(context: Context):
         evaluate_fn=get_evaluate_fn(testloader, device="cpu"),  # Optional, function used for validation
         fit_metrics_aggregation_fn=handle_fit_metrics,  # optional, Metrics aggregation function
     )
+    strategy2 = FedCustom(
+        fraction_fit=fraction_fit,
+        fraction_evaluate=1.0,
+        min_available_clients=2,
+        initial_parameters=parameters,
+        device='cpu',
+    )
     config = ServerConfig(num_rounds=num_rounds)
 
-    return ServerAppComponents(strategy=strategy, config=config)
+    return ServerAppComponents(strategy=strategy2, config=config)
 
 
 # Create ServerApp
