@@ -48,7 +48,7 @@ class CustomFedAvg(FedAvg):
     ) -> tuple[float, dict[str, Scalar]] | None:
         loss, metrics = super().evaluate(server_round, parameters)
 
-        my_result = {"loss": loss, **metrics}
+        my_result = {"cen_loss": loss, **metrics}
 
         self.result_to_save[server_round] = my_result
 

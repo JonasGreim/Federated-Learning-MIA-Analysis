@@ -156,7 +156,7 @@ def train(net, trainloader, epochs, lr, device) -> tuple[float, float]:
             total += labels.size(0)  # Count total samples
 
     avg_trainloss = running_loss / len(trainloader)
-    avg_trainacc = correct / total  # Average accuracy
+    avg_trainacc = correct / total  # Average accuracy over epochs
 
     return avg_trainloss, avg_trainacc
 
