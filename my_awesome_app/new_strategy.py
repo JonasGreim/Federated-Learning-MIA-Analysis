@@ -117,6 +117,23 @@ class FedCustom(Strategy):
             (parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples)
             for _, fit_res in results
         ]
+
+        loss_aggregated = weighted_loss_avg(
+            [
+                (evaluate_res.num_examples, evaluate_res.metrics["train_loss"])
+                for _, evaluate_res in results
+            ]
+        )
+
+        accuracy_aggregated = weighted_loss_avg(  # same functionality as loss
+            [
+                (evaluate_res.num_examples, evaluate_res.metrics["train_accuracy"])
+                for _, evaluate_res in results
+            ]
+        )
+        metrics_aggregated = {"client_weighted_train_loss": loss_aggregated, "client_weighted_train_accuracy": accuracy_aggregated}
+        wandb.log(metrics_aggregated, step=server_round)
+
         parameters_aggregated = ndarrays_to_parameters(aggregate(weights_results))
         metrics_aggregated = {}
         return parameters_aggregated, metrics_aggregated
@@ -138,7 +155,17 @@ class FedCustom(Strategy):
                 for _, evaluate_res in results
             ]
         )
-        metrics_aggregated = {}
+
+        accuracy_aggregated = weighted_loss_avg(  # same functionality as loss
+            [
+                (evaluate_res.num_examples, evaluate_res.metrics["evaluate_accuracy"])
+                for _, evaluate_res in results
+            ]
+        )
+
+        metrics_aggregated = {"client_weighted_evaluate_loss": loss_aggregated, "client_weighted_evaluate_accuracy": accuracy_aggregated}
+        wandb.log(metrics_aggregated, step=server_round)
+
         return loss_aggregated, metrics_aggregated
 
     def evaluate(
@@ -147,7 +174,7 @@ class FedCustom(Strategy):
         """Evaluate global model parameters using an evaluation function."""
 
         # load testset, setup NN, run test
-        testset = load_dataset("uoft-cs/cifar10")["test"]
+        testset = load_dataset("uoft-cs/cifar10")["test"] # loads the data in its original format
         # preprocessing image data (transform to tensor(hugging dataset) + normalize pixel values)
         testloader = DataLoader(testset.with_transform(get_transforms()), batch_size=32)
         net = Net()
@@ -167,7 +194,7 @@ class FedCustom(Strategy):
         # log to W&B (also json metrics)
         wandb.log(result, step=server_round)
 
-        return loss, {"cen_accuracy": accuracy}
+        return loss, result
 
     def num_fit_clients(self, num_available_clients: int) -> Tuple[int, int]:
         """Return sample size and required number of clients."""
