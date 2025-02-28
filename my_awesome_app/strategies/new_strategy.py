@@ -8,19 +8,21 @@ from flwr.common import (
     Parameters,
     Scalar,
     ndarrays_to_parameters,
-    parameters_to_ndarrays,
+    parameters_to_ndarrays
 )
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from typing import Optional, List, Tuple, Dict
-from my_awesome_app.task import Net, get_weights, set_weights, test, get_transforms
+from my_awesome_app.task import set_weights, test, get_transforms, create_model
 from torch.utils.data import DataLoader
 from datasets import load_dataset
 import os
 import wandb
 import json
+import torch
+from datetime import datetime
 
 
 class FedCustom(Strategy):
@@ -44,7 +46,11 @@ class FedCustom(Strategy):
         self.min_available_clients = min_available_clients
         self.initial_parameters = initial_parameters
         self.device = device
+
         self.result_to_json_global_model_test = {}
+
+        name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        wandb.init(project="flower-simulation-tutorial", name=f"custom-strategy-{name}")
 
     def __repr__(self) -> str:
         return "FedCustom"
@@ -84,6 +90,7 @@ class FedCustom(Strategy):
                     (client, FitIns(parameters, higher_lr_config))
                 )
         return fit_configurations
+
 
     def configure_evaluate(
             self, server_round: int, parameters: Parameters, client_manager: ClientManager
@@ -134,8 +141,15 @@ class FedCustom(Strategy):
         metrics_aggregated = {"client_weighted_train_loss": loss_aggregated, "client_weighted_train_accuracy": accuracy_aggregated}
         wandb.log(metrics_aggregated, step=server_round)
 
-        parameters_aggregated = ndarrays_to_parameters(aggregate(weights_results))
-        metrics_aggregated = {}
+        aggregated_ndarrays = aggregate(weights_results)
+        parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
+
+        # #  save global model each round
+        # model = create_model()
+        # set_weights(model, aggregated_ndarrays)
+        # os.makedirs("model_checkpoints", exist_ok=True)
+        # torch.save(model.state_dict(), f"model_checkpoints/global_model_round_{server_round}")
+
         return parameters_aggregated, metrics_aggregated
 
     def aggregate_evaluate(
@@ -174,10 +188,10 @@ class FedCustom(Strategy):
         """Evaluate global model parameters using an evaluation function."""
 
         # load testset, setup NN, run test
-        testset = load_dataset("uoft-cs/cifar10")["test"] # loads the data in its original format
+        testset = load_dataset("uoft-cs/cifar10")["test"]  # loads the data in its original format
         # preprocessing image data (transform to tensor(hugging dataset) + normalize pixel values)
         testloader = DataLoader(testset.with_transform(get_transforms()), batch_size=32)
-        net = Net()
+        net = create_model()
         set_weights(net, parameters_to_ndarrays(parameters))  # parameters = tensors -> ndarray parameters
         net.to(self.device)
         loss, accuracy = test(net, testloader, self.device)

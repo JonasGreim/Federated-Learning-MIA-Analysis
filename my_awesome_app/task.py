@@ -1,7 +1,7 @@
 """my-awesome-app: A Flower / PyTorch app."""
 
 from collections import OrderedDict
-
+import os
 import torch
 from flwr_datasets.visualization import plot_label_distributions
 from torch import Tensor
@@ -11,49 +11,28 @@ from flwr_datasets import FederatedDataset
 from flwr_datasets.partitioner import DirichletPartitioner
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, Normalize, ToTensor
+import toml
+from my_awesome_app.models.complex_model import NetComplex
+from my_awesome_app.models.simple_model import NetSimple
+from flwr.common import Metrics
+from typing import List, Tuple
 
 
-class Net(nn.Module):
+def create_model() -> nn.Module:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    pyproject_path = os.path.join(current_dir, '..', 'pyproject.toml')
 
-    def __init__(self) -> None:
-        super(Net, self).__init__()
-        # Convolutional Layers -> extract features from the image, kearnel_size: size of the filter, padding: add zeros to the border of the image
-        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, padding=1)
-        self.bn1 = nn.BatchNorm2d(32)  # reducing internal covariate shift -> shift values to zero mean and unit variance (implicit form of regularization)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.bn2 = nn.BatchNorm2d(64)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-        self.bn3 = nn.BatchNorm2d(128)
+    with open(pyproject_path) as file:
+        data = toml.load(file)
+    # Access the model name from the configuration file
+    model_name: str = data["tool"]["flwr"]["app"]["config"]["model"]
 
-        # Pooling
-        # reduce feature map, holds only the highest value of the 2x2 square -> 1 (half matrix), stride: how many steps the filter moves each time
-        self.pool = nn.MaxPool2d(2, 2)
-
-        # Fully Connected Layers
-        # purpose: combine features + learn relationships between features -> flatten the data for prediction
-        self.fc1 = nn.Linear(128 * 4 * 4, 256)  # Adjust based on image size
-        self.bn4 = nn.BatchNorm1d(256)
-        self.fc2 = nn.Linear(256, 128)
-        self.bn5 = nn.BatchNorm1d(128)
-        self.fc3 = nn.Linear(128, 10)
-
-        # Dropout to prevent overfitting -> random subset of neurons is deactivated (in training)
-        self.dropout = nn.Dropout(0.5)
-
-    def forward(self, x):
-        """Compute forward pass."""
-        # ReLu: fc1(x)=W⋅x+b -> apply weights to the input data, add bias, relu kinda sorts out unrelevant data (<0)
-        x = self.pool(F.relu(self.bn1(self.conv1(x))))
-        x = self.pool(F.relu(self.bn2(self.conv2(x))))
-        x = self.pool(F.relu(self.bn3(self.conv3(x))))  # Additional Conv Layer
-
-        x = torch.flatten(x, 1)  # Flatten for FC layers
-        x = F.relu(self.bn4(self.fc1(x)))
-        x = self.dropout(x)  # Dropout for regularization
-        x = F.relu(self.bn5(self.fc2(x)))
-        x = self.dropout(x)  # Another dropout layer
-        x = self.fc3(x)  # Output layer -> 10 different classes
-        return x
+    if model_name == "complex_model":
+        return NetComplex()
+    elif model_name == "simple_model":
+        return NetSimple()
+    else:
+        raise ValueError(f"Unknown model name: {model_name}")
 
 
 def get_transforms():

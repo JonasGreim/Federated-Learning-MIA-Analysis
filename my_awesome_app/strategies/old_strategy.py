@@ -7,7 +7,7 @@ import torch
 import json
 import wandb
 from datetime import datetime
-from .task import Net, set_weights
+from my_awesome_app.task import set_weights, create_model
 
 
 #  extends FedAvg and overrides some methods to add custom behavior, such as saving the global model and logging metrics.
@@ -32,7 +32,7 @@ class CustomFedAvg(FedAvg):
         ndarrays = parameters_to_ndarrays(parameters_aggregated)
 
         # instantiate model (Pytorch way)
-        model = Net()
+        model = create_model()
         set_weights(model, ndarrays)
 
         # save global model in the standard PyTorch way

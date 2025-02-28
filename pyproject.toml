@@ -14,6 +14,7 @@ dependencies = [
     "torchvision==0.17.1",
     "numpy<2.0.0",
     "wandb (>=0.19.5,<0.20.0)",
+    "toml (>=0.10.2,<0.11.0)",
 ]
 
 requires-python = ">=3.10,<3.11"
@@ -29,9 +30,10 @@ serverapp = "my_awesome_app.server_app:app"
 clientapp = "my_awesome_app.client_app:app"
 
 [tool.flwr.app.config]
-num-server-rounds = 5
+num-server-rounds = 4
 fraction-fit = 0.5
 local-epochs = 1
+model="simple_model"
 
 [tool.flwr.federations]
 default = "local-simulation"
