@@ -37,7 +37,7 @@ class CustomFedAvg(FedAvg):
 
         # save global model in the standard PyTorch way
         os.makedirs("model_checkpoints", exist_ok=True)
-        torch.save(model.state_dict(), f"model_checkpoints/global_model_round_{server_round}")
+        torch.save(model.state_dict(), f"model_checkpoints/global_model_round_{server_round}.pth")
 
         return parameters_aggregated, metrics_aggregated
 
