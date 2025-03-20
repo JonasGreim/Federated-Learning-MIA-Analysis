@@ -143,11 +143,11 @@ class FedCustom(Strategy):
         aggregated_ndarrays = aggregate(weights_results)
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
-        # #  save global model each round
-        # model = create_model()
-        # set_weights(model, aggregated_ndarrays)
-        # os.makedirs("model_checkpoints", exist_ok=True)
-        # torch.save(model.state_dict(), f"model_checkpoints/global_model_round_{server_round}")
+        #  save global model each round
+        model = create_model()
+        set_weights(model, aggregated_ndarrays)
+        os.makedirs("model_checkpoints", exist_ok=True)
+        torch.save(model.state_dict(), f"model_checkpoints/global_model_round_{server_round}.pth")
 
         return parameters_aggregated, metrics_aggregated
 
