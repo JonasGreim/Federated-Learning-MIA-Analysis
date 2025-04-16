@@ -3,20 +3,9 @@ import glob
 import os
 
 import torch
-import json
-from flwr.client import ClientApp, NumPyClient
-from flwr.common import Context, ndarrays_to_parameters
 from my_awesome_app.task import get_weights, load_data, set_weights, test, train, create_model
 from PIL import Image
 from torchvision.transforms import Compose, Normalize, ToTensor
-
-
-class AttackerClient:
-    def __init__(self, net, local_epochs):
-        self.net = net
-        self.local_epochs = local_epochs
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.net.to(self.device)
 
 
 def make_prediction():
@@ -47,17 +36,23 @@ def make_prediction():
     image = pytorch_transforms(image)  # image.shape [3, 32, 32]
     image = image.unsqueeze(0).to(device)  # Add batch dimension [1, 3, 32, 32]
 
-    # make prediction
+    # make prediction/inference
     with torch.no_grad():
         output = net(image)
-    print("Output: ", output)
+    # print("Output: ", output)
     predicted_class = torch.argmax(output, dim=1).item()  # confidence score for classes: tensor([[-2.3889, -1.0582, -0.1234, -0.5264, -1.0304, -0.6134, -2.9557,  0.1385, -2.1263, -1.3092]])
     # before applying an activation function like softmax to convert them into probabilities
-    print("Predicted class: ", predicted_class)
+    print("Predicted class number: ", predicted_class)
     # 0=airplane, 1=automobile, 2=bird, 3=cat, 4=deer, 5=dog, 6=frog, 7=horse, 8=ship, 9=truck
+    class_mapping = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
+    print("Predicted class: ", class_mapping[predicted_class])
 
     output_probabilities = torch.nn.functional.softmax(output, dim=1)
-    print("Output probabilities: ", output_probabilities)
+    # print("Output probabilities: ", output_probabilities)
+
+    class_probabilities = {class_mapping[i]: round(prob.item(), 2) for i, prob in enumerate(output_probabilities[0])}
+    print("Class probabilities: ", class_probabilities)
+    # Output probabilities:  tensor([[0.0546, 0.1229, 0.5366, 0.0244, 0.0407, 0.0259, 0.0347, 0.0039, 0.1158, 0.0405]])
 
 
 make_prediction()
