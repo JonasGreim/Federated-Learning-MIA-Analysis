@@ -51,9 +51,13 @@ def make_prediction():
     with torch.no_grad():
         output = net(image)
     print("Output: ", output)
-    predicted_class = torch.argmax(output, dim=1).item()
+    predicted_class = torch.argmax(output, dim=1).item()  # confidence score for classes: tensor([[-2.3889, -1.0582, -0.1234, -0.5264, -1.0304, -0.6134, -2.9557,  0.1385, -2.1263, -1.3092]])
+    # before applying an activation function like softmax to convert them into probabilities
     print("Predicted class: ", predicted_class)
     # 0=airplane, 1=automobile, 2=bird, 3=cat, 4=deer, 5=dog, 6=frog, 7=horse, 8=ship, 9=truck
+
+    output_probabilities = torch.nn.functional.softmax(output, dim=1)
+    print("Output probabilities: ", output_probabilities)
 
 
 make_prediction()
