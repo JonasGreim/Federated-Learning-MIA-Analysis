@@ -5,12 +5,20 @@ from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from my_awesome_app.models.black_box_shadow_model import BlackBoxShadowModel
 from my_awesome_app.models.simple_model import NetSimple
 from sklearn.linear_model import LogisticRegression
 import numpy as np
 import glob
 import os
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+    classification_report
+)
+from sklearn.preprocessing import StandardScaler
 
 # Load CIFAR-10 dataset
 dataset = load_dataset('cifar10', batch_size=32)
@@ -40,14 +48,14 @@ train_split_size = len(train_dataset) // 2
 shadow_train_dataset, target_train_dataset = random_split(train_dataset, [train_split_size, train_split_size])
 
 # load data into dataloader
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=64)
-target_train_loader = DataLoader(target_train_dataset, batch_size=64, shuffle=True)
-shadow_train_loader = DataLoader(shadow_train_dataset, batch_size=64, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=32)
+target_train_loader = DataLoader(target_train_dataset, batch_size=32, shuffle=True)
+shadow_train_loader = DataLoader(shadow_train_dataset, batch_size=32, shuffle=True)
 
 
 # train function
-def train_model(model, dataloader, epochs=5):
+def train_shadow_model(model, dataloader, epochs=10):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -66,7 +74,7 @@ def train_model(model, dataloader, epochs=5):
 
 
 shadow_model = NetSimple()
-shadow_model = train_model(shadow_model, shadow_train_loader)
+shadow_model = train_shadow_model(shadow_model, shadow_train_loader)
 
 
 # Collect Confidence Scores (for attack model)
@@ -99,6 +107,10 @@ y_attack = shadow_member_labels + shadow_nonmember_labels
 X_attack = np.array(X_attack).reshape(-1, 1)
 y_attack = np.array(y_attack)
 
+# normalize features
+scaler = StandardScaler()
+X_attack_scaled = scaler.fit_transform(X_attack)
+
 attack_model = LogisticRegression().fit(X_attack, y_attack)
 
 # Load target model
@@ -118,8 +130,23 @@ target_member_conf, _ = get_confidences(target_model, target_train_loader, 1)
 target_nonmember_conf, _ = get_confidences(target_model, test_loader, 0)
 
 X_target_attack = np.array(target_member_conf + target_nonmember_conf).reshape(-1, 1)
+X_target_attack_scaled = scaler.transform(X_target_attack)
+# ground truth
 y_target_true = np.array([1] * len(target_member_conf) + [0] * len(target_nonmember_conf))
 
-y_pred = attack_model.predict(X_target_attack)
-attack_accuracy = np.mean(y_pred == y_target_true)
+y_pred = attack_model.predict(X_target_attack_scaled)
+
+# evaluate attack: compare to ground truth
+attack_accuracy = accuracy_score(y_target_true, y_pred)
 print(f"Attack Accuracy: {attack_accuracy:.2f}")
+# Attack Accuracy: 0.71 (10 or 20 rounds) -> baseline random guessing -> 50% -> 50% non-members und 50% members
+
+precision = precision_score(y_target_true, y_pred)
+recall = recall_score(y_target_true, y_pred)
+f1 = f1_score(y_target_true, y_pred)
+auc = roc_auc_score(y_target_true, y_pred)
+print("=== Attack Model Evaluation ===")
+print(f"Precision: {precision:.2f}")  # How many of your positive predictions were correct
+print(f"Recall   : {recall:.2f}")  # How many actual members did you find?
+print(f"F1 Score : {f1:.2f}")  # Balance between precision and recall
+print(f"AUC      : {auc:.2f}")  # 0.5 -> random guessing, 1 perfect, Measures the model’s ability to separate the classes across all possible thresholds
