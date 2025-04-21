@@ -7,6 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from my_awesome_app.models.simple_model import NetSimple
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 import numpy as np
 import glob
 import os
@@ -16,9 +18,9 @@ from sklearn.metrics import (
     recall_score,
     f1_score,
     roc_auc_score,
-    classification_report
 )
 from sklearn.preprocessing import StandardScaler
+from collections import Counter
 
 # Load CIFAR-10 dataset
 dataset = load_dataset('cifar10', batch_size=32)
@@ -79,39 +81,59 @@ shadow_model = train_shadow_model(shadow_model, shadow_train_loader)
 
 # Collect Confidence Scores (for attack model)
 # We'll use softmax outputs as input features and whether the sample was in the training set as the label.
-def get_confidences(model, dataloader, label):
+# label=1 for members, label=0 for non-members
+def get_attack_features(model, dataloader, label, use_extra_features=False):
     model.eval()
     device = next(model.parameters()).device
-    confidences = []
+    features = []
     labels = []
+    eps = 1e-10  # for safe log
+
     with torch.no_grad():
         for batch in dataloader:
-            inputs, true_labels = batch["img"].to(device), batch["label"].to(device)
-            outputs = model(inputs)  # input = batches of data
-            probs = F.softmax(outputs, dim=1)  # convert tensors to probability tensors batches
-            max_conf = probs.max(dim=1)[0]  # maximum value per row (data object)
-            confidences.extend(max_conf.cpu().numpy())  # moves tensor to cpu, covert to numpy array, add max. confidences to list
-            labels.extend([label] * len(max_conf))  # label = 1 if member (train set), 0 if non-member (test set) -> depends on input data
-    return confidences, labels
+            inputs = batch["img"].to(device)
+            outputs = model(inputs)
+            probs = F.softmax(outputs, dim=1)  # shape: [batch_size, 10]
+
+            batch_features = probs
+
+            if use_extra_features:
+                # Entropy
+                entropy = (-probs * (probs + eps).log()).sum(dim=1).unsqueeze(1)
+                # Margin (top-1 - top-2)
+                top2 = probs.topk(2, dim=1)[0]
+                margin = (top2[:, 0] - top2[:, 1]).unsqueeze(1)
+                # Concatenate extra features
+                batch_features = torch.cat([probs, entropy, margin], dim=1)
+
+            features.extend(batch_features.cpu().numpy())
+            labels.extend([label] * batch_features.size(0))
+
+    return features, labels
 
 
 # prepare attack dataset
 # For the shadow model, we know exactly which samples were members
-shadow_member_conf, shadow_member_labels = get_confidences(shadow_model, shadow_train_loader, 1)
-shadow_nonmember_conf, shadow_nonmember_labels = get_confidences(shadow_model, test_loader, 0)
+shadow_member_features, shadow_member_labels = get_attack_features(shadow_model, shadow_train_loader, 1, use_extra_features=True)
+shadow_nonmember_features, shadow_nonmember_labels = get_attack_features(shadow_model, test_loader, 0, use_extra_features=True)
 
-X_attack = shadow_member_conf + shadow_nonmember_conf
-y_attack = shadow_member_labels + shadow_nonmember_labels
+# Balance the datasets member vs non_member(downsample)
+min_size = min(len(shadow_member_features), len(shadow_nonmember_features))
 
-# Train the Attack Model
-X_attack = np.array(X_attack).reshape(-1, 1)
-y_attack = np.array(y_attack)
+shadow_member_features = shadow_member_features[:min_size]
+shadow_member_labels = shadow_member_labels[:min_size]
+shadow_nonmember_features = shadow_nonmember_features[:min_size]
+shadow_nonmember_labels = shadow_nonmember_labels[:min_size]
+
+# Combine and prepare for training
+X_attack = np.vstack((shadow_member_features, shadow_nonmember_features))
+y_attack = np.array(shadow_member_labels + shadow_nonmember_labels)
 
 # normalize features
 scaler = StandardScaler()
 X_attack_scaled = scaler.fit_transform(X_attack)
 
-attack_model = LogisticRegression().fit(X_attack, y_attack)
+attack_model = GradientBoostingClassifier().fit(X_attack_scaled, y_attack)
 
 # Load target model
 list_of_files = [fname for fname in glob.glob("../model_checkpoints/global_model_round_*")]
@@ -126,27 +148,28 @@ target_model.eval()
 # Run the Attack on Target Mode
 # Measured how well it could infer membership
 
-target_member_conf, _ = get_confidences(target_model, target_train_loader, 1)
-target_nonmember_conf, _ = get_confidences(target_model, test_loader, 0)
+target_member_features, _ = get_attack_features(target_model, target_train_loader, 1, use_extra_features=True)
+target_nonmember_features, _ = get_attack_features(target_model, test_loader, 0, use_extra_features=True)
 
-X_target_attack = np.array(target_member_conf + target_nonmember_conf).reshape(-1, 1)
+X_target_attack = np.vstack((target_member_features, target_nonmember_features))  # multi arrays stacked to (1,N)
 X_target_attack_scaled = scaler.transform(X_target_attack)
 # ground truth
-y_target_true = np.array([1] * len(target_member_conf) + [0] * len(target_nonmember_conf))
+y_target_true = np.array([1] * len(target_member_features) + [0] * len(target_nonmember_features))
 
 y_pred = attack_model.predict(X_target_attack_scaled)
 
 # evaluate attack: compare to ground truth
 attack_accuracy = accuracy_score(y_target_true, y_pred)
-print(f"Attack Accuracy: {attack_accuracy:.2f}")
-# Attack Accuracy: 0.71 (10 or 20 rounds) -> baseline random guessing -> 50% -> 50% non-members und 50% members
-
 precision = precision_score(y_target_true, y_pred)
 recall = recall_score(y_target_true, y_pred)
 f1 = f1_score(y_target_true, y_pred)
 auc = roc_auc_score(y_target_true, y_pred)
+
+# Attack Accuracy: 0.71 (10 or 20 rounds) -> baseline random guessing -> 50% -> 50% non-members und 50% members
 print("=== Attack Model Evaluation ===")
+print(f"Attack Accuracy: {attack_accuracy:.2f}")
 print(f"Precision: {precision:.2f}")  # How many of your positive predictions were correct
 print(f"Recall   : {recall:.2f}")  # How many actual members did you find?
 print(f"F1 Score : {f1:.2f}")  # Balance between precision and recall
 print(f"AUC      : {auc:.2f}")  # 0.5 -> random guessing, 1 perfect, Measures the model’s ability to separate the classes across all possible thresholds
+print("Class distribution in attack data:", Counter(y_attack))
