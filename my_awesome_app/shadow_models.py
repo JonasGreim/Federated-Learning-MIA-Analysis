@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from my_awesome_app.models.black_box_shadow_models import NetSmallCNN, NetMLP, NetMediumCNN, NetResLike, NetDepthwiseCNN
 from my_awesome_app.models.simple_model import NetSimple
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -21,15 +22,14 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import StandardScaler
 from collections import Counter
-from multiprocessing import Pool, cpu_count, set_start_method
-import warnings
 
 # === Config ===
 USE_EXTRA_ATTACK_FEATURES = True  # use extra features for attack model (entropy, margin)
-NUM_SHADOW_MODELS = 5
-SHADOW_EPOCHS = 1
+SHADOW_EPOCHS = 10
 BATCH_SIZE = 32
 CHECKPOINT_DIR = "../model_checkpoints"
+SHADOW_MODEL_ARCHS = [NetSmallCNN, NetMLP, NetMediumCNN, NetResLike, NetDepthwiseCNN]
+NUM_SHADOW_MODELS = len(SHADOW_MODEL_ARCHS)
 
 
 # === Utility Functions ===
@@ -107,9 +107,9 @@ def train_shadow_models(shadow_subsets, test_dataset):
     all_member_feats, all_member_labels = [], []
     all_nonmember_feats, all_nonmember_labels = [], []
 
-    for i, subset in enumerate(shadow_subsets):
-        print(f"Training Shadow Model {i + 1}/{NUM_SHADOW_MODELS}")
-        model = NetSimple()
+    for i, (subset, arch) in enumerate(zip(shadow_subsets, SHADOW_MODEL_ARCHS)):
+        print(f"Training Shadow Model {i + 1}/{NUM_SHADOW_MODELS} with {arch.__name__}")
+        model = arch()
         loader = DataLoader(subset, batch_size=BATCH_SIZE, shuffle=True)
         model = train_model(model, loader, SHADOW_EPOCHS)
 
@@ -130,7 +130,7 @@ def train_attack_model(member_feats, member_labels, nonmember_feats, nonmember_l
     y = np.array(member_labels + nonmember_labels)
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    model = GradientBoostingClassifier().fit(X_scaled, y)
+    model = RandomForestClassifier(n_estimators=100, max_depth=10).fit(X_scaled, y)
     return model, scaler, y
 
 
