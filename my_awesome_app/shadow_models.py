@@ -22,11 +22,18 @@ from sklearn.metrics import (
 from sklearn.preprocessing import StandardScaler
 from collections import Counter
 
-# Load CIFAR-10 dataset
+# settings
+USE_EXTRA_ATTACK_FEATURES = True  # use extra features for attack model (entropy, margin)
+NUM_SHADOW_MODELS = 5
+SHADOW_EPOCHS = 1
+BATCH_SIZE = 32
+CHECKPOINT_DIR = "../model_checkpoints"
+
+# === Load CIFAR-10 dataset ===
 dataset = load_dataset('cifar10', batch_size=32)
 
 
-# Apply transform
+# === Transform function ===
 def get_transforms():
     pytorch_transforms = Compose(
         [ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
@@ -42,49 +49,56 @@ def get_transforms():
 
 dataset = dataset.with_transform(get_transforms())
 
-# split data
+# === Dataset Splits ===
 train_dataset = dataset["train"]
 test_dataset = dataset["test"]
 
+# split train dataset into shadow and target datasets (50:50)
 train_split_size = len(train_dataset) // 2
 shadow_train_dataset, target_train_dataset = random_split(train_dataset, [train_split_size, train_split_size])
 
+# split shadow dataset into NUM_SHADOW_MODELS parts
+shadow_split_size = len(shadow_train_dataset) // NUM_SHADOW_MODELS
+
+# Split shadow training data into multiple parts
+shadow_subsets = torch.utils.data.random_split(
+    shadow_train_dataset,
+    [shadow_split_size] * (NUM_SHADOW_MODELS - 1) + [len(shadow_train_dataset) - shadow_split_size * (NUM_SHADOW_MODELS - 1)]
+)
+
 # load data into dataloader
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=32)
-target_train_loader = DataLoader(target_train_dataset, batch_size=32, shuffle=True)
-shadow_train_loader = DataLoader(shadow_train_dataset, batch_size=32, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+target_train_loader = DataLoader(target_train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+shadow_train_loader = DataLoader(shadow_train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 
-# train function
-def train_shadow_model(model, dataloader, epochs=10):
+# === Train Shadow Model ===
+def train_shadow_model(shadow_model, dataloader, epochs=10):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    shadow_model = shadow_model.to(device)
+    optimizer = torch.optim.Adam(shadow_model.parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
 
-    model.train()
+    shadow_model.train()
     for epoch in range(epochs):
         for batch in dataloader:
             inputs, labels = batch["img"].to(device), batch["label"].to(device)
             optimizer.zero_grad()
-            outputs = model(inputs)
+            outputs = shadow_model(inputs)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
-    return model
+    return shadow_model
 
 
-shadow_model = NetSimple()
-shadow_model = train_shadow_model(shadow_model, shadow_train_loader)
-
-
+# === Extract Features for Attack Model ===
 # Collect Confidence Scores (for attack model)
 # We'll use softmax outputs as input features and whether the sample was in the training set as the label.
 # label=1 for members, label=0 for non-members
-def get_attack_features(model, dataloader, label, use_extra_features=False):
-    model.eval()
-    device = next(model.parameters()).device
+def get_attack_features(target_model, dataloader, label, use_extra_features=False):
+    target_model.eval()
+    device = next(target_model.parameters()).device
     features = []
     labels = []
     eps = 1e-10  # for safe log
@@ -92,7 +106,7 @@ def get_attack_features(model, dataloader, label, use_extra_features=False):
     with torch.no_grad():
         for batch in dataloader:
             inputs = batch["img"].to(device)
-            outputs = model(inputs)
+            outputs = target_model(inputs)
             probs = F.softmax(outputs, dim=1)  # shape: [batch_size, 10]
 
             batch_features = probs
@@ -112,31 +126,45 @@ def get_attack_features(model, dataloader, label, use_extra_features=False):
     return features, labels
 
 
-# prepare attack dataset
-# For the shadow model, we know exactly which samples were members
-shadow_member_features, shadow_member_labels = get_attack_features(shadow_model, shadow_train_loader, 1, use_extra_features=True)
-shadow_nonmember_features, shadow_nonmember_labels = get_attack_features(shadow_model, test_loader, 0, use_extra_features=True)
+shadow_models = []
+all_shadow_member_features = []
+all_shadow_member_labels = []
+all_shadow_nonmember_features = []
+all_shadow_nonmember_labels = []
 
-# Balance the datasets member vs non_member(downsample)
-min_size = min(len(shadow_member_features), len(shadow_nonmember_features))
+# === Shadow Training Function ===
+# Train each shadow model and collect features
+for i, subset in enumerate(shadow_subsets):
+    print(f"\n--- Training Shadow Model {i + 1}/{NUM_SHADOW_MODELS} ---")
+    model = NetSimple()
+    loader = DataLoader(subset, batch_size=BATCH_SIZE, shuffle=True)
+    model = train_shadow_model(model, loader, epochs=SHADOW_EPOCHS)
 
-shadow_member_features = shadow_member_features[:min_size]
-shadow_member_labels = shadow_member_labels[:min_size]
-shadow_nonmember_features = shadow_nonmember_features[:min_size]
-shadow_nonmember_labels = shadow_nonmember_labels[:min_size]
+    shadow_models.append(model)
 
-# Combine and prepare for training
-X_attack = np.vstack((shadow_member_features, shadow_nonmember_features))
-y_attack = np.array(shadow_member_labels + shadow_nonmember_labels)
+    # Member features (from model's own training data)
+    member_features, member_labels = get_attack_features(model, loader, label=1, use_extra_features=USE_EXTRA_ATTACK_FEATURES)
+    # Non-member features (from shared test data)
+    nonmember_features, nonmember_labels = get_attack_features(model, test_loader, label=0, use_extra_features=USE_EXTRA_ATTACK_FEATURES)
 
-# normalize features
+    # Balance and collect
+    min_len = min(len(member_features), len(nonmember_features))
+    all_shadow_member_features.extend(member_features[:min_len])
+    all_shadow_member_labels.extend(member_labels[:min_len])
+    all_shadow_nonmember_features.extend(nonmember_features[:min_len])
+    all_shadow_nonmember_labels.extend(nonmember_labels[:min_len])
+
+# Combine all shadow model features
+X_attack = np.vstack((all_shadow_member_features, all_shadow_nonmember_features))
+y_attack = np.array(all_shadow_member_labels + all_shadow_nonmember_labels)
+
+# Normalize and train attack model
 scaler = StandardScaler()
 X_attack_scaled = scaler.fit_transform(X_attack)
-
 attack_model = GradientBoostingClassifier().fit(X_attack_scaled, y_attack)
 
 # Load target model
-list_of_files = [fname for fname in glob.glob("../model_checkpoints/global_model_round_*")]
+list_of_files = [fname for fname in glob.glob(f"{CHECKPOINT_DIR}/global_model_round_*")]
 latest_round_file = max(list_of_files, key=os.path.getctime)
 
 target_model = NetSimple()
@@ -144,12 +172,11 @@ target_model.load_state_dict(torch.load(f=latest_round_file, map_location='cpu')
 print("Loading pre-trained model from: ", latest_round_file)
 target_model.eval()
 
-
 # Run the Attack on Target Mode
 # Measured how well it could infer membership
 
-target_member_features, _ = get_attack_features(target_model, target_train_loader, 1, use_extra_features=True)
-target_nonmember_features, _ = get_attack_features(target_model, test_loader, 0, use_extra_features=True)
+target_member_features, _ = get_attack_features(target_model, target_train_loader, 1, use_extra_features=USE_EXTRA_ATTACK_FEATURES)
+target_nonmember_features, _ = get_attack_features(target_model, test_loader, 0, use_extra_features=USE_EXTRA_ATTACK_FEATURES)
 
 X_target_attack = np.vstack((target_member_features, target_nonmember_features))  # multi arrays stacked to (1,N)
 X_target_attack_scaled = scaler.transform(X_target_attack)
