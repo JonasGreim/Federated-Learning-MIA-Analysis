@@ -5,7 +5,8 @@ from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from my_awesome_app.models.black_box_shadow_models import NetSmallCNN, NetOverfitShadow, NetMediumCNN, NetResLike, NetDepthwiseCNN
+from my_awesome_app.models.black_box_shadow_models import NetSmallCNN, NetOverfitShadow, NetMediumCNN, NetResLike, \
+    NetDepthwiseCNN
 from my_awesome_app.models.simple_model import NetSimple
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -93,8 +94,8 @@ def extract_attack_features(model, dataloader, label, use_extra_features):
     with torch.no_grad():
         for batch in dataloader:
             inputs = batch["img"].to(device)
-            outputs = model(inputs)
-            probs = F.softmax(outputs, dim=1)
+            outputs = model(inputs)  # you could use the logits -> not realistic for black box
+            probs = F.softmax(outputs, dim=1)  # use softmax to get probabilities
 
             if use_extra_features:
                 entropy = (-probs * (probs + eps).log()).sum(dim=1, keepdim=True)
@@ -178,7 +179,8 @@ def train_attack_model(member_feats, member_labels, nonmember_feats, nonmember_l
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
-    model = LogisticRegression(max_iter=1000, solver="lbfgs")
+    # model = LogisticRegression(max_iter=1000, solver="lbfgs")
+    model = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42)
     model.fit(X_scaled, y)
     return model, scaler, y
 
