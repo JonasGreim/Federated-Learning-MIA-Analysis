@@ -22,6 +22,7 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import StandardScaler
 from collections import Counter
+from sklearn.metrics import confusion_matrix
 
 # === Config ===
 USE_EXTRA_ATTACK_FEATURES = True  # use extra features for attack model (entropy, margin)
@@ -50,12 +51,14 @@ def load_and_prepare_data():
     test_dataset = dataset["test"]
 
     half_size = len(train_dataset) // 2
-    shadow_train_dataset, target_train_dataset = random_split(train_dataset, [half_size, len(train_dataset) - half_size])
+    shadow_train_dataset, target_train_dataset = random_split(train_dataset,
+                                                              [half_size, len(train_dataset) - half_size])
 
     shadow_split_size = len(shadow_train_dataset) // NUM_SHADOW_MODELS
     shadow_subsets = random_split(
         shadow_train_dataset,
-        [shadow_split_size] * (NUM_SHADOW_MODELS - 1) + [len(shadow_train_dataset) - shadow_split_size * (NUM_SHADOW_MODELS - 1)]
+        [shadow_split_size] * (NUM_SHADOW_MODELS - 1) + [
+            len(shadow_train_dataset) - shadow_split_size * (NUM_SHADOW_MODELS - 1)]
     )
 
     return shadow_subsets, target_train_dataset, test_dataset
@@ -135,7 +138,9 @@ def train_shadow_models(shadow_subsets, test_dataset):
         print(f"✅ Shadow Model {i + 1} - Train Accuracy: {train_acc:.2%}, Test Accuracy: {test_acc:.2%}")
 
         member_feats, member_labels = extract_attack_features(model, loader, 1, USE_EXTRA_ATTACK_FEATURES)
-        nonmember_feats, nonmember_labels = extract_attack_features(model, DataLoader(test_dataset, batch_size=BATCH_SIZE), 0, USE_EXTRA_ATTACK_FEATURES)
+        nonmember_feats, nonmember_labels = extract_attack_features(model,
+                                                                    DataLoader(test_dataset, batch_size=BATCH_SIZE), 0,
+                                                                    USE_EXTRA_ATTACK_FEATURES)
 
         min_len = min(len(member_feats), len(nonmember_feats))
         all_member_feats.extend(member_feats[:min_len])
@@ -168,6 +173,11 @@ def load_latest_target_model():
     return model
 
 
+def compute_far(y_true, y_pred):
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    return fp / (fp + tn)
+
+
 def evaluate_attack_model(attack_model, scaler, target_model, target_train_loader, test_loader):
     member_feats, _ = extract_attack_features(target_model, target_train_loader, 1, USE_EXTRA_ATTACK_FEATURES)
     nonmember_feats, _ = extract_attack_features(target_model, test_loader, 0, USE_EXTRA_ATTACK_FEATURES)
@@ -179,13 +189,17 @@ def evaluate_attack_model(attack_model, scaler, target_model, target_train_loade
     X = np.vstack((member_feats, nonmember_feats))
     y_true = np.array([1] * len(member_feats) + [0] * len(nonmember_feats))
     y_pred = attack_model.predict(scaler.transform(X))
+    far = compute_far(y_true, y_pred)
 
     print("\n=== Attack Model Evaluation ===")
     print(f"Accuracy : {accuracy_score(y_true, y_pred):.2f}")
-    print(f"Precision: {precision_score(y_true, y_pred):.2f}")
-    print(f"Recall   : {recall_score(y_true, y_pred):.2f}")
+    print(f"Precision: {precision_score(y_true, y_pred):.2f}") # TP / (TP + FP) predicted as positive, how many were actually positive?
+    print(
+        f"Recall   : {recall_score(y_true, y_pred):.2f}")  # TP / (TP + FN) how many members were correctly identified out of all members
     print(f"F1 Score : {f1_score(y_true, y_pred):.2f}")
-    print(f"AUC      : {roc_auc_score(y_true, y_pred):.2f}")
+    print(f"AUC      : {roc_auc_score(y_true, y_pred):.2f}")  # TPR (Recall) vs FPR (0.5 = random guessing)
+    print(
+        f"False Alarm Rate (FAR): {far:.2f}")  # FP / (FP/TN) rate proportion of non-member samples that are incorrectly classified as members (<10% & high recall -> good)
     print("Class distribution in attack data:", Counter(y_true))
 
 
