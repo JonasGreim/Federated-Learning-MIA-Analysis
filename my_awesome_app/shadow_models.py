@@ -103,6 +103,21 @@ def extract_attack_features(model, dataloader, label, use_extra_features):
     return features, labels
 
 
+def evaluate_shadow_model(shadow_model, dataloader):
+    shadow_model.eval()
+    correct = 0
+    total = 0
+    device = next(shadow_model.parameters()).device
+    with torch.no_grad():
+        for batch in dataloader:
+            inputs, labels = batch["img"].to(device), batch["label"].to(device)
+            outputs = shadow_model(inputs)
+            preds = outputs.argmax(dim=1)
+            correct += (preds == labels).sum().item()
+            total += labels.size(0)
+    return correct / total
+
+
 def train_shadow_models(shadow_subsets, test_dataset):
     all_member_feats, all_member_labels = [], []
     all_nonmember_feats, all_nonmember_labels = [], []
@@ -112,6 +127,12 @@ def train_shadow_models(shadow_subsets, test_dataset):
         model = arch()
         loader = DataLoader(subset, batch_size=BATCH_SIZE, shuffle=True)
         model = train_model(model, loader, SHADOW_EPOCHS)
+
+        # === Add logging here ===
+        train_acc = evaluate_shadow_model(model, loader)
+        test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE)
+        test_acc = evaluate_shadow_model(model, test_loader)
+        print(f"✅ Shadow Model {i + 1} - Train Accuracy: {train_acc:.2%}, Test Accuracy: {test_acc:.2%}")
 
         member_feats, member_labels = extract_attack_features(model, loader, 1, USE_EXTRA_ATTACK_FEATURES)
         nonmember_feats, nonmember_labels = extract_attack_features(model, DataLoader(test_dataset, batch_size=BATCH_SIZE), 0, USE_EXTRA_ATTACK_FEATURES)
@@ -126,11 +147,15 @@ def train_shadow_models(shadow_subsets, test_dataset):
 
 
 def train_attack_model(member_feats, member_labels, nonmember_feats, nonmember_labels):
+    print("✅ Member count:", len(member_feats))
+    print("✅ Non-member count:", len(nonmember_feats))
     X = np.vstack((member_feats, nonmember_feats))
     y = np.array(member_labels + nonmember_labels)
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    model = RandomForestClassifier(n_estimators=100, max_depth=10).fit(X_scaled, y)
+
+    model = LogisticRegression(max_iter=1000, solver="lbfgs")
+    model.fit(X_scaled, y)
     return model, scaler, y
 
 
@@ -146,6 +171,10 @@ def load_latest_target_model():
 def evaluate_attack_model(attack_model, scaler, target_model, target_train_loader, test_loader):
     member_feats, _ = extract_attack_features(target_model, target_train_loader, 1, USE_EXTRA_ATTACK_FEATURES)
     nonmember_feats, _ = extract_attack_features(target_model, test_loader, 0, USE_EXTRA_ATTACK_FEATURES)
+
+    # min_len = min(len(member_feats), len(nonmember_feats))
+    # member_feats = member_feats[:min_len]
+    # nonmember_feats = nonmember_feats[:min_len]
 
     X = np.vstack((member_feats, nonmember_feats))
     y_true = np.array([1] * len(member_feats) + [0] * len(nonmember_feats))
