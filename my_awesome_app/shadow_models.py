@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from my_awesome_app.models.black_box_shadow_models import NetSmallCNN, NetMLP, NetMediumCNN, NetResLike, NetDepthwiseCNN
+from my_awesome_app.models.black_box_shadow_models import NetSmallCNN, NetOverfitShadow, NetMediumCNN, NetResLike, NetDepthwiseCNN
 from my_awesome_app.models.simple_model import NetSimple
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -28,10 +28,10 @@ from sklearn.utils import resample
 
 # === Config ===
 USE_EXTRA_ATTACK_FEATURES = True  # use extra features for attack model (entropy, margin)
-SHADOW_EPOCHS = 10
+SHADOW_EPOCHS = 25  # need to overfit 25-50 epochs
 BATCH_SIZE = 32
 CHECKPOINT_DIR = "../model_checkpoints"
-SHADOW_MODEL_ARCHS = [NetSmallCNN, NetMLP, NetMediumCNN, NetResLike, NetDepthwiseCNN]
+SHADOW_MODEL_ARCHS = [NetSmallCNN, NetOverfitShadow, NetMediumCNN, NetResLike, NetDepthwiseCNN]
 NUM_SHADOW_MODELS = len(SHADOW_MODEL_ARCHS)
 
 
