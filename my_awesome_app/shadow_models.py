@@ -221,7 +221,7 @@ def evaluate_attack_model(attack_model, scaler, target_model, target_train_loade
     far = compute_far(y_true, y_pred)
 
     print("\n=== Attack Model Evaluation ===")
-    print(f"Accuracy : {accuracy_score(y_true, y_pred):.2f}")
+    print(f"Accuracy : {accuracy_score(y_true, y_pred):.2f}")  # (TP+TN)/(TP+TN+FP+FN) how many were correctly classified out of all samples
     print(
         f"Precision: {precision_score(y_true, y_pred):.2f}")  # TP / (TP + FP) predicted as positive, how many were actually positive?
     print(
