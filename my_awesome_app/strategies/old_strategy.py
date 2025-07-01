@@ -7,7 +7,7 @@ import torch
 import json
 import wandb
 from datetime import datetime
-from my_awesome_app.task import set_weights, create_model
+from my_awesome_app.task import set_weights, create_model, get_dataset_split_flag
 
 
 #  extends FedAvg and overrides some methods to add custom behavior, such as saving the global model and logging metrics.
@@ -35,9 +35,12 @@ class CustomFedAvg(FedAvg):
         model = create_model()
         set_weights(model, ndarrays)
 
-        # save global model in the standard PyTorch way
-        os.makedirs("model_checkpoints", exist_ok=True)
-        torch.save(model.state_dict(), f"model_checkpoints/global_model_round_{server_round}.pth")
+        # save global model from shadow and target model in the standard PyTorch way
+        dataset_split = get_dataset_split_flag()
+        save_dir = f"model_checkpoints_{dataset_split}"
+        os.makedirs(save_dir, exist_ok=True)
+        model_path = os.path.join(save_dir, f"global_model_round_{server_round}.pth")
+        torch.save(model.state_dict(), model_path)
 
         return parameters_aggregated, metrics_aggregated
 

@@ -1,5 +1,4 @@
 from typing import Union
-
 from flwr.common import (
     EvaluateIns,
     EvaluateRes,
@@ -15,14 +14,16 @@ from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from typing import Optional, List, Tuple, Dict
-from my_awesome_app.task import set_weights, test, get_transforms, create_model
+from my_awesome_app.task import set_weights, test, create_model, get_transforms_custom, get_dataset_split_flag
 from torch.utils.data import DataLoader
-from datasets import load_dataset
 import os
 import wandb
 import json
 import torch
 from datetime import datetime
+from torchvision.datasets import CIFAR10
+from torch.utils.data import Subset
+import numpy as np
 
 
 class FedCustom(Strategy):
@@ -64,11 +65,13 @@ class FedCustom(Strategy):
         return initial_parameters
 
     def configure_fit(
-            self, server_round: int, parameters: Parameters, client_manager: ClientManager
+            self,
+            server_round: int,
+            parameters: Parameters,
+            client_manager: ClientManager,
     ) -> List[Tuple[ClientProxy, FitIns]]:
-        """Configure the next round of training."""
+        """Configure the next round of training with a fixed learning rate."""
 
-        # Sample clients
         sample_size, min_num_clients = self.num_fit_clients(
             client_manager.num_available()
         )
@@ -76,20 +79,9 @@ class FedCustom(Strategy):
             num_clients=sample_size, min_num_clients=min_num_clients
         )
 
-        # Create custom configs
-        n_clients = len(clients)
-        half_clients = n_clients // 2
-        standard_config = {"lr": 0.001}
-        higher_lr_config = {"lr": 0.003}
-        fit_configurations = []
-        for idx, client in enumerate(clients):
-            if idx < half_clients:
-                fit_configurations.append((client, FitIns(parameters, standard_config)))
-            else:
-                fit_configurations.append(
-                    (client, FitIns(parameters, higher_lr_config))
-                )
-        return fit_configurations
+        # Single learning rate for all clients
+        config = {"lr": 0.001}
+        return [(client, FitIns(parameters, config)) for client in clients]
 
     def configure_evaluate(
             self, server_round: int, parameters: Parameters, client_manager: ClientManager
@@ -146,8 +138,13 @@ class FedCustom(Strategy):
         #  save global model each round
         model = create_model()
         set_weights(model, aggregated_ndarrays)
-        os.makedirs("model_checkpoints", exist_ok=True)
-        torch.save(model.state_dict(), f"model_checkpoints/global_model_round_{server_round}.pth")
+
+        # save global model from shadow and target model in the standard PyTorch way
+        dataset_split = get_dataset_split_flag()
+        save_dir = f"model_checkpoints_{dataset_split}"
+        os.makedirs(save_dir, exist_ok=True)
+        model_path = os.path.join(save_dir, f"global_model_round_{server_round}.pth")
+        torch.save(model.state_dict(), model_path)
 
         return parameters_aggregated, metrics_aggregated
 
@@ -186,10 +183,18 @@ class FedCustom(Strategy):
     ) -> Optional[Tuple[float, Dict[str, Scalar]]]:
         """Evaluate global model parameters using an evaluation function."""
 
-        # load testset, setup NN, run test
-        testset = load_dataset("uoft-cs/cifar10")["test"]  # loads the data in its original format
-        # preprocessing image data (transform to tensor(hugging dataset) + normalize pixel values)
-        testloader = DataLoader(testset.with_transform(get_transforms()), batch_size=32)
+        split_type = get_dataset_split_flag()
+        if split_type == "target":
+            test_indices = np.load("splits/D2_indices.npy").tolist()
+        else:
+            test_indices = np.load("splits/D4_indices.npy").tolist()
+
+        testset = Subset(
+            CIFAR10(root="./data", train=True, download=True, transform=get_transforms_custom()),
+            test_indices
+        )
+        testloader = DataLoader(testset, batch_size=32)
+
         net = create_model()
         set_weights(net, parameters_to_ndarrays(parameters))  # parameters = tensors -> ndarray parameters
         net.to(self.device)

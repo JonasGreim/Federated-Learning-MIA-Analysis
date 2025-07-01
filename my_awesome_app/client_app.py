@@ -4,7 +4,8 @@ import torch
 import json
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
-from my_awesome_app.task import get_weights, load_data, set_weights, test, train, create_model
+from my_awesome_app.task import get_weights, set_weights, test, train, create_model, load_data_custom, get_dataset_split_flag
+import numpy as np
 
 
 # Define Flower Client and client_fn
@@ -44,7 +45,15 @@ def client_fn(context: Context):
     net = create_model()
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
-    trainloader, valloader = load_data(partition_id, num_partitions)
+
+    split_type = get_dataset_split_flag()
+    if split_type == "target":
+        indices = np.load("splits/D1_indices.npy").tolist()
+    elif split_type == "shadow":
+        indices = np.load("splits/D3_indices.npy").tolist()
+    else:
+        raise ValueError(f"Unknown dataset-split: {split_type}")
+    trainloader, valloader = load_data_custom(partition_id, num_partitions, indices=indices)
     local_epochs = context.run_config["local-epochs"]
 
     # Return Client instance
