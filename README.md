@@ -36,6 +36,7 @@ setup:
   - poetry install
 - run simulation (with 10 client nodes)
   - flwr run .
+- first run -> wandb login: API-key
 
 dataset: https://huggingface.co/datasets/uoft-cs/cifar10
 - 10 classes (airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck)

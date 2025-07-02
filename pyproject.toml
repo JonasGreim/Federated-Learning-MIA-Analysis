@@ -32,12 +32,14 @@ clientapp = "my_awesome_app.client_app:app"
 
 [tool.flwr.app.config]
 num-server-rounds = 100
-fraction-fit = 1
-local-epochs = 1
+local-epochs = 1 # clients train for 1 epoch per round
 learning-rate = 0.001
+batch_size = 64
+fraction-fit = 1.0  # all clients participate in each round
 device = "cuda" # <-- "cpu" or "cuda"
 model = "mia_paper" # <-- loader defined in tasks.create_model()
 dataset-split = "target" # <-- "target" or "shadow"
+seed = 42
 
 [tool.flwr.federations]
 default = "local-simulation"

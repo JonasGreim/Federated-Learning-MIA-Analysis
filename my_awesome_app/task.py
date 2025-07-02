@@ -3,7 +3,7 @@
 from collections import OrderedDict
 import os
 from typing import List
-
+import random
 import torch
 import torch.nn as nn
 import toml
@@ -52,7 +52,14 @@ def get_flower_partition(data_indices) -> Subset:
     return Subset(full_dataset, data_indices)
 
 
-def load_data_custom(partition_id: int, num_partitions: int, indices: list) -> tuple[DataLoader, DataLoader]:
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2 ** 32  # worker-specific seed
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
+
+
+def load_data_custom(partition_id: int, num_partitions: int, indices: list, batch_size: int, seed: int) -> tuple[
+    DataLoader, DataLoader]:
     # Handle edge case if data doesn't divide evenly
     partition_sizes = np.array_split(indices, num_partitions)
     client_indices = partition_sizes[partition_id]
@@ -64,8 +71,11 @@ def load_data_custom(partition_id: int, num_partitions: int, indices: list) -> t
     trainset = get_flower_partition(train_idx)
     testset = get_flower_partition(test_idx)
 
-    trainloader = DataLoader(trainset, batch_size=32, shuffle=True)
-    testloader = DataLoader(testset, batch_size=32)
+    g = torch.Generator()
+    g.manual_seed(seed)
+
+    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker, generator=g)
+    testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker, generator=g)
     return trainloader, testloader
 
 
@@ -195,3 +205,26 @@ def get_dataset_split_flag() -> str:
     with open(pyproject_path) as f:
         config = toml.load(f)
     return config["tool"]["flwr"]["app"]["config"].get("dataset-split", "target")
+
+
+def seed_everything(seed: int = 42) -> None:
+    """Seed all major libraries and environment settings for full reproducibility."""
+    os.environ["PYTHONHASHSEED"] = str(seed)  # Python hash
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"  # CUDA deterministic
+    random.seed(seed)  # Python built-in RNG
+    np.random.seed(seed)  # NumPy
+    torch.manual_seed(seed)  # Torch CPU
+    torch.cuda.manual_seed(seed)  # Torch current GPU
+    torch.cuda.manual_seed_all(seed)  # All GPUs
+    torch.backends.cudnn.deterministic = True  # Force determinism
+    torch.backends.cudnn.benchmark = False  # Disable auto-tuning
+    torch.use_deterministic_algorithms(True)
+
+    try:
+        import sklearn
+        from sklearn.utils import check_random_state
+        _ = check_random_state(seed)
+    except ImportError:
+        pass
+
+    print(f"[Seed] Set global seed to {seed}")

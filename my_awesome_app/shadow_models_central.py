@@ -24,12 +24,12 @@ import random
 from sklearn.utils import resample
 from torchvision.datasets import CIFAR10
 from torch.utils.data import Subset
-from my_awesome_app.task import get_transforms_custom
+from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker
 
 # === Config ===
 USE_EXTRA_ATTACK_FEATURES = True  # use extra features for attack model (entropy, margin)
 SHADOW_EPOCHS = 25  # need to overfit 25-50 epochs
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 CHECKPOINT_DIR = "../model_checkpoints_target"
 SHADOW_MODEL_ARCHS = [SimpleCNN, SimpleCNN, SimpleCNN, SimpleCNN, SimpleCNN]
 NUM_SHADOW_MODELS = len(SHADOW_MODEL_ARCHS)
@@ -37,10 +37,14 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATA_DIR = os.path.join(ROOT_DIR, "data")
 SPLIT_DIR = os.path.join(ROOT_DIR, "splits")
 DEVICE_STR = "cuda"
+SEED = 42
+
+# Seed everything for reproducibility
+seed_everything(SEED)
+g = torch.Generator().manual_seed(SEED)
 
 DEVICE = torch.device(DEVICE_STR if torch.cuda.is_available() or "cpu" in DEVICE_STR else "cpu")
 print(f"Using device: {DEVICE} {'✅ GPU available' if DEVICE.type == 'cuda' else '⚠️ CPU only'}")
-
 
 
 # === Utility Functions ===
@@ -75,11 +79,13 @@ def load_and_prepare_data():
 
     # split shadow_train_dataset across multiple shadow models
     shadow_split_size = len(shadow_train_dataset) // NUM_SHADOW_MODELS
+    g = torch.Generator().manual_seed(SEED)
     shadow_subsets = random_split(
         shadow_train_dataset,
         [shadow_split_size] * (NUM_SHADOW_MODELS - 1) + [
             len(shadow_train_dataset) - shadow_split_size * (NUM_SHADOW_MODELS - 1)
-        ]
+        ],
+        generator=g
     )
 
     return shadow_subsets, target_train_dataset, target_test_dataset, shadow_test_dataset
@@ -154,9 +160,9 @@ def train_shadow_models(shadow_subsets, test_dataset):
     for i, (subset, arch) in enumerate(zip(shadow_subsets, SHADOW_MODEL_ARCHS)):
         print(f"Training Shadow Model {i + 1}/{NUM_SHADOW_MODELS} with {arch.__name__}")
         model = arch()
-        loader = DataLoader(subset, batch_size=BATCH_SIZE, shuffle=True)
+        loader = DataLoader(subset, batch_size=BATCH_SIZE, shuffle=True, worker_init_fn=seed_worker, generator=g)
         model = train_model(model, loader, SHADOW_EPOCHS)
-        test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE)
+        test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, worker_init_fn=seed_worker, generator=g)
 
         # === Add logging here ===
         train_loss, train_acc = evaluate_shadow_model(model, loader)
@@ -166,7 +172,7 @@ def train_shadow_models(shadow_subsets, test_dataset):
 
         member_feats, member_labels = extract_attack_features(model, loader, 1, USE_EXTRA_ATTACK_FEATURES)
         nonmember_feats, nonmember_labels = extract_attack_features(model,
-                                                                    DataLoader(test_dataset, batch_size=BATCH_SIZE), 0,
+                                                                    DataLoader(test_dataset, batch_size=BATCH_SIZE, worker_init_fn=seed_worker, generator=g), 0,
                                                                     USE_EXTRA_ATTACK_FEATURES)
 
         all_member_feats.extend(member_feats)
@@ -261,7 +267,7 @@ if __name__ == "__main__":
     attack_model, scaler, y_attack = train_attack_model(member_feats, member_labels, nonmember_feats, nonmember_labels)
 
     target_model = load_latest_target_model()
-    target_train_loader = DataLoader(target_train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-    test_loader = DataLoader(target_test_dataset, batch_size=BATCH_SIZE)
+    target_train_loader = DataLoader(target_train_dataset, batch_size=BATCH_SIZE, shuffle=True, worker_init_fn=seed_worker, generator=g)
+    test_loader = DataLoader(target_test_dataset, batch_size=BATCH_SIZE, worker_init_fn=seed_worker, generator=g)
 
     evaluate_attack_model(attack_model, scaler, target_model, target_train_loader, test_loader)

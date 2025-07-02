@@ -4,7 +4,7 @@ import torch
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
 from my_awesome_app.task import get_weights, set_weights, test, train, create_model, load_data_custom, \
-    get_dataset_split_flag
+    get_dataset_split_flag, seed_everything
 import numpy as np
 
 
@@ -49,6 +49,12 @@ def client_fn(context: Context):
 
     local_epochs = context.run_config.get("local-epochs", 1)
     device_str = context.run_config.get("device", "cpu")
+    batch_size = context.run_config.get("batch_size", 32)
+    seed = context.run_config.get("seed", 42)
+
+    # Seed everything for reproducibility
+    seed_everything(seed)
+
     # check if cuda is available and set device accordingly
     device = torch.device(device_str if torch.cuda.is_available() or "cpu" in device_str else "cpu")
     print(f"[Client {partition_id}] Using device: {device}, gpu available {torch.cuda.is_available()}")
@@ -60,7 +66,9 @@ def client_fn(context: Context):
         indices = np.load("splits/D3_indices.npy").tolist()
     else:
         raise ValueError(f"Unknown dataset-split: {split_type}")
-    trainloader, valloader = load_data_custom(partition_id, num_partitions, indices=indices)
+
+    trainloader, valloader = load_data_custom(partition_id=partition_id, num_partitions=num_partitions, indices=indices,
+                                              batch_size=batch_size, seed=seed)
 
     # Return Client instance
     return FlowerClient(net, trainloader, valloader, local_epochs, device).to_client()
