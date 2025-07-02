@@ -7,6 +7,8 @@ __pycache__/
 /wandb
 global_model_round_*
 results.json
+data
+splits
 
 
 # Flower directory
