@@ -32,6 +32,10 @@ BATCH_SIZE = 32
 CHECKPOINT_DIR = "../model_checkpoints_target"
 SHADOW_MODEL_ARCHS = [SimpleCNN, SimpleCNN, SimpleCNN, SimpleCNN, SimpleCNN]
 NUM_SHADOW_MODELS = len(SHADOW_MODEL_ARCHS)
+DEVICE_STR = "cuda"
+
+DEVICE = torch.device(DEVICE_STR if torch.cuda.is_available() or "cpu" in DEVICE_STR else "cpu")
+print(f"Using device: {DEVICE} {'✅ GPU available' if DEVICE.type == 'cuda' else '⚠️ CPU only'}")
 
 
 # === Utility Functions ===
@@ -98,8 +102,7 @@ def load_and_prepare_data():
 
 
 def train_model(model, dataloader, epochs):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
+    model = model.to(DEVICE)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
     model.train()
@@ -107,7 +110,7 @@ def train_model(model, dataloader, epochs):
     for _ in range(epochs):
         for batch in dataloader:
             inputs, labels = batch
-            inputs, labels = inputs.to(device), labels.to(device)
+            inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
             optimizer.zero_grad()
             loss = criterion(model(inputs), labels)
             loss.backward()
@@ -118,14 +121,13 @@ def train_model(model, dataloader, epochs):
 
 def extract_attack_features(model, dataloader, label, use_extra_features):
     model.eval()
-    device = next(model.parameters()).device
     features, labels = [], []
     eps = 1e-10
 
     with torch.no_grad():
         for batch in dataloader:
             inputs, _ = batch
-            inputs = inputs.to(device)
+            inputs = inputs.to(DEVICE)
             outputs = model(inputs)  # you could use the logits -> not realistic for black box
             probs = F.softmax(outputs, dim=1)  # use softmax to get probabilities
 
@@ -147,11 +149,10 @@ def evaluate_shadow_model(shadow_model, dataloader):
     total = 0
     total_loss = 0.0
     criterion = nn.CrossEntropyLoss()
-    device = next(shadow_model.parameters()).device
     with torch.no_grad():
         for batch in dataloader:
             inputs, labels = batch
-            inputs, labels = inputs.to(device), labels.to(device)
+            inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
             outputs = shadow_model(inputs)
             loss = criterion(outputs, labels)
             total_loss += loss.item()
@@ -255,7 +256,8 @@ def evaluate_attack_model(attack_model, scaler, target_model, target_train_loade
     far = compute_far(y_true, y_pred)
 
     print("\n=== Attack Model Evaluation ===")
-    print(f"Accuracy : {accuracy_score(y_true, y_pred):.2f}")  # (TP+TN)/(TP+TN+FP+FN) how many were correctly classified out of all samples
+    print(
+        f"Accuracy : {accuracy_score(y_true, y_pred):.2f}")  # (TP+TN)/(TP+TN+FP+FN) how many were correctly classified out of all samples
     print(
         f"Precision: {precision_score(y_true, y_pred):.2f}")  # TP / (TP + FP) predicted as positive, how many were actually positive?
     print(
@@ -283,8 +285,10 @@ if __name__ == "__main__":
     shadow_train_loader = DataLoader(shadow_train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     shadow_test_loader = DataLoader(shadow_test_dataset, batch_size=BATCH_SIZE)
 
-    member_feats, member_labels = extract_attack_features(shadow_model, shadow_train_loader, 1, USE_EXTRA_ATTACK_FEATURES)
-    nonmember_feats, nonmember_labels = extract_attack_features(shadow_model, shadow_test_loader, 0, USE_EXTRA_ATTACK_FEATURES)
+    member_feats, member_labels = extract_attack_features(shadow_model, shadow_train_loader, 1,
+                                                          USE_EXTRA_ATTACK_FEATURES)
+    nonmember_feats, nonmember_labels = extract_attack_features(shadow_model, shadow_test_loader, 0,
+                                                                USE_EXTRA_ATTACK_FEATURES)
 
     attack_model, scaler, y_attack = train_attack_model(member_feats, member_labels, nonmember_feats, nonmember_labels)
 

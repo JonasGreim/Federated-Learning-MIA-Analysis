@@ -1,17 +1,12 @@
-from datasets import load_dataset
 from torchvision.transforms import Compose, Normalize, ToTensor
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from my_awesome_app.models.black_box_shadow_models import NetSmallCNN, NetOverfitShadow, NetMediumCNN, NetResLike, \
-    NetDepthwiseCNN
 from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
 from my_awesome_app.models.simple_model import NetSimple
-from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import GradientBoostingClassifier
 import numpy as np
 import glob
 import os
@@ -38,6 +33,14 @@ BATCH_SIZE = 32
 CHECKPOINT_DIR = "../model_checkpoints_target"
 SHADOW_MODEL_ARCHS = [SimpleCNN, SimpleCNN, SimpleCNN, SimpleCNN, SimpleCNN]
 NUM_SHADOW_MODELS = len(SHADOW_MODEL_ARCHS)
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DATA_DIR = os.path.join(ROOT_DIR, "data")
+SPLIT_DIR = os.path.join(ROOT_DIR, "splits")
+DEVICE_STR = "cuda"
+
+DEVICE = torch.device(DEVICE_STR if torch.cuda.is_available() or "cpu" in DEVICE_STR else "cpu")
+print(f"Using device: {DEVICE} {'✅ GPU available' if DEVICE.type == 'cuda' else '⚠️ CPU only'}")
+
 
 
 # === Utility Functions ===
@@ -54,11 +57,6 @@ def get_transforms():
 
 def load_and_prepare_data():
     # Load full CIFAR-10 train and test sets
-    ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    DATA_DIR = os.path.join(ROOT_DIR, "data")
-    SPLIT_DIR = os.path.join(ROOT_DIR, "splits")
-
-    # Load full CIFAR-10 dataset with transforms
     train_dataset = CIFAR10(root=DATA_DIR, train=True, download=True, transform=get_transforms_custom())
     test_dataset = CIFAR10(root=DATA_DIR, train=False, download=True, transform=get_transforms_custom())
 
@@ -88,8 +86,7 @@ def load_and_prepare_data():
 
 
 def train_model(model, dataloader, epochs):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
+    model = model.to(DEVICE)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
     model.train()
@@ -97,7 +94,7 @@ def train_model(model, dataloader, epochs):
     for _ in range(epochs):
         for batch in dataloader:
             inputs, labels = batch
-            inputs, labels = inputs.to(device), labels.to(device)
+            inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
             optimizer.zero_grad()
             loss = criterion(model(inputs), labels)
             loss.backward()
@@ -108,14 +105,13 @@ def train_model(model, dataloader, epochs):
 
 def extract_attack_features(model, dataloader, label, use_extra_features):
     model.eval()
-    device = next(model.parameters()).device
     features, labels = [], []
     eps = 1e-10
 
     with torch.no_grad():
         for batch in dataloader:
             inputs, _ = batch
-            inputs = inputs.to(device)
+            inputs = inputs.to(DEVICE)
             outputs = model(inputs)  # you could use the logits -> not realistic for black box
             probs = F.softmax(outputs, dim=1)  # use softmax to get probabilities
 
@@ -137,11 +133,10 @@ def evaluate_shadow_model(shadow_model, dataloader):
     total = 0
     total_loss = 0.0
     criterion = nn.CrossEntropyLoss()
-    device = next(shadow_model.parameters()).device
     with torch.no_grad():
         for batch in dataloader:
             inputs, labels = batch
-            inputs, labels = inputs.to(device), labels.to(device)
+            inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
             outputs = shadow_model(inputs)
             loss = criterion(outputs, labels)
             total_loss += loss.item()
@@ -211,7 +206,7 @@ def train_attack_model(member_feats, member_labels, nonmember_feats, nonmember_l
 def load_latest_target_model():
     model = NetSimple()
     model_path = max(glob.glob(f"{CHECKPOINT_DIR}/global_model_round_*"), key=os.path.getctime)
-    model.load_state_dict(torch.load(model_path, map_location="cpu"))
+    model.load_state_dict(torch.load(model_path, map_location=DEVICE))
     model.eval()
     print("Loaded target model from:", model_path)
     return model
@@ -244,7 +239,8 @@ def evaluate_attack_model(attack_model, scaler, target_model, target_train_loade
     far = compute_far(y_true, y_pred)
 
     print("\n=== Attack Model Evaluation ===")
-    print(f"Accuracy : {accuracy_score(y_true, y_pred):.2f}")  # (TP+TN)/(TP+TN+FP+FN) how many were correctly classified out of all samples
+    print(
+        f"Accuracy : {accuracy_score(y_true, y_pred):.2f}")  # (TP+TN)/(TP+TN+FP+FN) how many were correctly classified out of all samples
     print(
         f"Precision: {precision_score(y_true, y_pred):.2f}")  # TP / (TP + FP) predicted as positive, how many were actually positive?
     print(
@@ -260,7 +256,8 @@ def evaluate_attack_model(attack_model, scaler, target_model, target_train_loade
 if __name__ == "__main__":
     shadow_subsets, target_train_dataset, target_test_dataset, shadow_test_dataset = load_and_prepare_data()
 
-    member_feats, member_labels, nonmember_feats, nonmember_labels = train_shadow_models(shadow_subsets, shadow_test_dataset)
+    member_feats, member_labels, nonmember_feats, nonmember_labels = train_shadow_models(shadow_subsets,
+                                                                                         shadow_test_dataset)
     attack_model, scaler, y_attack = train_attack_model(member_feats, member_labels, nonmember_feats, nonmember_labels)
 
     target_model = load_latest_target_model()
