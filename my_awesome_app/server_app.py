@@ -2,7 +2,6 @@
 from typing import List, Tuple
 from flwr.common import Context, ndarrays_to_parameters, Metrics
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
-
 from my_awesome_app.split_cifar10_mia import create_split_files
 from my_awesome_app.strategies.new_strategy import FedCustom
 from my_awesome_app.task import get_weights, create_model
@@ -14,6 +13,7 @@ def server_fn(context: Context):
     fraction_fit = context.run_config["learning-rate"]
     learning_rate = context.run_config["learning-rate"]
     split_flag = context.run_config["dataset-split"]
+    device = context.run_config["device"]
 
     # Create dataset splits if they do not exist
     create_split_files()
@@ -30,7 +30,7 @@ def server_fn(context: Context):
         initial_parameters=parameters,
         learning_rate=learning_rate,
         dataset_split=split_flag,
-        device='cpu',
+        device=device,
     )
     config = ServerConfig(num_rounds=num_rounds)
 

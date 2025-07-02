@@ -14,7 +14,7 @@ from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from typing import Optional, List, Tuple, Dict
-from my_awesome_app.task import set_weights, test, create_model, get_transforms_custom, get_dataset_split_flag
+from my_awesome_app.task import set_weights, test, create_model, get_transforms_custom
 from torch.utils.data import DataLoader
 import os
 import wandb
@@ -42,16 +42,19 @@ class FedCustom(Strategy):
     ) -> None:
         # can be overwritten here + abstract methods invoke
         super().__init__()
+        if "cuda" in device and not torch.cuda.is_available():
+            print("[FedCustom] ⚠️ CUDA requested but not available. Falling back to CPU.")
+            device = "cpu"
         self.fraction_fit = fraction_fit
         self.fraction_evaluate = fraction_evaluate
         self.min_fit_clients = min_fit_clients
         self.min_evaluate_clients = min_evaluate_clients
         self.min_available_clients = min_available_clients
         self.initial_parameters = initial_parameters
-        self.device = device
         self.learning_rate = learning_rate
         self.dataset_split = dataset_split
         self.result_to_json_global_model_test = {}
+        self.device = torch.device(device)
 
         name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         if not wandb.run:

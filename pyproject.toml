@@ -35,11 +35,17 @@ num-server-rounds = 100
 fraction-fit = 1
 local-epochs = 1
 learning-rate = 0.001
-model="simple_model"
-dataset-split = "shadow" # <-- "target" or "shadow"
+device = "cuda" # <-- "cpu" or "cuda"
+model = "mia_paper" # <-- loader defined in tasks.create_model()
+dataset-split = "target" # <-- "target" or "shadow"
 
 [tool.flwr.federations]
 default = "local-simulation"
 
 [tool.flwr.federations.local-simulation]
-options.num-supernodes = 10
+options.num-supernodes = 5 # number of clients
+options.backend.client-resources.num-cpus = 1
+# if no GPU avaible -> ERROR -> set it to 0
+options.backend.client-resources.num-gpus = 0.25  # 25% VRAM pro Client
+# options.backend.init_args.num_cpus = 1 # maximum number of CPUs for the simulation
+# options.backend.init_args.num_gpus = 1 # maximum number of GPUs for the simulation

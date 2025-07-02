@@ -2,19 +2,14 @@
 
 from collections import OrderedDict
 import os
+from typing import List
+
 import torch
-from flwr_datasets.visualization import plot_label_distributions
-from torch import Tensor
 import torch.nn as nn
-import torch.nn.functional as F
-from flwr_datasets import FederatedDataset
-from flwr_datasets.partitioner import DirichletPartitioner
-from torchvision.transforms import Compose, Normalize, ToTensor
 import toml
 from my_awesome_app.models.complex_model import NetComplex
+from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
 from my_awesome_app.models.simple_model import NetSimple
-from flwr.common import Metrics
-from typing import List, Tuple
 from torchvision.datasets import CIFAR10
 from torch.utils.data import Subset, DataLoader
 from torchvision import transforms
@@ -37,38 +32,27 @@ def create_model() -> nn.Module:
         return NetComplex()
     elif model_name == "simple_model":
         return NetSimple()
+    elif model_name == "mia_paper":
+        return SimpleCNN()
     else:
         raise ValueError(f"Unknown model name: {model_name}")
 
 
-# def get_transforms():
-#     pytorch_transforms = Compose(
-#         [ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
-#     )
-#
-#     def apply_transforms(batch):
-#         """Apply transforms to the partition from FederatedDataset."""
-#         batch["img"] = [pytorch_transforms(img) for img in batch["img"]]
-#         return batch
-#
-#     return apply_transforms
-
-
-def get_transforms_custom():
+def get_transforms_custom() -> transforms.Compose:
     return transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
 
 
-def get_flower_partition(data_indices):
+def get_flower_partition(data_indices) -> Subset:
     # Return only a subset of CIFAR10
     os.makedirs(DATA_DIR, exist_ok=True)
     full_dataset = CIFAR10(root=DATA_DIR, train=True, download=True, transform=get_transforms_custom())
     return Subset(full_dataset, data_indices)
 
 
-def load_data_custom(partition_id: int, num_partitions: int, indices: list):
+def load_data_custom(partition_id: int, num_partitions: int, indices: list) -> tuple[DataLoader, DataLoader]:
     # Handle edge case if data doesn't divide evenly
     partition_sizes = np.array_split(indices, num_partitions)
     client_indices = partition_sizes[partition_id]
@@ -177,7 +161,7 @@ def train(net, trainloader, epochs, lr, device) -> tuple[float, float]:
     return avg_trainloss, avg_trainacc
 
 
-def test(net, testloader, device):
+def test(net, testloader, device) -> tuple[float, float]:
     """Validate the model on the test set."""
     net.to(device)
     net.eval()
@@ -190,24 +174,24 @@ def test(net, testloader, device):
             outputs = net(images)
             loss += criterion(outputs, labels).item()
             correct += (torch.max(outputs.data, 1)[1] == labels).sum().item()
-    accuracy = correct / len(testloader.dataset)
+    accuracy = correct / len(testloader.dataset) if len(testloader.dataset) > 0 else 0.0
     loss = loss / len(testloader)
     return loss, accuracy
 
 
-def get_weights(net):
+def get_weights(net: nn.Module) -> List[np.ndarray]:
     return [val.cpu().numpy() for _, val in net.state_dict().items()]
 
 
-def set_weights(net, parameters):
+def set_weights(net: nn.Module, parameters: List[np.ndarray]) -> None:
     params_dict = zip(net.state_dict().keys(), parameters)
     state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
     net.load_state_dict(state_dict, strict=True)
 
 
-def get_dataset_split_flag():
+def get_dataset_split_flag() -> str:
     current_dir = os.path.dirname(os.path.abspath(__file__))
     pyproject_path = os.path.join(current_dir, "..", "pyproject.toml")
     with open(pyproject_path) as f:
         config = toml.load(f)
-    return config["tool"]["flwr"]["app"]["config"].get("dataset-split")
+    return config["tool"]["flwr"]["app"]["config"].get("dataset-split", "target")

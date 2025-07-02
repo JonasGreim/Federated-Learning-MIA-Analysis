@@ -1,21 +1,21 @@
 """my-awesome-app: A Flower / PyTorch app."""
 
 import torch
-import json
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
-from my_awesome_app.task import get_weights, set_weights, test, train, create_model, load_data_custom, get_dataset_split_flag
+from my_awesome_app.task import get_weights, set_weights, test, train, create_model, load_data_custom, \
+    get_dataset_split_flag
 import numpy as np
 
 
 # Define Flower Client and client_fn
 class FlowerClient(NumPyClient):
-    def __init__(self, net, trainloader, valloader, local_epochs):
+    def __init__(self, net, trainloader, valloader, local_epochs, device):
         self.net = net
         self.trainloader = trainloader
         self.valloader = valloader
         self.local_epochs = local_epochs
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = device
         self.net.to(self.device)
 
     def fit(self, parameters, config):
@@ -43,8 +43,15 @@ class FlowerClient(NumPyClient):
 def client_fn(context: Context):
     # Load model and data
     net = create_model()
+
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
+
+    local_epochs = context.run_config.get("local-epochs", 1)
+    device_str = context.run_config.get("device", "cpu")
+    # check if cuda is available and set device accordingly
+    device = torch.device(device_str if torch.cuda.is_available() or "cpu" in device_str else "cpu")
+    print(f"[Client {partition_id}] Using device: {device}, gpu available {torch.cuda.is_available()}")
 
     split_type = get_dataset_split_flag()
     if split_type == "target":
@@ -54,10 +61,9 @@ def client_fn(context: Context):
     else:
         raise ValueError(f"Unknown dataset-split: {split_type}")
     trainloader, valloader = load_data_custom(partition_id, num_partitions, indices=indices)
-    local_epochs = context.run_config["local-epochs"]
 
     # Return Client instance
-    return FlowerClient(net, trainloader, valloader, local_epochs).to_client()
+    return FlowerClient(net, trainloader, valloader, local_epochs, device).to_client()
 
 
 # Flower ClientApp

@@ -3,7 +3,8 @@ import numpy as np
 from torchvision.datasets import CIFAR10
 from collections import defaultdict
 
-def create_split_files():
+
+def create_split_files() -> None:
     # Define paths
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     data_dir = os.path.join(root_dir, "data")
@@ -51,4 +52,3 @@ def create_split_files():
     # D2: test set for target model (10000 samples, 1000 per class)
     # D3: train set for shadow model (15000 samples, 1500 per class)
     # D4: test set for shadow model (15000 samples, 1500 per class)
-
