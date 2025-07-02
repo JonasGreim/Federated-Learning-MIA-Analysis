@@ -36,6 +36,8 @@ class FedCustom(Strategy):
             min_evaluate_clients: int = 2,
             min_available_clients: int = 2,
             initial_parameters: Optional[Parameters] = None,
+            learning_rate: float = 0.001,
+            dataset_split: str = "target",
             device: str = "cpu",
     ) -> None:
         # can be overwritten here + abstract methods invoke
@@ -47,11 +49,15 @@ class FedCustom(Strategy):
         self.min_available_clients = min_available_clients
         self.initial_parameters = initial_parameters
         self.device = device
-
+        self.learning_rate = learning_rate
+        self.dataset_split = dataset_split
         self.result_to_json_global_model_test = {}
 
         name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        wandb.init(project="flower-simulation-tutorial", name=f"custom-strategy-{name}")
+        if not wandb.run:
+            wandb.init(project="flower-simulation-tutorial", name=f"custom-strategy-{name}")
+
+        print(f"[FedCustom] Config: lr={self.learning_rate}, split={self.dataset_split}, device={self.device}")
 
     def __repr__(self) -> str:
         return "FedCustom"
@@ -80,7 +86,7 @@ class FedCustom(Strategy):
         )
 
         # Single learning rate for all clients
-        config = {"lr": 0.001}
+        config = {"lr": self.learning_rate}
         return [(client, FitIns(parameters, config)) for client in clients]
 
     def configure_evaluate(
@@ -140,8 +146,7 @@ class FedCustom(Strategy):
         set_weights(model, aggregated_ndarrays)
 
         # save global model from shadow and target model in the standard PyTorch way
-        dataset_split = get_dataset_split_flag()
-        save_dir = f"model_checkpoints_{dataset_split}"
+        save_dir = f"model_checkpoints_{self.dataset_split}"
         os.makedirs(save_dir, exist_ok=True)
         model_path = os.path.join(save_dir, f"global_model_round_{server_round}.pth")
         torch.save(model.state_dict(), model_path)
@@ -168,7 +173,7 @@ class FedCustom(Strategy):
 
         accuracy_aggregated = weighted_loss_avg(  # same functionality as loss
             [
-                (evaluate_res.num_examples, evaluate_res.metrics["evaluate_accuracy"])
+                (evaluate_res.num_examples, evaluate_res.metrics.get("evaluate_accuracy", 0.0))
                 for _, evaluate_res in results
             ]
         )
@@ -183,8 +188,7 @@ class FedCustom(Strategy):
     ) -> Optional[Tuple[float, Dict[str, Scalar]]]:
         """Evaluate global model parameters using an evaluation function."""
 
-        split_type = get_dataset_split_flag()
-        if split_type == "target":
+        if self.dataset_split == "target":
             test_indices = np.load("splits/D2_indices.npy").tolist()
         else:
             test_indices = np.load("splits/D4_indices.npy").tolist()

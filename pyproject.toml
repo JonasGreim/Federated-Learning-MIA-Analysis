@@ -34,6 +34,7 @@ clientapp = "my_awesome_app.client_app:app"
 num-server-rounds = 100
 fraction-fit = 1
 local-epochs = 1
+learning-rate = 0.001
 model="simple_model"
 dataset-split = "shadow" # <-- "target" or "shadow"
 

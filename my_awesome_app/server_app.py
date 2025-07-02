@@ -11,7 +11,9 @@ from my_awesome_app.task import get_weights, create_model
 def server_fn(context: Context):
     # Read from config
     num_rounds = context.run_config["num-server-rounds"]
-    fraction_fit = context.run_config["fraction-fit"]
+    fraction_fit = context.run_config["learning-rate"]
+    learning_rate = context.run_config["learning-rate"]
+    split_flag = context.run_config["dataset-split"]
 
     # Create dataset splits if they do not exist
     create_split_files()
@@ -26,6 +28,8 @@ def server_fn(context: Context):
         fraction_evaluate=1.0,
         min_available_clients=2,
         initial_parameters=parameters,
+        learning_rate=learning_rate,
+        dataset_split=split_flag,
         device='cpu',
     )
     config = ServerConfig(num_rounds=num_rounds)
