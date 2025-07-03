@@ -9,6 +9,7 @@ import torch.nn as nn
 import toml
 from my_awesome_app.models.complex_model import NetComplex
 from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
+from my_awesome_app.models.resnet_18 import create_resnet18_model
 from my_awesome_app.models.simple_model import NetSimple
 from torchvision.datasets import CIFAR10
 from torch.utils.data import Subset, DataLoader
@@ -33,6 +34,8 @@ def create_model() -> nn.Module:
         return NetSimple()
     elif model_name == "mia_paper":
         return SimpleCNN()
+    elif model_name == "resnet18":
+        return create_resnet18_model()
     else:
         raise ValueError(f"Unknown model name: {model_name}")
 
@@ -40,7 +43,9 @@ def create_model() -> nn.Module:
 def get_transforms_custom() -> transforms.Compose:
     return transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        # Normalize with CIFAR-10 mean and std (shokri does not use normalization -> better overfitting)
+        # transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     ])
 
 
@@ -140,7 +145,7 @@ def train(net, trainloader, epochs, lr, device) -> tuple[float, float]:
     """Train the model on the training set."""
     net.to(device)  # move model to GPU if available
     criterion = torch.nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(net.parameters(), lr=lr)  # (faster convergence but can overfit)
+    optimizer = torch.optim.SGD(net.parameters(), lr=lr)
     net.train()
 
     with open(pyproject_path) as file:

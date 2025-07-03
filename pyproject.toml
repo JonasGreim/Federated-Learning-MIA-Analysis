@@ -31,8 +31,8 @@ serverapp = "my_awesome_app.server_app:app"
 clientapp = "my_awesome_app.client_app:app"
 
 [tool.flwr.app.config]
-num-server-rounds = 100
-local-epochs = 10 # clients train for 1 epoch per round
+num-server-rounds = 40 # number of rounds for the server
+local-epochs = 20 # clients train for 1 epoch per round
 learning-rate = 0.05
 learning-rate-decay = 1e-7
 batch_size = 32

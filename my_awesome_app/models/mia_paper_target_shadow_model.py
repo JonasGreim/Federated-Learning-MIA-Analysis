@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 # CNN defined in the paper "Membership Inference Attacks Against Machine Learning Models", by Shokri et al. (2017)
@@ -20,4 +19,4 @@ class SimpleCNN(nn.Module):
         x = self.pool(torch.tanh(self.conv2(x)))
         x = torch.flatten(x, 1)
         x = torch.tanh(self.fc1(x))
-        return F.softmax(self.fc2(x), dim=1)
+        return self.fc2(x)  # no softmax in the last layer, as it is not needed for the loss function (CrossEntropyLoss)
