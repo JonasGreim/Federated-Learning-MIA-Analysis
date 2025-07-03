@@ -17,12 +17,11 @@ import numpy as np
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATA_DIR = os.path.join(ROOT_DIR, "data")
+current_dir = os.path.dirname(os.path.abspath(__file__))
+pyproject_path = os.path.join(current_dir, '..', 'pyproject.toml')
 
 
 def create_model() -> nn.Module:
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    pyproject_path = os.path.join(current_dir, '..', 'pyproject.toml')
-
     with open(pyproject_path) as file:
         data = toml.load(file)
     # Access the model name from the configuration file
@@ -144,11 +143,21 @@ def train(net, trainloader, epochs, lr, device) -> tuple[float, float]:
     optimizer = torch.optim.Adam(net.parameters(), lr=lr)  # (faster convergence but can overfit)
     net.train()
 
+    with open(pyproject_path) as file:
+        data = toml.load(file)
+    learning_rate_decay = data["tool"]["flwr"]["app"]["config"]["learning-rate-decay"]
+
+    # Learning rate decay matching paper: decay = 1e-7
+    scheduler = torch.optim.lr_scheduler.LambdaLR(
+        optimizer,
+        lr_lambda=lambda e: 1 / (1 + learning_rate_decay * e)
+    )
+
     running_loss = 0.0
     correct = 0
     total = 0
 
-    for _ in range(epochs):
+    for epoch in range(epochs):
         for images, labels in trainloader:
             images = images.to(device)
             labels = labels.to(device)
@@ -165,7 +174,10 @@ def train(net, trainloader, epochs, lr, device) -> tuple[float, float]:
             correct += (predicted == labels).sum().item()  # Count correct predictions
             total += labels.size(0)  # Count total samples
 
-    avg_trainloss = running_loss / len(trainloader)
+        # Apply learning rate decay at end of each epoch
+        scheduler.step()
+
+    avg_trainloss = running_loss / (epochs * len(trainloader))
     avg_trainacc = correct / total  # Average accuracy over epochs
 
     return avg_trainloss, avg_trainacc

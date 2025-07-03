@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-# CNN defined in the paper "Membership Inference Attacks Against Machine Learning Models"
+# CNN defined in the paper "Membership Inference Attacks Against Machine Learning Models", by Shokri et al. (2017)
 # Note: Paper uses Torch7; here we are using PyTorch
 # conv_filters (32,64 ), kernel_size and padding & pooling kernel size and stride are not descripted (only descripted as standard CNN)
 class SimpleCNN(nn.Module):
