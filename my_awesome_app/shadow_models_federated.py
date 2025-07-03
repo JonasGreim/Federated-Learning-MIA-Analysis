@@ -1,10 +1,10 @@
 from torchvision.transforms import Compose, Normalize, ToTensor
+from torch.utils.data import random_split
 from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
-from my_awesome_app.models.simple_model import NetSimple
 from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 import glob
@@ -26,40 +26,41 @@ from torch.utils.data import Subset
 from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker
 
 # === Config ===
-USE_EXTRA_ATTACK_FEATURES = True  # use extra features for attack model (entropy, margin)
-SHADOW_EPOCHS = 25  # need to overfit 25-50 epochs
-BATCH_SIZE = 64
-CHECKPOINT_DIR = "../model_checkpoints_target"
-SHADOW_MODEL_ARCHS = [SimpleCNN, SimpleCNN, SimpleCNN, SimpleCNN, SimpleCNN]
-NUM_SHADOW_MODELS = len(SHADOW_MODEL_ARCHS)
+USE_EXTRA_ATTACK_FEATURES = False  # use extra features for attack model (entropy, margin)
+SHADOW_EPOCHS = 100
+BATCH_SIZE = 32
+LEARNING_RATE = 0.05  # learning rate for shadow models
+TARGET_CHECKPOINT_DIR = "../model_checkpoints_target"
+SHADOW_CHECKPOINT_DIR = "../model_checkpoints_shadow"
+MODEL_Arch = SimpleCNN
+NUM_SHADOW_MODELS = 1  # number of shadow models to train
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DATA_DIR = os.path.join(ROOT_DIR, "data")
+SPLIT_DIR = os.path.join(ROOT_DIR, "splits")
 DEVICE_STR = "cuda"
 SEED = 42
+
+# Generate a list of shadow model architectures
+SHADOW_MODEL_ARCHS = [MODEL_Arch] * NUM_SHADOW_MODELS  # You could use here different architectures for each shadow model
 
 # Seed everything for reproducibility
 seed_everything(SEED)
 g = torch.Generator().manual_seed(SEED)
 
+# Set device
 DEVICE = torch.device(DEVICE_STR if torch.cuda.is_available() or "cpu" in DEVICE_STR else "cpu")
 print(f"Using device: {DEVICE} {'✅ GPU available' if DEVICE.type == 'cuda' else '⚠️ CPU only'}")
 
 
 # === Utility Functions ===
-def ensure_path(path: str, description: str = "", is_dir: bool = False):
-    """
-    Ensure that a required file or directory exists.
-    """
-    if is_dir:
-        if not os.path.isdir(path):
-            raise FileNotFoundError(f"❌ Required directory not found: {description or path}")
-        print(f"✅ Found directory: {description or path}")
-    else:
-        if not os.path.isfile(path):
-            raise FileNotFoundError(f"❌ Required file not found: {description or path}")
-        print(f"✅ Found file: {description or path}")
-
 
 def get_transforms():
-    transform = Compose([ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    transform = Compose([
+        ToTensor(),
+        # Does not make any impact on the attack performance (also not used in the paper)
+        # Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        # Normalize((0.4914, 0.4822, 0.4465),(0.2023, 0.1994, 0.2010))
+    ])
 
     def apply_transforms(batch):
         batch["img"] = [transform(img) for img in batch["img"]]
@@ -70,18 +71,10 @@ def get_transforms():
 
 def load_and_prepare_data():
     # Load full CIFAR-10 train and test sets
-    ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    DATA_DIR = os.path.join(ROOT_DIR, "data")
-    SPLIT_DIR = os.path.join(ROOT_DIR, "splits")
-    ensure_path(path=DATA_DIR, description="data directory", is_dir=True)
-    ensure_path(path=SPLIT_DIR, description="split directory", is_dir=True)
-
-    # Load full CIFAR-10 dataset with transforms
     train_dataset = CIFAR10(root=DATA_DIR, train=True, download=True, transform=get_transforms_custom())
     test_dataset = CIFAR10(root=DATA_DIR, train=False, download=True, transform=get_transforms_custom())
 
     # Load predefined split indices
-
     D1 = np.load(os.path.join(SPLIT_DIR, "D1_indices.npy")).tolist()
     D2 = np.load(os.path.join(SPLIT_DIR, "D2_indices.npy")).tolist()
     D3 = np.load(os.path.join(SPLIT_DIR, "D3_indices.npy")).tolist()
@@ -94,21 +87,12 @@ def load_and_prepare_data():
     shadow_train_dataset = Subset(train_dataset, D3)
     shadow_test_dataset = Subset(train_dataset, D4)
 
-    # # split shadow_train_dataset across multiple shadow models
-    # shadow_split_size = len(shadow_train_dataset) // NUM_SHADOW_MODELS
-    # shadow_subsets = random_split(
-    #     shadow_train_dataset,
-    #     [shadow_split_size] * (NUM_SHADOW_MODELS - 1) + [
-    #         len(shadow_train_dataset) - shadow_split_size * (NUM_SHADOW_MODELS - 1)
-    #     ]
-    # )
-
     return shadow_train_dataset, target_train_dataset, target_test_dataset, shadow_test_dataset
 
 
 def train_model(model, dataloader, epochs):
     model = model.to(DEVICE)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
     criterion = nn.CrossEntropyLoss()
     model.train()
 
@@ -168,6 +152,18 @@ def evaluate_shadow_model(shadow_model, dataloader):
     return avg_loss, correct / total
 
 
+def load_federated_shadow_models(num_shadow_models):
+    shadow_models = []
+    for i in range(num_shadow_models):
+        model = MODEL_Arch()
+        ckpt_path = max(glob.glob(f"{SHADOW_CHECKPOINT_DIR}/global_model_round_*"), key=os.path.getctime)
+        model.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
+        model.to(DEVICE).eval()
+        shadow_models.append(model)
+        print(f"✅ Loaded shadow model {i + 1} from {ckpt_path}")
+    return shadow_models
+
+
 def train_shadow_models(shadow_subsets, test_dataset):
     all_member_feats, all_member_labels = [], []
     all_nonmember_feats, all_nonmember_labels = [], []
@@ -175,13 +171,9 @@ def train_shadow_models(shadow_subsets, test_dataset):
     for i, (subset, arch) in enumerate(zip(shadow_subsets, SHADOW_MODEL_ARCHS)):
         print(f"Training Shadow Model {i + 1}/{NUM_SHADOW_MODELS} with {arch.__name__}")
         model = arch()
-        loader = DataLoader(subset, batch_size=BATCH_SIZE, shuffle=True,
-                            worker_init_fn=seed_worker,
-                            generator=g)
+        loader = DataLoader(subset, batch_size=BATCH_SIZE, shuffle=True, worker_init_fn=seed_worker, generator=g)
         model = train_model(model, loader, SHADOW_EPOCHS)
-        test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE,
-                                 worker_init_fn=seed_worker,
-                                 generator=g)
+        test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, worker_init_fn=seed_worker, generator=g)
 
         # === Add logging here ===
         train_loss, train_acc = evaluate_shadow_model(model, loader)
@@ -192,10 +184,43 @@ def train_shadow_models(shadow_subsets, test_dataset):
         member_feats, member_labels = extract_attack_features(model, loader, 1, USE_EXTRA_ATTACK_FEATURES)
         nonmember_feats, nonmember_labels = extract_attack_features(model,
                                                                     DataLoader(test_dataset, batch_size=BATCH_SIZE,
-                                                                               worker_init_fn=seed_worker,
-                                                                               generator=g), 0,
+                                                                               worker_init_fn=seed_worker, generator=g),
+                                                                    0,
                                                                     USE_EXTRA_ATTACK_FEATURES)
 
+        all_member_feats.extend(member_feats)
+        all_member_labels.extend(member_labels)
+        all_nonmember_feats.extend(nonmember_feats)
+        all_nonmember_labels.extend(nonmember_labels)
+
+    return all_member_feats, all_member_labels, all_nonmember_feats, all_nonmember_labels
+
+
+def extract_features_from_federated_shadows(shadow_models, shadow_train_dataset, shadow_test_dataset):
+    all_member_feats, all_member_labels = [], []
+    all_nonmember_feats, all_nonmember_labels = [], []
+
+    # Loop over pre-trained federated shadow models
+    for i, model in enumerate(shadow_models):
+        print(f"✅ Evaluating Federated Shadow Model {i + 1}/{len(shadow_models)}")
+
+        # Use shadow_train_dataset for member samples
+        train_loader = DataLoader(shadow_train_dataset, batch_size=BATCH_SIZE, shuffle=True, worker_init_fn=seed_worker,
+                                  generator=g)
+        # Use shadow_test_dataset for non-member samples
+        test_loader = DataLoader(shadow_test_dataset, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker,
+                                 generator=g)
+
+        # (Optional) Evaluate model on both sets for logging
+        train_loss, train_acc = evaluate_shadow_model(model, train_loader)
+        test_loss, test_acc = evaluate_shadow_model(model, test_loader)
+        print(f"🔎 Shadow Model {i + 1} - Train Acc: {train_acc:.2%}, Test Acc: {test_acc:.2%}")
+
+        # Extract features
+        member_feats, member_labels = extract_attack_features(model, train_loader, 1, USE_EXTRA_ATTACK_FEATURES)
+        nonmember_feats, nonmember_labels = extract_attack_features(model, test_loader, 0, USE_EXTRA_ATTACK_FEATURES)
+
+        # Aggregate across models
         all_member_feats.extend(member_feats)
         all_member_labels.extend(member_labels)
         all_nonmember_feats.extend(nonmember_feats)
@@ -231,12 +256,12 @@ def train_attack_model(member_feats, member_labels, nonmember_feats, nonmember_l
 
 
 def load_latest_target_model():
-    model = NetSimple()
-    ensure_path(path=CHECKPOINT_DIR, description="target model checkpoint directory", is_dir=True)
-    model_path = max(glob.glob(f"{CHECKPOINT_DIR}/global_model_round_*"), key=os.path.getctime)
-    model.load_state_dict(torch.load(model_path, map_location="cpu"))
+    model = MODEL_Arch()
+    model_checkpoint_path = max(glob.glob(f"{TARGET_CHECKPOINT_DIR}/global_model_round_*"), key=os.path.getctime)
+    model.load_state_dict(torch.load(model_checkpoint_path, map_location=DEVICE))
+    model.to(DEVICE)
     model.eval()
-    print("Loaded target model from:", model_path)
+    print("Loaded target model from:", model_checkpoint_path)
     return model
 
 
@@ -283,36 +308,17 @@ def evaluate_attack_model(attack_model, scaler, target_model, target_train_loade
 # === Main Script ===
 if __name__ == "__main__":
     shadow_train_dataset, target_train_dataset, target_test_dataset, shadow_test_dataset = load_and_prepare_data()
-
-    print("Using federated shadow model checkpoint...")
-    shadow_model = NetSimple()  # use same model class as your federated shadow model
-    ensure_path(path="model_checkpoints_shadow", description="shadow model checkpoint folder", is_dir=True)
-    checkpoint_path = max(glob.glob("model_checkpoints_shadow/global_model_round_*"), key=os.path.getctime)
-    shadow_model.load_state_dict(torch.load(checkpoint_path, map_location="cpu"))
-    shadow_model.eval()
-    print("✅ Loaded federated shadow model from:", checkpoint_path)
-
-    # Use full shadow train/test datasets for feature extraction
-    shadow_train_loader = DataLoader(shadow_train_dataset, batch_size=BATCH_SIZE, shuffle=True,
-                                     worker_init_fn=seed_worker,
-                                     generator=g)
-    shadow_test_loader = DataLoader(shadow_test_dataset, batch_size=BATCH_SIZE,
-                                    worker_init_fn=seed_worker,
-                                    generator=g)
-
-    member_feats, member_labels = extract_attack_features(shadow_model, shadow_train_loader, 1,
-                                                          USE_EXTRA_ATTACK_FEATURES)
-    nonmember_feats, nonmember_labels = extract_attack_features(shadow_model, shadow_test_loader, 0,
-                                                                USE_EXTRA_ATTACK_FEATURES)
-
+    shadow_models = load_federated_shadow_models(NUM_SHADOW_MODELS)
+    member_feats, member_labels, nonmember_feats, nonmember_labels = extract_features_from_federated_shadows(
+        shadow_models,
+        shadow_train_dataset=shadow_train_dataset,  # or a proper shadow_train_split if you have one
+        shadow_test_dataset=shadow_test_dataset
+    )
     attack_model, scaler, y_attack = train_attack_model(member_feats, member_labels, nonmember_feats, nonmember_labels)
 
     target_model = load_latest_target_model()
     target_train_loader = DataLoader(target_train_dataset, batch_size=BATCH_SIZE, shuffle=True,
-                                     worker_init_fn=seed_worker,
-                                     generator=g)
-    test_loader = DataLoader(target_test_dataset, batch_size=BATCH_SIZE,
-                             worker_init_fn=seed_worker,
-                             generator=g)
+                                     worker_init_fn=seed_worker, generator=g)
+    test_loader = DataLoader(target_test_dataset, batch_size=BATCH_SIZE, worker_init_fn=seed_worker, generator=g)
 
     evaluate_attack_model(attack_model, scaler, target_model, target_train_loader, test_loader)
