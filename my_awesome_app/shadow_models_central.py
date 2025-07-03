@@ -54,7 +54,12 @@ print(f"Using device: {DEVICE} {'✅ GPU available' if DEVICE.type == 'cuda' els
 # === Utility Functions ===
 
 def get_transforms():
-    transform = Compose([ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    transform = Compose([
+        ToTensor(),
+        # Does not make any impact on the attack performance (also not used in the paper)
+        # Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        # Normalize((0.4914, 0.4822, 0.4465),(0.2023, 0.1994, 0.2010))
+    ])
 
     def apply_transforms(batch):
         batch["img"] = [transform(img) for img in batch["img"]]
