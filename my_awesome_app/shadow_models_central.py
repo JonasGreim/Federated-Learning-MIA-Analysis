@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
-from my_awesome_app.models.simple_model import NetSimple
 from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 import glob
@@ -27,13 +26,13 @@ from torch.utils.data import Subset
 from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker
 
 # === Config ===
-USE_EXTRA_ATTACK_FEATURES = True  # use extra features for attack model (entropy, margin)
+USE_EXTRA_ATTACK_FEATURES = False  # use extra features for attack model (entropy, margin)
 SHADOW_EPOCHS = 100
 BATCH_SIZE = 32
 LEARNING_RATE = 0.05  # learning rate for shadow models
 TARGET_CHECKPOINT_DIR = "../model_checkpoints_target"
 MODEL_Arch = SimpleCNN
-NUM_SHADOW_MODELS = 5  # number of shadow models to train
+NUM_SHADOW_MODELS = 1  # number of shadow models to train
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATA_DIR = os.path.join(ROOT_DIR, "data")
 SPLIT_DIR = os.path.join(ROOT_DIR, "splits")
