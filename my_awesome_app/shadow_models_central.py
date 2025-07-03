@@ -28,8 +28,9 @@ from my_awesome_app.task import get_transforms_custom, seed_everything, seed_wor
 
 # === Config ===
 USE_EXTRA_ATTACK_FEATURES = True  # use extra features for attack model (entropy, margin)
-SHADOW_EPOCHS = 25  # need to overfit 25-50 epochs
+SHADOW_EPOCHS = 40  # need to overfit 25-50 epochs
 BATCH_SIZE = 64
+LEARNING_RATE = 0.05
 CHECKPOINT_DIR = "../model_checkpoints_target"
 SHADOW_MODEL_ARCHS = [SimpleCNN, SimpleCNN, SimpleCNN, SimpleCNN, SimpleCNN]
 NUM_SHADOW_MODELS = len(SHADOW_MODEL_ARCHS)
@@ -93,7 +94,7 @@ def load_and_prepare_data():
 
 def train_model(model, dataloader, epochs):
     model = model.to(DEVICE)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
     criterion = nn.CrossEntropyLoss()
     model.train()
 
