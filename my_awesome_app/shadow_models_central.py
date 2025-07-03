@@ -28,22 +28,26 @@ from my_awesome_app.task import get_transforms_custom, seed_everything, seed_wor
 
 # === Config ===
 USE_EXTRA_ATTACK_FEATURES = True  # use extra features for attack model (entropy, margin)
-SHADOW_EPOCHS = 40  # need to overfit 25-50 epochs
-BATCH_SIZE = 64
-LEARNING_RATE = 0.05
-CHECKPOINT_DIR = "../model_checkpoints_target"
-SHADOW_MODEL_ARCHS = [SimpleCNN, SimpleCNN, SimpleCNN, SimpleCNN, SimpleCNN]
-NUM_SHADOW_MODELS = len(SHADOW_MODEL_ARCHS)
+SHADOW_EPOCHS = 50  # need to overfit 25-50 epochs
+BATCH_SIZE = 32
+LEARNING_RATE = 0.05  # learning rate for shadow models
+TARGET_CHECKPOINT_DIR = "../model_checkpoints_target"
+MODEL_Arch = SimpleCNN
+NUM_SHADOW_MODELS = 5  # number of shadow models to train
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATA_DIR = os.path.join(ROOT_DIR, "data")
 SPLIT_DIR = os.path.join(ROOT_DIR, "splits")
 DEVICE_STR = "cuda"
 SEED = 42
 
+# Generate a list of shadow model architectures
+SHADOW_MODEL_ARCHS = [MODEL_Arch] * NUM_SHADOW_MODELS  # You could use here different architectures for each shadow model
+
 # Seed everything for reproducibility
 seed_everything(SEED)
 g = torch.Generator().manual_seed(SEED)
 
+# Set device
 DEVICE = torch.device(DEVICE_STR if torch.cuda.is_available() or "cpu" in DEVICE_STR else "cpu")
 print(f"Using device: {DEVICE} {'✅ GPU available' if DEVICE.type == 'cuda' else '⚠️ CPU only'}")
 
@@ -173,7 +177,9 @@ def train_shadow_models(shadow_subsets, test_dataset):
 
         member_feats, member_labels = extract_attack_features(model, loader, 1, USE_EXTRA_ATTACK_FEATURES)
         nonmember_feats, nonmember_labels = extract_attack_features(model,
-                                                                    DataLoader(test_dataset, batch_size=BATCH_SIZE, worker_init_fn=seed_worker, generator=g), 0,
+                                                                    DataLoader(test_dataset, batch_size=BATCH_SIZE,
+                                                                               worker_init_fn=seed_worker, generator=g),
+                                                                    0,
                                                                     USE_EXTRA_ATTACK_FEATURES)
 
         all_member_feats.extend(member_feats)
@@ -211,11 +217,12 @@ def train_attack_model(member_feats, member_labels, nonmember_feats, nonmember_l
 
 
 def load_latest_target_model():
-    model = NetSimple()
-    model_path = max(glob.glob(f"{CHECKPOINT_DIR}/global_model_round_*"), key=os.path.getctime)
-    model.load_state_dict(torch.load(model_path, map_location=DEVICE))
+    model = MODEL_Arch()
+    model_checkpoint_path = max(glob.glob(f"{TARGET_CHECKPOINT_DIR}/global_model_round_*"), key=os.path.getctime)
+    model.load_state_dict(torch.load(model_checkpoint_path, map_location=DEVICE))
+    model.to(DEVICE)
     model.eval()
-    print("Loaded target model from:", model_path)
+    print("Loaded target model from:", model_checkpoint_path)
     return model
 
 
@@ -268,7 +275,8 @@ if __name__ == "__main__":
     attack_model, scaler, y_attack = train_attack_model(member_feats, member_labels, nonmember_feats, nonmember_labels)
 
     target_model = load_latest_target_model()
-    target_train_loader = DataLoader(target_train_dataset, batch_size=BATCH_SIZE, shuffle=True, worker_init_fn=seed_worker, generator=g)
+    target_train_loader = DataLoader(target_train_dataset, batch_size=BATCH_SIZE, shuffle=True,
+                                     worker_init_fn=seed_worker, generator=g)
     test_loader = DataLoader(target_test_dataset, batch_size=BATCH_SIZE, worker_init_fn=seed_worker, generator=g)
 
     evaluate_attack_model(attack_model, scaler, target_model, target_train_loader, test_loader)
