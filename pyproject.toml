@@ -37,7 +37,7 @@ learning-rate = 0.05
 learning-rate-decay = 1e-7
 batch_size = 32
 fraction-fit = 1.0  # all clients participate in each round
-device = "cuda" # <-- "cpu" or "cuda"
+device = "cpu" # <-- "cpu" or "cuda"
 model = "mia_paper" # <-- loader defined in tasks.create_model()
 dataset-split = "target" # <-- "target" or "shadow"
 seed = 42
@@ -45,10 +45,14 @@ seed = 42
 [tool.flwr.federations]
 default = "local-simulation"
 
-[tool.flwr.federations.local-simulation]
+[tool.flwr.federations.local-simulation] # cpu simulation
 options.num-supernodes = 4 # number of clients
 options.backend.client-resources.num-cpus = 1
-# if no GPU avaible -> ERROR -> set it to 0
+
+
+[tool.flwr.federations.local-simulation-gpu] # gpu simulation
+options.num-supernodes = 4 # number of clients
+options.backend.client-resources.num-cpus = 1
 options.backend.client-resources.num-gpus = 0.25  # 25% VRAM pro Client
 # options.backend.init_args.num_cpus = 1 # maximum number of CPUs for the simulation
 # options.backend.init_args.num_gpus = 1 # maximum number of GPUs for the simulation

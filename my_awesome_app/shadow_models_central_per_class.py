@@ -16,7 +16,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.utils import resample
 
 from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
-from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker
+from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker, release_model
 
 from collections import defaultdict, Counter
 
@@ -127,6 +127,7 @@ def train_shadow_models(shadow_subsets, shadow_test_dataset):
             per_class_data[cls]['member'].extend([x for x in member_data.get(cls, [])])
             per_class_data[cls]['nonmember'].extend([x for x in nonmember_data.get(cls, [])])
 
+        release_model(model, DEVICE.type)
     return per_class_data
 
 
@@ -204,6 +205,7 @@ def evaluate_per_class_attack_models(attack_models, scalers, target_model, targe
 
 
 def load_target_model():
+    release_model(None, DEVICE.type)
     model = MODEL_ARCH()
     ckpt_path = max(glob.glob(f"{TARGET_CHECKPOINT_DIR}/global_model_round_*"), key=os.path.getctime)
     model.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
@@ -224,3 +226,4 @@ if __name__ == "__main__":
     target_test_loader = DataLoader(target_test, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker, generator=g)
 
     evaluate_per_class_attack_models(attack_models, scalers, target_model, target_train_loader, target_test_loader)
+    release_model(target_model, DEVICE.type)

@@ -79,3 +79,16 @@ costume strategy: (global model aggregation)
 - add pytorch model checkpoints for each round 
 - push metrics to wandb (weights and biases) for each round 
 - create json file to store metrics
+
+
+what i could do better but won t:
+- add more attack Attack Model Diversity for  more black box(CatBoost, XGBoost, Logistic Regression)
+- Use logits, loss values, or gradient norms (if white-box is permitted)
+- Implement top-k probability truncation to simulate black-box API constraints.
+
+
+Helps against overfitting -> no testing:
+- Model Calibration: temperature scaling to flatten softmax probabilities
+
+
+

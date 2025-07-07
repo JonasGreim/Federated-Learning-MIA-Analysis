@@ -14,7 +14,7 @@ from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from typing import Optional, List, Tuple, Dict
-from my_awesome_app.task import set_weights, test, create_model, get_transforms_custom
+from my_awesome_app.task import set_weights, test, create_model, get_transforms_custom, release_model
 from torch.utils.data import DataLoader
 import os
 import wandb
@@ -153,7 +153,7 @@ class FedCustom(Strategy):
         os.makedirs(save_dir, exist_ok=True)
         model_path = os.path.join(save_dir, f"global_model_round_{server_round}.pth")
         torch.save(model.state_dict(), model_path)
-
+        release_model(model, self.device.type)
         return parameters_aggregated, metrics_aggregated
 
     def aggregate_evaluate(
@@ -218,7 +218,7 @@ class FedCustom(Strategy):
 
         # log to W&B (also json metrics)
         wandb.log(result, step=server_round)
-
+        release_model(net, self.device.type)
         return loss, result
 
     def num_fit_clients(self, num_available_clients: int) -> Tuple[int, int]:

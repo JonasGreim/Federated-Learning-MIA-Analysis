@@ -185,6 +185,7 @@ def train(net, trainloader, epochs, lr, device) -> tuple[float, float]:
     avg_trainloss = running_loss / (epochs * len(trainloader))
     avg_trainacc = correct / total  # Average accuracy over epochs
 
+    release_model(net, device.type)
     return avg_trainloss, avg_trainacc
 
 
@@ -203,6 +204,7 @@ def test(net, testloader, device) -> tuple[float, float]:
             correct += (torch.max(outputs.data, 1)[1] == labels).sum().item()
     accuracy = correct / len(testloader.dataset) if len(testloader.dataset) > 0 else 0.0
     loss = loss / len(testloader)
+    release_model(net, device.type)
     return loss, accuracy
 
 
@@ -245,3 +247,16 @@ def seed_everything(seed: int = 42) -> None:
         pass
 
     print(f"[Seed] Set global seed to {seed}")
+
+
+def release_model(model, device: str) -> None:
+    """
+    Safely release a PyTorch model from GPU memory.
+
+    Moves the model to CPU, deletes the object, and clears GPU cache if needed.
+    """
+    if model is not None:
+        model.cpu()
+        del model
+    if device == 'cuda':
+        torch.cuda.empty_cache()

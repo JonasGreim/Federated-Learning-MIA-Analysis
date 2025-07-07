@@ -23,7 +23,7 @@ import random
 from sklearn.utils import resample
 from torchvision.datasets import CIFAR10
 from torch.utils.data import Subset
-from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker
+from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker, release_model
 
 # === Config ===
 USE_EXTRA_ATTACK_FEATURES = False  # use extra features for attack model (entropy, margin)
@@ -191,6 +191,8 @@ def train_shadow_models(shadow_subsets, test_dataset):
         all_nonmember_feats.extend(nonmember_feats)
         all_nonmember_labels.extend(nonmember_labels)
 
+        release_model(model, DEVICE.type)
+
     return all_member_feats, all_member_labels, all_nonmember_feats, all_nonmember_labels
 
 
@@ -221,6 +223,7 @@ def train_attack_model(member_feats, member_labels, nonmember_feats, nonmember_l
 
 
 def load_latest_target_model():
+    release_model(None, DEVICE.type)
     model = MODEL_Arch()
     model_checkpoint_path = max(glob.glob(f"{TARGET_CHECKPOINT_DIR}/global_model_round_*"), key=os.path.getctime)
     model.load_state_dict(torch.load(model_checkpoint_path, map_location=DEVICE))
@@ -268,6 +271,7 @@ def evaluate_attack_model(attack_model, scaler, target_model, target_train_loade
     print(
         f"False Alarm Rate (FAR): {far:.2f}")  # FP / (FP/TN) rate proportion of non-member samples that are incorrectly classified as members (<10% & high recall -> good)
     print("Class distribution in test attack data:", Counter(y_true))
+    release_model(target_model, DEVICE.type)
 
 
 # === Main Script ===
