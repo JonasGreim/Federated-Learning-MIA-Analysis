@@ -43,12 +43,11 @@ dataset-split = "target" # <-- "target" or "shadow"
 seed = 42
 
 [tool.flwr.federations]
-default = "local-simulation"
+default = "local-simulation-cpu"  # default setting for local simulation
 
-[tool.flwr.federations.local-simulation] # cpu simulation
+[tool.flwr.federations.local-simulation-cpu] # cpu simulation
 options.num-supernodes = 4 # number of clients
 options.backend.client-resources.num-cpus = 1
-
 
 [tool.flwr.federations.local-simulation-gpu] # gpu simulation
 options.num-supernodes = 4 # number of clients

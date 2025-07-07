@@ -90,5 +90,15 @@ what i could do better but won t:
 Helps against overfitting -> no testing:
 - Model Calibration: temperature scaling to flatten softmax probabilities
 
+Run:
+with GPU: (change in toml device parameter)
+```bash
+flwr run . local-simulation-gpu
+```
+with CPU: (change in toml device parameter)
+```bash
+flwr run . 
+```
+
 
 
