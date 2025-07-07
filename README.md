@@ -100,5 +100,14 @@ with CPU: (change in toml device parameter)
 flwr run . 
 ```
 
-
+Difference to Shokri:
+ - Attack Model Type RandomForestClassifier instead of small MLP
+ - number of Shadow Models: 4+ instead of 1
+ - extra features
+ - Balanced Member/Non-Member Training (not done in Shokri)
+ - shadow model datasets are the same size as the target model’s training set
+    - currently only if 1 shadow model is used
+    - testset should also be the same size as the target model’s training set (splitted)
+ -  code currently implements one attack model per class across all shadow models, not per shadow model per class
+  improved versions of MIA from later papers (like Salem et al. 2018 or Yeom et al. 2018) where fewer shadow models are used or models are shared.
 
