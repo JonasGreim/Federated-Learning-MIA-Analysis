@@ -19,7 +19,7 @@ from collections import defaultdict
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 SEED = 42
 BATCH_SIZE = 32
-SHADOW_EPOCHS = 50
+SHADOW_EPOCHS = 100
 LEARNING_RATE = 0.05
 NUM_CLASSES = 10
 NUM_SHADOW_MODELS = 4
@@ -133,9 +133,13 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
 
         per_class_data = defaultdict(lambda: {'member': [], 'nonmember': []})
 
+        print(f"📊 Shadow Model {i + 1} — Per-Class Member/Non-Member Counts:")
         for cls in range(num_classes):
+            num_members = len(member_features.get(cls, []))
+            num_nonmembers = len(nonmember_features.get(cls, []))
             per_class_data[cls]['member'].extend(member_features.get(cls, []))
             per_class_data[cls]['nonmember'].extend(nonmember_features.get(cls, []))
+            print(f"    Class {cls}: Members = {num_members}, Non-Members = {num_nonmembers}")
 
         per_shadow_per_class_data.append(per_class_data)
 
