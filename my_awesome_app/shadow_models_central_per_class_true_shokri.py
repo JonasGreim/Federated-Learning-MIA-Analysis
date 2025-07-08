@@ -1,33 +1,28 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Subset, random_split
+from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import CIFAR10
-from torchvision.transforms import Compose, Normalize, ToTensor
-
+from torchvision.transforms import Compose, ToTensor
 import numpy as np
 import os
-import random
 import glob
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 from sklearn.utils import resample
-
 from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
 from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker, release_model
-
-from collections import defaultdict, Counter
+from collections import defaultdict
 
 # === Configuration ===
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 SEED = 42
 BATCH_SIZE = 32
-SHADOW_EPOCHS = 100
+SHADOW_EPOCHS = 50
 LEARNING_RATE = 0.05
 NUM_CLASSES = 10
-NUM_SHADOW_MODELS = 1
+NUM_SHADOW_MODELS = 4
 USE_EXTRA_ATTACK_FEATURES = False
 MODEL_ARCH = SimpleCNN
 TARGET_CHECKPOINT_DIR = "../model_checkpoints_target"
@@ -79,24 +74,39 @@ def train_model(model, dataloader, epochs):
     return model
 
 
+def stratified_shadow_splits(shadow_dataset, num_shadow_models, seed):
+    # Extract targets from the original dataset
+    targets = np.array([shadow_dataset.dataset.targets[i] for i in shadow_dataset.indices])
+
+    # Group indices by class
+    class_to_indices = defaultdict(list)
+    for idx, label in zip(shadow_dataset.indices, targets):
+        class_to_indices[label].append(idx)
+
+    # Shuffle each class
+    rng = np.random.RandomState(seed)
+    for cls in class_to_indices:
+        rng.shuffle(class_to_indices[cls])
+
+    # Split per class into equal parts
+    per_class_splits = {cls: np.array_split(class_to_indices[cls], num_shadow_models) for cls in class_to_indices}
+
+    # Build shadow subsets
+    shadow_splits = []
+    for i in range(num_shadow_models):
+        indices = []
+        for cls in per_class_splits:
+            indices.extend(per_class_splits[cls][i])
+        rng.shuffle(indices)  # Shuffle to mix classes
+        shadow_splits.append(Subset(shadow_dataset.dataset, indices))
+
+    return shadow_splits
+
+
 def load_shadow_data_with_test_splits(num_shadow_models, seed, g, shadow_train_dataset, shadow_test_dataset):
     # Split shadow_train_dataset into disjoint subsets
-    shadow_train_size = len(shadow_train_dataset) // num_shadow_models
-    shadow_train_subsets = random_split(
-        shadow_train_dataset,
-        [shadow_train_size] * (num_shadow_models - 1) + [
-            len(shadow_train_dataset) - shadow_train_size * (num_shadow_models - 1)],
-        generator=g
-    )
-
-    # Split shadow_test_dataset into disjoint subsets
-    shadow_test_size = len(shadow_test_dataset) // num_shadow_models
-    shadow_test_subsets = random_split(
-        shadow_test_dataset,
-        [shadow_test_size] * (num_shadow_models - 1) + [
-            len(shadow_test_dataset) - shadow_test_size * (num_shadow_models - 1)],
-        generator=g
-    )
+    shadow_train_subsets = stratified_shadow_splits(shadow_train, num_shadow_models, seed)
+    shadow_test_subsets = stratified_shadow_splits(shadow_test, num_shadow_models, seed)
 
     return shadow_train_subsets, shadow_test_subsets
 
@@ -152,10 +162,12 @@ def train_per_shadow_per_class_attack_models(per_shadow_per_class_data, num_clas
             X_member, y_member = zip(*member)
             X_nonmember, y_nonmember = zip(*nonmember)
 
-            min_len = min(len(X_member), len(X_nonmember))
-            X_member, y_member = resample(X_member, y_member, n_samples=min_len, random_state=seed, replace=False)
-            X_nonmember, y_nonmember = resample(X_nonmember, y_nonmember, n_samples=min_len, random_state=seed,
-                                                replace=False)
+            # Oversampling = ensure balanced attack model datasets
+            max_len = max(len(X_member), len(X_nonmember))
+
+            X_member, y_member = resample(X_member, y_member, n_samples=max_len, random_state=seed, replace=True)
+            X_nonmember, y_nonmember = resample(X_nonmember, y_nonmember, n_samples=max_len, random_state=seed,
+                                                replace=True)
 
             X = np.vstack((X_member, X_nonmember))
             y = np.array(y_member + y_nonmember)
@@ -233,6 +245,11 @@ def extract_features_by_class(model, dataloader, label_indicator, use_extra=Fals
             outputs = model(inputs)
             probs = F.softmax(outputs, dim=1)
 
+            # Compute predicted classes (not part original shokri code -> improvement of other papers)
+            # pred_classes = outputs.argmax(dim=1)
+            # Build mask for correct predictions
+            # mask = pred_classes == labels
+
             if use_extra:
                 entropy = (-probs * (probs + eps).log()).sum(dim=1, keepdim=True)
                 top2 = probs.topk(2, dim=1).values
@@ -281,7 +298,3 @@ if __name__ == "__main__":
 
     evaluate_all_attack_models(attack_models, scalers, target_model, target_train_loader, target_test_loader,
                                NUM_CLASSES, USE_EXTRA_ATTACK_FEATURES)
-
-
-# Imbalanced Dataset Handling:
-# The resample function is used to balance the number of member and non-member samples for training the attack models. However, this approach may discard valuable data and could lead to overfitting if the dataset is too small.
