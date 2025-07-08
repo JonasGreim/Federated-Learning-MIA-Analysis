@@ -8,6 +8,7 @@ import numpy as np
 import os
 import glob
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 from sklearn.utils import resample
@@ -148,53 +149,65 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
     return per_shadow_per_class_data
 
 
-def train_per_shadow_per_class_attack_models(per_shadow_per_class_data, num_classes, seed):
-    attack_models = []
-    scalers = []
+def train_per_class_attack_models(per_shadow_per_class_data, num_classes, seed):
+    """
+    Trains one attack model per class using features pooled from all shadow models (faithful to Shokri et al.)
+    """
+    pooled_per_class_data = defaultdict(lambda: {'member': [], 'nonmember': []})
 
+    # Pool features from all shadows
     for shadow_idx, class_data in enumerate(per_shadow_per_class_data):
-        shadow_attack_models = {}
-        shadow_scalers = {}
-
         for cls in range(num_classes):
-            member = class_data[cls]['member']
-            nonmember = class_data[cls]['nonmember']
+            pooled_per_class_data[cls]['member'].extend(class_data[cls]['member'])
+            pooled_per_class_data[cls]['nonmember'].extend(class_data[cls]['nonmember'])
 
-            if not member or not nonmember:
-                continue
+    attack_models = {}
+    scalers = {}
 
-            X_member, y_member = zip(*member)
-            X_nonmember, y_nonmember = zip(*nonmember)
+    # Train one attack model per class
+    for cls in range(num_classes):
+        member = pooled_per_class_data[cls]['member']
+        nonmember = pooled_per_class_data[cls]['nonmember']
 
-            # Oversampling = ensure balanced attack model datasets
-            max_len = max(len(X_member), len(X_nonmember))
+        if not member or not nonmember:
+            print(f"⚠️ Skipping Class {cls}: insufficient data (Members: {len(member)}, Non-members: {len(nonmember)})")
+            continue
 
-            X_member, y_member = resample(X_member, y_member, n_samples=max_len, random_state=seed, replace=True)
-            X_nonmember, y_nonmember = resample(X_nonmember, y_nonmember, n_samples=max_len, random_state=seed,
-                                                replace=True)
+        X_member, y_member = zip(*member)
+        X_nonmember, y_nonmember = zip(*nonmember)
 
-            X = np.vstack((X_member, X_nonmember))
-            y = np.array(y_member + y_nonmember)
+        # Balance members and non-members (Shokri likely used undersampling)
+        n_samples = min(len(X_member), len(X_nonmember))
 
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X)
+        X_member, y_member = resample(X_member, y_member, n_samples=n_samples, random_state=seed, replace=False)
+        X_nonmember, y_nonmember = resample(X_nonmember, y_nonmember, n_samples=n_samples, random_state=seed, replace=False)
 
-            clf = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=seed)
-            clf.fit(X_scaled, y)
+        X = np.vstack((X_member, X_nonmember))
+        y = np.array(y_member + y_nonmember)
 
-            shadow_attack_models[cls] = clf
-            shadow_scalers[cls] = scaler
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
 
-        attack_models.append(shadow_attack_models)
-        scalers.append(shadow_scalers)
+        # In paper Shokri et al. used logistic regression, but RandomForest is better for this task
+        clf = LogisticRegression(max_iter=1000, random_state=seed)
+        clf.fit(X_scaled, y)
+
+        # clf = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=SEED)
+        # clf.fit(X_scaled, y)
+
+        attack_models[cls] = clf
+        scalers[cls] = scaler
+
+        print(f"✅ Trained attack model for Class {cls} (Samples: {len(y)})")
 
     return attack_models, scalers
 
 
-def evaluate_all_attack_models(attack_models, scalers, target_model, target_train_loader, target_test_loader,
-                               num_classes, use_extra_features):
+def evaluate_attack_models(attack_models, scalers, target_model, target_train_loader, target_test_loader,
+                           num_classes, use_extra_features):
     target_model.eval()
 
+    # Extract features from the target model for members (train) and non-members (test)
     train_feats = extract_features_by_class(target_model, target_train_loader, label_indicator=1,
                                             use_extra=use_extra_features)
     test_feats = extract_features_by_class(target_model, target_test_loader, label_indicator=0,
@@ -202,40 +215,70 @@ def evaluate_all_attack_models(attack_models, scalers, target_model, target_trai
 
     all_aucs = []
     all_f1s = []
+    all_accs = []
 
-    for shadow_idx, (attack_model_dict, scaler_dict) in enumerate(zip(attack_models, scalers)):
-        print(f"\n=== Evaluating Attack Models from Shadow {shadow_idx + 1} ===")
+    per_class_aucs = {}
+    per_class_f1s = {}
+    per_class_accs = {}
 
-        for cls in range(num_classes):
-            if cls not in attack_model_dict:
-                continue
+    print(f"\n=== Evaluating Pooled Per-Class Attack Models ===")
 
-            train_cls_feats = train_feats.get(cls, [])
-            test_cls_feats = test_feats.get(cls, [])
+    for cls in range(num_classes):
+        if cls not in attack_models:
+            print(f"⚠️ Skipping Class {cls} — no attack model trained.")
+            continue
 
-            if not train_cls_feats or not test_cls_feats:
-                continue
+        train_cls_feats = train_feats.get(cls, [])
+        test_cls_feats = test_feats.get(cls, [])
 
-            X_train, _ = zip(*train_cls_feats)
-            X_test, _ = zip(*test_cls_feats)
+        if not train_cls_feats or not test_cls_feats:
+            print(f"⚠️ Skipping Class {cls} — insufficient data: Train={len(train_cls_feats)}, Test={len(test_cls_feats)}")
+            continue
 
-            min_len = min(len(X_train), len(X_test))
-            X_eval = np.vstack((X_train[:min_len], X_test[:min_len]))
-            y_eval = np.array([1] * min_len + [0] * min_len)
+        X_train, _ = zip(*train_cls_feats)
+        X_test, _ = zip(*test_cls_feats)
 
-            X_scaled = scaler_dict[cls].transform(X_eval)
-            y_pred = attack_model_dict[cls].predict(X_scaled)
-            y_scores = attack_model_dict[cls].predict_proba(X_scaled)[:, 1]
+        min_len = min(len(X_train), len(X_test))
+        X_eval = np.vstack((X_train[:min_len], X_test[:min_len]))
+        y_eval = np.array([1] * min_len + [0] * min_len)
 
-            tn, fp, fn, tp = confusion_matrix(y_eval, y_pred).ravel()
-            far = fp / (fp + tn) if (fp + tn) > 0 else 0.0
-            all_aucs.append(roc_auc_score(y_eval, y_scores))
-            all_f1s.append(f1_score(y_eval, y_pred))
+        class_one_hot = np.eye(NUM_CLASSES)[cls]
+        X_eval = np.array([np.concatenate([x, class_one_hot]) for x in X_eval])
 
-            print(
-                f"Class {cls}: Acc={accuracy_score(y_eval, y_pred):.2f}, Prec={precision_score(y_eval, y_pred):.2f}, Rec={recall_score(y_eval, y_pred):.2f}, F1={f1_score(y_eval, y_pred):.2f}, AUC={roc_auc_score(y_eval, y_scores):.2f}, FAR={far:.2f}")
-    print(
-        f"\n=== Overall Attack Performance: Avg AUC = {np.mean(all_aucs):.2f}, Avg F1 = {np.mean(all_f1s):.2f}")
+        X_scaled = scalers[cls].transform(X_eval)
+        y_pred = attack_models[cls].predict(X_scaled)
+        y_scores = attack_models[cls].predict_proba(X_scaled)[:, 1]
+
+        acc = accuracy_score(y_eval, y_pred)
+        auc = roc_auc_score(y_eval, y_scores)
+        f1 = f1_score(y_eval, y_pred)
+
+        tn, fp, fn, tp = confusion_matrix(y_eval, y_pred).ravel()
+        far = fp / (fp + tn) if (fp + tn) > 0 else 0.0
+
+        # Store per-class metrics
+        per_class_accs[cls] = acc
+        per_class_aucs[cls] = auc
+        per_class_f1s[cls] = f1
+
+        # Store for global averages
+        all_accs.append(acc)
+        all_aucs.append(auc)
+        all_f1s.append(f1)
+
+        print(f"Class {cls}: Acc={acc:.2f}, Prec={precision_score(y_eval, y_pred):.2f}, "
+              f"Rec={recall_score(y_eval, y_pred):.2f}, F1={f1:.2f}, AUC={auc:.2f}, FAR={far:.2f}")
+
+    # === Per-Class Summary ===
+    print(f"\n=== Per-Class Attack Metrics ===")
+    for cls in sorted(per_class_accs.keys()):
+        print(f"Class {cls}: Acc={per_class_accs[cls]:.2f}, AUC={per_class_aucs[cls]:.2f}, F1={per_class_f1s[cls]:.2f}")
+
+    # === Overall Summary ===
+    print(f"\n=== Overall Attack Performance ===")
+    print(f"Accuracy = {np.mean(all_accs):.2f} ± {np.std(all_accs):.2f}")
+    print(f"AUC      = {np.mean(all_aucs):.2f} ± {np.std(all_aucs):.2f}")
+    print(f"F1       = {np.mean(all_f1s):.2f} ± {np.std(all_f1s):.2f}")
 
 
 def extract_features_by_class(model, dataloader, label_indicator, use_extra=False):
@@ -249,11 +292,6 @@ def extract_features_by_class(model, dataloader, label_indicator, use_extra=Fals
             outputs = model(inputs)
             probs = F.softmax(outputs, dim=1)
 
-            # Compute predicted classes (not part original shokri code -> improvement of other papers)
-            # pred_classes = outputs.argmax(dim=1)
-            # Build mask for correct predictions
-            # mask = pred_classes == labels
-
             if use_extra:
                 entropy = (-probs * (probs + eps).log()).sum(dim=1, keepdim=True)
                 top2 = probs.topk(2, dim=1).values
@@ -264,8 +302,11 @@ def extract_features_by_class(model, dataloader, label_indicator, use_extra=Fals
             labels_np = labels.cpu().numpy()
 
             for i in range(labels_np.shape[0]):
-                class_idx = labels_np[i]
-                class_features[class_idx].append((probs_np[i], label_indicator))
+                cls = labels_np[i]
+                # Page 4
+                class_one_hot = np.eye(NUM_CLASSES)[cls]  # One-hot encoding of class label
+                input_vector = np.concatenate([probs_np[i], class_one_hot])
+                class_features[cls].append((input_vector, label_indicator))
 
     return class_features
 
@@ -273,7 +314,12 @@ def extract_features_by_class(model, dataloader, label_indicator, use_extra=Fals
 def load_target_model():
     release_model(None, DEVICE.type)
     model = MODEL_ARCH()
-    ckpt_path = max(glob.glob(f"{TARGET_CHECKPOINT_DIR}/global_model_round_*"), key=os.path.getctime)
+
+    ckpt_files = glob.glob(f"{TARGET_CHECKPOINT_DIR}/global_model_round_*")
+    if not ckpt_files:
+        raise FileNotFoundError(f"No checkpoint files found in {TARGET_CHECKPOINT_DIR}. Expected files like 'global_model_round_*.pth'.")
+
+    ckpt_path = max(ckpt_files, key=os.path.getctime)
     model.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
     model.to(DEVICE).eval()
     print(f"✅ Loaded target model: {ckpt_path}")
@@ -292,7 +338,7 @@ if __name__ == "__main__":
         USE_EXTRA_ATTACK_FEATURES, g
     )
 
-    attack_models, scalers = train_per_shadow_per_class_attack_models(per_shadow_per_class_data, NUM_CLASSES, SEED)
+    attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data, NUM_CLASSES, SEED)
 
     target_model = load_target_model()
     target_train_loader = DataLoader(target_train, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker,
@@ -300,5 +346,5 @@ if __name__ == "__main__":
     target_test_loader = DataLoader(target_test, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker,
                                     generator=g)
 
-    evaluate_all_attack_models(attack_models, scalers, target_model, target_train_loader, target_test_loader,
-                               NUM_CLASSES, USE_EXTRA_ATTACK_FEATURES)
+    evaluate_attack_models(attack_models, scalers, target_model, target_train_loader, target_test_loader,
+                           NUM_CLASSES, USE_EXTRA_ATTACK_FEATURES)
