@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import CIFAR10
-from torchvision.transforms import Compose, ToTensor
 import numpy as np
 import os
 import glob
@@ -15,6 +14,7 @@ from sklearn.utils import resample
 from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
 from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker, release_model
 from collections import defaultdict
+import re
 
 # === Configuration ===
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -23,7 +23,7 @@ BATCH_SIZE = 32
 SHADOW_EPOCHS = 100
 LEARNING_RATE = 0.05
 NUM_CLASSES = 10
-NUM_SHADOW_MODELS = 4
+NUM_SHADOW_MODELS = 3
 USE_EXTRA_ATTACK_FEATURES = False
 MODEL_ARCH = SimpleCNN
 TARGET_CHECKPOINT_DIR = "../model_checkpoints_target"
@@ -36,28 +36,48 @@ g = torch.Generator().manual_seed(SEED)
 
 
 # === Utility Functions ===
-def get_transforms():
-    return Compose([
-        ToTensor(),
-        # Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ])
-
-
 def load_data():
     train_dataset = CIFAR10(root=DATA_DIR, train=True, download=True, transform=get_transforms_custom())
-    test_dataset = CIFAR10(root=DATA_DIR, train=False, download=True, transform=get_transforms_custom())
+    test_dataset = CIFAR10(root=DATA_DIR, train=False, download=True,
+                           transform=get_transforms_custom())  # real unseen data
 
+    # load split indices
     D1 = np.load(os.path.join(SPLIT_DIR, "D1_indices.npy")).tolist()
-    D2 = np.load(os.path.join(SPLIT_DIR, "D2_indices.npy")).tolist()
+    # D2 = np.load(os.path.join(SPLIT_DIR, "D2_indices.npy")).tolist()
     D3 = np.load(os.path.join(SPLIT_DIR, "D3_indices.npy")).tolist()
     D4 = np.load(os.path.join(SPLIT_DIR, "D4_indices.npy")).tolist()
+    # D1: train set for target model (10000 samples, 1000 per class)
+    # D2: test set for target model (10000 samples, 1000 per class)
+    # D3: train set for shadow model (15000 samples, 1500 per class)
+    # D4: test set for shadow model (15000 samples, 1500 per class)
 
     target_train = Subset(train_dataset, D1)
-    target_test = Subset(train_dataset, D2)
+    # target_test = Subset(train_dataset, D2)
+    target_test = test_dataset
     shadow_train = Subset(train_dataset, D3)
     shadow_test = Subset(train_dataset, D4)
 
     return shadow_train, target_train, target_test, shadow_test
+
+
+def sample_shadow_datasets_with_overlap(shadow_train_dataset, shadow_test_dataset, num_shadow_models, train_size,
+                                        test_size, seed):
+    rng = np.random.RandomState(seed)
+    all_indices = np.array(shadow_train_dataset.indices)
+    test_indices_pool = np.array(shadow_test_dataset.indices)
+
+    shadow_train_sets = []
+    shadow_test_sets = []
+
+    for _ in range(num_shadow_models):
+        # Sample training set without replacement
+        train_indices = rng.choice(all_indices, size=train_size, replace=False)
+        test_indices = rng.choice(test_indices_pool, size=test_size, replace=False)
+
+        shadow_train_sets.append(Subset(shadow_train_dataset.dataset, train_indices))
+        shadow_test_sets.append(Subset(shadow_test_dataset.dataset, test_indices))
+
+    return shadow_train_sets, shadow_test_sets
 
 
 def train_model(model, dataloader, epochs):
@@ -75,41 +95,33 @@ def train_model(model, dataloader, epochs):
     return model
 
 
-def stratified_shadow_splits(shadow_dataset, num_shadow_models, seed):
-    # Extract targets from the original dataset
-    targets = np.array([shadow_dataset.dataset.targets[i] for i in shadow_dataset.indices])
+def extract_features_by_class(model, dataloader, label_indicator, use_extra=False):
+    model.eval()
+    class_features = defaultdict(list)
+    eps = 1e-10
 
-    # Group indices by class
-    class_to_indices = defaultdict(list)
-    for idx, label in zip(shadow_dataset.indices, targets):
-        class_to_indices[label].append(idx)
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
+            outputs = model(inputs)
+            probs = F.softmax(outputs, dim=1)
 
-    # Shuffle each class
-    rng = np.random.RandomState(seed)
-    for cls in class_to_indices:
-        rng.shuffle(class_to_indices[cls])
+            if use_extra:
+                entropy = (-probs * (probs + eps).log()).sum(dim=1, keepdim=True)
+                top2 = probs.topk(2, dim=1).values
+                margin = (top2[:, 0] - top2[:, 1]).unsqueeze(1)
+                probs = torch.cat([probs, entropy, margin], dim=1)
 
-    # Split per class into equal parts
-    per_class_splits = {cls: np.array_split(class_to_indices[cls], num_shadow_models) for cls in class_to_indices}
+            probs_np = probs.cpu().numpy()
+            labels_np = labels.cpu().numpy()
 
-    # Build shadow subsets
-    shadow_splits = []
-    for i in range(num_shadow_models):
-        indices = []
-        for cls in per_class_splits:
-            indices.extend(per_class_splits[cls][i])
-        rng.shuffle(indices)  # Shuffle to mix classes
-        shadow_splits.append(Subset(shadow_dataset.dataset, indices))
+            for i in range(labels_np.shape[0]):
+                cls = labels_np[i]
+                # Page 4
+                input_vector = probs_np[i]
+                class_features[cls].append((input_vector, label_indicator))
 
-    return shadow_splits
-
-
-def load_shadow_data_with_test_splits(num_shadow_models, seed, g, shadow_train_dataset, shadow_test_dataset):
-    # Split shadow_train_dataset into disjoint subsets
-    shadow_train_subsets = stratified_shadow_splits(shadow_train, num_shadow_models, seed)
-    shadow_test_subsets = stratified_shadow_splits(shadow_test, num_shadow_models, seed)
-
-    return shadow_train_subsets, shadow_test_subsets
+    return class_features
 
 
 def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_test_subsets, num_classes, model_arch,
@@ -180,7 +192,8 @@ def train_per_class_attack_models(per_shadow_per_class_data, num_classes, seed):
         n_samples = min(len(X_member), len(X_nonmember))
 
         X_member, y_member = resample(X_member, y_member, n_samples=n_samples, random_state=seed, replace=False)
-        X_nonmember, y_nonmember = resample(X_nonmember, y_nonmember, n_samples=n_samples, random_state=seed, replace=False)
+        X_nonmember, y_nonmember = resample(X_nonmember, y_nonmember, n_samples=n_samples, random_state=seed,
+                                            replace=False)
 
         X = np.vstack((X_member, X_nonmember))
         y = np.array(y_member + y_nonmember)
@@ -232,7 +245,8 @@ def evaluate_attack_models(attack_models, scalers, target_model, target_train_lo
         test_cls_feats = test_feats.get(cls, [])
 
         if not train_cls_feats or not test_cls_feats:
-            print(f"⚠️ Skipping Class {cls} — insufficient data: Train={len(train_cls_feats)}, Test={len(test_cls_feats)}")
+            print(
+                f"⚠️ Skipping Class {cls} — insufficient data: Train={len(train_cls_feats)}, Test={len(test_cls_feats)}")
             continue
 
         X_train, _ = zip(*train_cls_feats)
@@ -265,7 +279,7 @@ def evaluate_attack_models(attack_models, scalers, target_model, target_train_lo
         all_aucs.append(auc)
         all_f1s.append(f1)
 
-        print(f"Class {cls}: Acc={acc:.2f}, Prec={precision_score(y_eval, y_pred):.2f}, "
+        print(f"Class {cls}: Acc={acc:.2f}, Prec={precision_score(y_eval, y_pred, zero_division=0):.2f}, "
               f"Rec={recall_score(y_eval, y_pred):.2f}, F1={f1:.2f}, AUC={auc:.2f}, FAR={far:.2f}")
 
     # === Per-Class Summary ===
@@ -280,48 +294,35 @@ def evaluate_attack_models(attack_models, scalers, target_model, target_train_lo
     print(f"F1       = {np.mean(all_f1s):.2f} ± {np.std(all_f1s):.2f}")
 
 
-def extract_features_by_class(model, dataloader, label_indicator, use_extra=False):
-    model.eval()
-    class_features = defaultdict(list)
-    eps = 1e-10
-
-    with torch.no_grad():
-        for inputs, labels in dataloader:
-            inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
-            outputs = model(inputs)
-            probs = F.softmax(outputs, dim=1)
-
-            if use_extra:
-                entropy = (-probs * (probs + eps).log()).sum(dim=1, keepdim=True)
-                top2 = probs.topk(2, dim=1).values
-                margin = (top2[:, 0] - top2[:, 1]).unsqueeze(1)
-                probs = torch.cat([probs, entropy, margin], dim=1)
-
-            probs_np = probs.cpu().numpy()
-            labels_np = labels.cpu().numpy()
-
-            for i in range(labels_np.shape[0]):
-                cls = labels_np[i]
-                # Page 4
-                class_one_hot = np.eye(NUM_CLASSES)[cls]  # One-hot encoding of class label
-                input_vector = np.concatenate([probs_np[i], class_one_hot])
-                class_features[cls].append((input_vector, label_indicator))
-
-    return class_features
-
-
-def load_target_model():
+def load_highest_round_number_target_model():
     release_model(None, DEVICE.type)
     model = MODEL_ARCH()
 
-    ckpt_files = glob.glob(f"{TARGET_CHECKPOINT_DIR}/global_model_round_*")
-    if not ckpt_files:
-        raise FileNotFoundError(f"No checkpoint files found in {TARGET_CHECKPOINT_DIR}. Expected files like 'global_model_round_*.pth'.")
+    # Get all checkpoint paths
+    checkpoint_paths = glob.glob(f"{TARGET_CHECKPOINT_DIR}/global_model_round_*.pth")
 
-    ckpt_path = max(ckpt_files, key=os.path.getctime)
-    model.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
-    model.to(DEVICE).eval()
-    print(f"✅ Loaded target model: {ckpt_path}")
+    if not checkpoint_paths:
+        raise FileNotFoundError("No checkpoint files found.")
+
+    # Extract round numbers and map to paths
+    checkpoints_with_rounds = []
+    for path in checkpoint_paths:
+        match = re.search(r'global_model_round_(\d+)\.pth', os.path.basename(path))
+        if match:
+            round_number = int(match.group(1))
+            checkpoints_with_rounds.append((round_number, path))
+
+    if not checkpoints_with_rounds:
+        raise ValueError("No valid checkpoint files with round numbers found.")
+
+    # Get the path with the highest round number
+    latest_round, latest_checkpoint_path = max(checkpoints_with_rounds, key=lambda x: x[0])
+
+    model.load_state_dict(torch.load(latest_checkpoint_path, map_location=DEVICE))
+    model.to(DEVICE)
+    model.eval()
+    print(f"Loaded target model from: {latest_checkpoint_path} (round {latest_round})")
+
     return model
 
 
@@ -329,8 +330,11 @@ def load_target_model():
 if __name__ == "__main__":
     shadow_train, target_train, target_test, shadow_test = load_data()
 
-    shadow_train_subsets, shadow_test_subsets = load_shadow_data_with_test_splits(NUM_SHADOW_MODELS, SEED, g,
-                                                                                  shadow_train, shadow_test)
+    shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_with_overlap(shadow_train_dataset=shadow_train,
+                                                                                    shadow_test_dataset=shadow_test,
+                                                                                    num_shadow_models=NUM_SHADOW_MODELS,
+                                                                                    train_size=10000, test_size=10000,
+                                                                                    seed=SEED)
 
     per_shadow_per_class_data = train_all_shadow_models_and_collect_features(
         shadow_train_subsets, shadow_test_subsets, NUM_CLASSES, MODEL_ARCH, SHADOW_EPOCHS, BATCH_SIZE, DEVICE,
@@ -339,7 +343,7 @@ if __name__ == "__main__":
 
     attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data, NUM_CLASSES, SEED)
 
-    target_model = load_target_model()
+    target_model = load_highest_round_number_target_model()
     target_train_loader = DataLoader(target_train, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker,
                                      generator=g)
     target_test_loader = DataLoader(target_test, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker,
