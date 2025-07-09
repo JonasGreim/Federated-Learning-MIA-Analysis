@@ -1,4 +1,4 @@
-from torchvision.transforms import Compose, Normalize, ToTensor
+from torchvision.transforms import Compose, ToTensor
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
 import torch
@@ -24,6 +24,7 @@ from sklearn.utils import resample
 from torchvision.datasets import CIFAR10
 from torch.utils.data import Subset
 from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker, release_model
+import re
 
 # === Config ===
 USE_EXTRA_ATTACK_FEATURES = False  # use extra features for attack model (entropy, margin)
@@ -222,14 +223,35 @@ def train_attack_model(member_feats, member_labels, nonmember_feats, nonmember_l
     return model, scaler, y
 
 
-def load_latest_target_model():
+def load_highest_round_number_target_model():
     release_model(None, DEVICE.type)
     model = MODEL_Arch()
-    model_checkpoint_path = max(glob.glob(f"{TARGET_CHECKPOINT_DIR}/global_model_round_*"), key=os.path.getctime)
-    model.load_state_dict(torch.load(model_checkpoint_path, map_location=DEVICE))
+
+    # Get all checkpoint paths
+    checkpoint_paths = glob.glob(f"{TARGET_CHECKPOINT_DIR}/global_model_round_*.pth")
+
+    if not checkpoint_paths:
+        raise FileNotFoundError("No checkpoint files found.")
+
+    # Extract round numbers and map to paths
+    checkpoints_with_rounds = []
+    for path in checkpoint_paths:
+        match = re.search(r'global_model_round_(\d+)\.pth', os.path.basename(path))
+        if match:
+            round_number = int(match.group(1))
+            checkpoints_with_rounds.append((round_number, path))
+
+    if not checkpoints_with_rounds:
+        raise ValueError("No valid checkpoint files with round numbers found.")
+
+    # Get the path with the highest round number
+    latest_round, latest_checkpoint_path = max(checkpoints_with_rounds, key=lambda x: x[0])
+
+    model.load_state_dict(torch.load(latest_checkpoint_path, map_location=DEVICE))
     model.to(DEVICE)
     model.eval()
-    print("Loaded target model from:", model_checkpoint_path)
+    print(f"Loaded target model from: {latest_checkpoint_path} (round {latest_round})")
+
     return model
 
 
@@ -282,7 +304,7 @@ if __name__ == "__main__":
                                                                                          shadow_test_dataset)
     attack_model, scaler, y_attack = train_attack_model(member_feats, member_labels, nonmember_feats, nonmember_labels)
 
-    target_model = load_latest_target_model()
+    target_model = load_highest_round_number_target_model()
     target_train_loader = DataLoader(target_train_dataset, batch_size=BATCH_SIZE, shuffle=True,
                                      worker_init_fn=seed_worker, generator=g)
     test_loader = DataLoader(target_test_dataset, batch_size=BATCH_SIZE, worker_init_fn=seed_worker, generator=g)

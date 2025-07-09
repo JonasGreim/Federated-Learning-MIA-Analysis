@@ -3,22 +3,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Subset, random_split
 from torchvision.datasets import CIFAR10
-from torchvision.transforms import Compose, Normalize, ToTensor
-
+from torchvision.transforms import Compose, ToTensor
 import numpy as np
 import os
-import random
 import glob
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 from sklearn.utils import resample
-
 from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
 from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker, release_model
-
-from collections import defaultdict, Counter
+import re
+from collections import defaultdict
 
 
 # === Configuration ===
@@ -204,13 +200,35 @@ def evaluate_per_class_attack_models(attack_models, scalers, target_model, targe
         print(f"Class {cls}: Accuracy={accuracy_score(y_true, y_pred):.2f}, Precision={precision_score(y_true, y_pred):.2f}, Recall={recall_score(y_true, y_pred):.2f}, F1={f1_score(y_true, y_pred):.2f}, AUC={roc_auc_score(y_true, y_scores):.2f}, FAR={far:.2f}")
 
 
-def load_target_model():
+def load_highest_round_number_target_model():
     release_model(None, DEVICE.type)
     model = MODEL_ARCH()
-    ckpt_path = max(glob.glob(f"{TARGET_CHECKPOINT_DIR}/global_model_round_*"), key=os.path.getctime)
-    model.load_state_dict(torch.load(ckpt_path, map_location=DEVICE))
-    model.to(DEVICE).eval()
-    print(f"✅ Loaded target model: {ckpt_path}")
+
+    # Get all checkpoint paths
+    checkpoint_paths = glob.glob(f"{TARGET_CHECKPOINT_DIR}/global_model_round_*.pth")
+
+    if not checkpoint_paths:
+        raise FileNotFoundError("No checkpoint files found.")
+
+    # Extract round numbers and map to paths
+    checkpoints_with_rounds = []
+    for path in checkpoint_paths:
+        match = re.search(r'global_model_round_(\d+)\.pth', os.path.basename(path))
+        if match:
+            round_number = int(match.group(1))
+            checkpoints_with_rounds.append((round_number, path))
+
+    if not checkpoints_with_rounds:
+        raise ValueError("No valid checkpoint files with round numbers found.")
+
+    # Get the path with the highest round number
+    latest_round, latest_checkpoint_path = max(checkpoints_with_rounds, key=lambda x: x[0])
+
+    model.load_state_dict(torch.load(latest_checkpoint_path, map_location=DEVICE))
+    model.to(DEVICE)
+    model.eval()
+    print(f"Loaded target model from: {latest_checkpoint_path} (round {latest_round})")
+
     return model
 
 
@@ -221,7 +239,7 @@ if __name__ == "__main__":
     shadow_data = train_shadow_models(shadow_subsets, shadow_test)
     attack_models, scalers = train_attack_models(shadow_data)
 
-    target_model = load_target_model()
+    target_model = load_highest_round_number_target_model()
     target_train_loader = DataLoader(target_train, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker, generator=g)
     target_test_loader = DataLoader(target_test, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker, generator=g)
 
