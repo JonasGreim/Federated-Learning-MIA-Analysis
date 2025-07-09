@@ -38,12 +38,10 @@ g = torch.Generator().manual_seed(SEED)
 # === Utility Functions ===
 def load_data():
     train_dataset = CIFAR10(root=DATA_DIR, train=True, download=True, transform=get_transforms_custom())
-    test_dataset = CIFAR10(root=DATA_DIR, train=False, download=True,
-                           transform=get_transforms_custom())  # real unseen data
 
     # load split indices
     D1 = np.load(os.path.join(SPLIT_DIR, "D1_indices.npy")).tolist()
-    # D2 = np.load(os.path.join(SPLIT_DIR, "D2_indices.npy")).tolist()
+    D2 = np.load(os.path.join(SPLIT_DIR, "D2_indices.npy")).tolist()
     D3 = np.load(os.path.join(SPLIT_DIR, "D3_indices.npy")).tolist()
     D4 = np.load(os.path.join(SPLIT_DIR, "D4_indices.npy")).tolist()
     # D1: train set for target model (10000 samples, 1000 per class)
@@ -52,8 +50,7 @@ def load_data():
     # D4: test set for shadow model (15000 samples, 1500 per class)
 
     target_train = Subset(train_dataset, D1)
-    # target_test = Subset(train_dataset, D2)
-    target_test = test_dataset
+    target_test = Subset(train_dataset, D2)
     shadow_train = Subset(train_dataset, D3)
     shadow_test = Subset(train_dataset, D4)
 
@@ -118,7 +115,8 @@ def extract_features_by_class(model, dataloader, label_indicator, use_extra=Fals
             for i in range(labels_np.shape[0]):
                 cls = labels_np[i]
                 # Page 4
-                input_vector = probs_np[i]
+                class_one_hot = np.eye(NUM_CLASSES)[cls]  # One-hot encoding of class label
+                input_vector = np.concatenate([probs_np[i], class_one_hot])
                 class_features[cls].append((input_vector, label_indicator))
 
     return class_features
