@@ -242,8 +242,7 @@ def evaluate_attack_models(attack_models, scalers, target_model, target_train_lo
         X_eval = np.vstack((X_train[:min_len], X_test[:min_len]))
         y_eval = np.array([1] * min_len + [0] * min_len)
 
-        class_one_hot = np.eye(NUM_CLASSES)[cls]
-        X_eval = np.array([np.concatenate([x, class_one_hot]) for x in X_eval])
+        X_eval = np.array(X_eval)
 
         X_scaled = scalers[cls].transform(X_eval)
         y_pred = attack_models[cls].predict(X_scaled)
