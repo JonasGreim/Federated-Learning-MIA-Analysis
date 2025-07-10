@@ -21,10 +21,10 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 SEED = 42
 BATCH_SIZE = 32
 SHADOW_EPOCHS = 100
-LEARNING_RATE = 0.05
+LEARNING_RATE = 0.001
+LEARNING_RATE_DECAY = 1e-7
 NUM_CLASSES = 10
-NUM_SHADOW_MODELS = 3
-USE_EXTRA_ATTACK_FEATURES = False
+NUM_SHADOW_MODELS = 10
 MODEL_ARCH = SimpleCNN
 TARGET_CHECKPOINT_DIR = "../model_checkpoints_target"
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -80,34 +80,36 @@ def sample_shadow_datasets_with_overlap(shadow_train_dataset, shadow_test_datase
 def train_model(model, dataloader, epochs):
     model = model.to(DEVICE)
     optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+    scheduler = torch.optim.lr_scheduler.LambdaLR(
+        optimizer,
+        lr_lambda=lambda e: 1 / (1 + LEARNING_RATE_DECAY * e)
+    )
     criterion = nn.CrossEntropyLoss()
     model.train()
-    for _ in range(epochs):
+
+    for epoch in range(epochs):
         for inputs, labels in dataloader:
             inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
+
             optimizer.zero_grad()
             loss = criterion(model(inputs), labels)
             loss.backward()
             optimizer.step()
+
+        scheduler.step()
+
     return model
 
 
-def extract_features_by_class(model, dataloader, label_indicator, use_extra=False):
+def extract_features_by_class(model, dataloader, label_indicator):
     model.eval()
     class_features = defaultdict(list)
-    eps = 1e-10
 
     with torch.no_grad():
         for inputs, labels in dataloader:
             inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
             outputs = model(inputs)
             probs = F.softmax(outputs, dim=1)
-
-            if use_extra:
-                entropy = (-probs * (probs + eps).log()).sum(dim=1, keepdim=True)
-                top2 = probs.topk(2, dim=1).values
-                margin = (top2[:, 0] - top2[:, 1]).unsqueeze(1)
-                probs = torch.cat([probs, entropy, margin], dim=1)
 
             probs_np = probs.cpu().numpy()
             labels_np = labels.cpu().numpy()
@@ -123,7 +125,7 @@ def extract_features_by_class(model, dataloader, label_indicator, use_extra=Fals
 
 
 def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_test_subsets, num_classes, model_arch,
-                                                 shadow_epochs, batch_size, device, use_extra_features, g):
+                                                 shadow_epochs, batch_size, device, g):
     per_shadow_per_class_data = []
 
     for i, (train_subset, test_subset) in enumerate(zip(shadow_train_subsets, shadow_test_subsets)):
@@ -137,10 +139,8 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
 
         model = train_model(model, train_loader, shadow_epochs)
 
-        member_features = extract_features_by_class(model, train_loader, label_indicator=1,
-                                                    use_extra=use_extra_features)
-        nonmember_features = extract_features_by_class(model, test_loader, label_indicator=0,
-                                                       use_extra=use_extra_features)
+        member_features = extract_features_by_class(model, train_loader, label_indicator=1)
+        nonmember_features = extract_features_by_class(model, test_loader, label_indicator=0)
 
         per_class_data = defaultdict(lambda: {'member': [], 'nonmember': []})
 
@@ -215,14 +215,12 @@ def train_per_class_attack_models(per_shadow_per_class_data, num_classes, seed):
 
 
 def evaluate_attack_models(attack_models, scalers, target_model, target_train_loader, target_test_loader,
-                           num_classes, use_extra_features):
+                           num_classes):
     target_model.eval()
 
     # Extract features from the target model for members (train) and non-members (test)
-    train_feats = extract_features_by_class(target_model, target_train_loader, label_indicator=1,
-                                            use_extra=use_extra_features)
-    test_feats = extract_features_by_class(target_model, target_test_loader, label_indicator=0,
-                                           use_extra=use_extra_features)
+    train_feats = extract_features_by_class(target_model, target_train_loader, label_indicator=1)
+    test_feats = extract_features_by_class(target_model, target_test_loader, label_indicator=0)
 
     all_aucs = []
     all_f1s = []
@@ -335,8 +333,7 @@ if __name__ == "__main__":
                                                                                     seed=SEED)
 
     per_shadow_per_class_data = train_all_shadow_models_and_collect_features(
-        shadow_train_subsets, shadow_test_subsets, NUM_CLASSES, MODEL_ARCH, SHADOW_EPOCHS, BATCH_SIZE, DEVICE,
-        USE_EXTRA_ATTACK_FEATURES, g
+        shadow_train_subsets, shadow_test_subsets, NUM_CLASSES, MODEL_ARCH, SHADOW_EPOCHS, BATCH_SIZE, DEVICE, g
     )
 
     attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data, NUM_CLASSES, SEED)
@@ -347,5 +344,4 @@ if __name__ == "__main__":
     target_test_loader = DataLoader(target_test, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker,
                                     generator=g)
 
-    evaluate_attack_models(attack_models, scalers, target_model, target_train_loader, target_test_loader,
-                           NUM_CLASSES, USE_EXTRA_ATTACK_FEATURES)
+    evaluate_attack_models(attack_models, scalers, target_model, target_train_loader, target_test_loader, NUM_CLASSES)
