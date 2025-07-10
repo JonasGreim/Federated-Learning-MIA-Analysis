@@ -15,6 +15,7 @@ from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
 from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker, release_model
 from collections import defaultdict
 import re
+import time
 
 # === Configuration ===
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -137,7 +138,12 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
         test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker,
                                  generator=g)
 
+        # Measure training time
+        start_time = time.time()
         model = train_model(model, train_loader, shadow_epochs)
+        end_time = time.time()
+        training_time = end_time - start_time
+        print(f"⏱️ Shadow Model {i + 1} Training Time: {training_time:.2f} seconds")
 
         member_features = extract_features_by_class(model, train_loader, label_indicator=1)
         nonmember_features = extract_features_by_class(model, test_loader, label_indicator=0)
@@ -153,7 +159,6 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
             print(f"    Class {cls}: Members = {num_members}, Non-Members = {num_nonmembers}")
 
         per_shadow_per_class_data.append(per_class_data)
-
         release_model(model, device.type)
 
     return per_shadow_per_class_data
