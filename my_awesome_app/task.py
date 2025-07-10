@@ -56,12 +56,6 @@ def get_flower_partition(data_indices) -> Subset:
     return Subset(full_dataset, data_indices)
 
 
-def seed_worker(worker_id):
-    worker_seed = torch.initial_seed() % 2 ** 32  # worker-specific seed
-    np.random.seed(worker_seed)
-    random.seed(worker_seed)
-
-
 def load_data_custom(partition_id: int, num_partitions: int, indices: list, batch_size: int, seed: int) -> tuple[
     DataLoader, DataLoader]:
     # Handle edge case if data doesn't divide evenly
@@ -247,6 +241,13 @@ def seed_everything(seed: int = 42) -> None:
         pass
 
     print(f"[Seed] Set global seed to {seed}")
+
+
+def seed_worker(worker_id) -> None:
+    # worker_id is automatically used internally by PyTorch to generate a unique seed for each worker process
+    worker_seed = torch.initial_seed() % 2 ** 32  # worker-specific seed
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
 
 
 def release_model(model, device: str) -> None:
