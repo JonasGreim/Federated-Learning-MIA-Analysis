@@ -114,12 +114,10 @@ def extract_features_by_class(model, dataloader, label_indicator):
             probs_np = probs.cpu().numpy()
             labels_np = labels.cpu().numpy()
 
-            for i in range(labels_np.shape[0]):
-                cls = labels_np[i]
-                # Page 4
-                class_one_hot = np.eye(NUM_CLASSES)[cls]  # One-hot encoding of class label
-                input_vector = np.concatenate([probs_np[i], class_one_hot])
-                class_features[cls].append((input_vector, label_indicator))
+            for prob_vec, cls_label in zip(probs_np, labels_np):
+                class_one_hot = np.eye(NUM_CLASSES)[cls_label]  # One-hot encoding of class label
+                input_vector = np.concatenate([prob_vec, class_one_hot])
+                class_features[cls_label].append((input_vector, label_indicator))
 
     return class_features
 
@@ -133,9 +131,8 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
         model = model_arch()
 
         train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker,
-                                  generator=torch.Generator().manual_seed(SEED + i))
-        test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker,
-                                 generator=torch.Generator().manual_seed(SEED + i))
+                                  generator=torch.Generator().manual_seed(SEED + i), num_workers=2)
+        test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=False, num_workers=2)
 
         # Measure training time
         start_time = time.time()
@@ -335,7 +332,8 @@ if __name__ == "__main__":
     shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_with_overlap(shadow_train_dataset=shadow_train,
                                                                                     shadow_test_dataset=shadow_test,
                                                                                     num_shadow_models=NUM_SHADOW_MODELS,
-                                                                                    train_size=TRAIN_TEST_SIZE, test_size=TRAIN_TEST_SIZE,
+                                                                                    train_size=TRAIN_TEST_SIZE,
+                                                                                    test_size=TRAIN_TEST_SIZE,
                                                                                     seed=SEED)
 
     per_shadow_per_class_data = train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_test_subsets,
@@ -345,8 +343,8 @@ if __name__ == "__main__":
     attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data, NUM_CLASSES, SEED)
 
     target_model = load_highest_round_number_target_model()
-    target_train_loader = DataLoader(target_train, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker)
+    target_train_loader = DataLoader(target_train, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
 
-    target_test_loader = DataLoader(target_test, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker)
+    target_test_loader = DataLoader(target_test, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
 
     evaluate_attack_models(attack_models, scalers, target_model, target_train_loader, target_test_loader, NUM_CLASSES)
