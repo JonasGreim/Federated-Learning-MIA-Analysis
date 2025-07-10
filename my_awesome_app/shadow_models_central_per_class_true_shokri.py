@@ -27,6 +27,7 @@ LEARNING_RATE_DECAY = 1e-7
 NUM_CLASSES = 10
 NUM_SHADOW_MODELS = 10
 MODEL_ARCH = SimpleCNN
+TRAIN_TEST_SIZE = 10000  # Size of train/test sets for shadow models (>15.000 samples would be with duplicates)
 TARGET_CHECKPOINT_DIR = "../model_checkpoints_target"
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATA_DIR = os.path.join(ROOT_DIR, "data")
@@ -66,7 +67,7 @@ def sample_shadow_datasets_with_overlap(shadow_train_dataset, shadow_test_datase
     for i in range(num_shadow_models):
         rng = np.random.RandomState(seed + i)  # different seed for each shadow model
 
-        # Sample training set without replacement
+        # Sample train and test sets without replacement
         train_indices = rng.choice(all_indices, size=train_size, replace=False)
         test_indices = rng.choice(test_indices_pool, size=test_size, replace=False)
 
@@ -192,9 +193,9 @@ def train_per_class_attack_models(per_shadow_per_class_data, num_classes, seed):
         # Balance members and non-members (Shokri likely used undersampling)
         n_samples = min(len(X_member), len(X_nonmember))
 
-        X_member, y_member = resample(X_member, y_member, n_samples=n_samples, random_state=seed, replace=False)
+        X_member, y_member = resample(X_member, y_member, n_samples=n_samples, random_state=seed, replace=True)
         X_nonmember, y_nonmember = resample(X_nonmember, y_nonmember, n_samples=n_samples, random_state=seed,
-                                            replace=False)
+                                            replace=True)
 
         X = np.vstack((X_member, X_nonmember))
         y = np.array(y_member + y_nonmember)
@@ -334,7 +335,7 @@ if __name__ == "__main__":
     shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_with_overlap(shadow_train_dataset=shadow_train,
                                                                                     shadow_test_dataset=shadow_test,
                                                                                     num_shadow_models=NUM_SHADOW_MODELS,
-                                                                                    train_size=15000, test_size=15000,
+                                                                                    train_size=TRAIN_TEST_SIZE, test_size=TRAIN_TEST_SIZE,
                                                                                     seed=SEED)
 
     per_shadow_per_class_data = train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_test_subsets,
