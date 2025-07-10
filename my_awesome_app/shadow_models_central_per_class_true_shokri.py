@@ -32,9 +32,6 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATA_DIR = os.path.join(ROOT_DIR, "data")
 SPLIT_DIR = os.path.join(ROOT_DIR, "splits")
 
-seed_everything(SEED)
-g = torch.Generator().manual_seed(SEED)
-
 
 # === Utility Functions ===
 def load_data():
@@ -60,14 +57,15 @@ def load_data():
 
 def sample_shadow_datasets_with_overlap(shadow_train_dataset, shadow_test_dataset, num_shadow_models, train_size,
                                         test_size, seed):
-    rng = np.random.RandomState(seed)
     all_indices = np.array(shadow_train_dataset.indices)
     test_indices_pool = np.array(shadow_test_dataset.indices)
 
     shadow_train_sets = []
     shadow_test_sets = []
 
-    for _ in range(num_shadow_models):
+    for i in range(num_shadow_models):
+        rng = np.random.RandomState(seed + i)  # different seed for each shadow model
+
         # Sample training set without replacement
         train_indices = rng.choice(all_indices, size=train_size, replace=False)
         test_indices = rng.choice(test_indices_pool, size=test_size, replace=False)
@@ -126,7 +124,7 @@ def extract_features_by_class(model, dataloader, label_indicator):
 
 
 def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_test_subsets, num_classes, model_arch,
-                                                 shadow_epochs, batch_size, device, g):
+                                                 shadow_epochs, batch_size, device):
     per_shadow_per_class_data = []
 
     for i, (train_subset, test_subset) in enumerate(zip(shadow_train_subsets, shadow_test_subsets)):
@@ -134,9 +132,9 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
         model = model_arch()
 
         train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker,
-                                  generator=g)
+                                  generator=torch.Generator().manual_seed(SEED + i))
         test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker,
-                                 generator=g)
+                                 generator=torch.Generator().manual_seed(SEED + i))
 
         # Measure training time
         start_time = time.time()
@@ -329,24 +327,25 @@ def load_highest_round_number_target_model():
 
 # === Main ===
 if __name__ == "__main__":
+    seed_everything(SEED)
+
     shadow_train, target_train, target_test, shadow_test = load_data()
 
     shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_with_overlap(shadow_train_dataset=shadow_train,
                                                                                     shadow_test_dataset=shadow_test,
                                                                                     num_shadow_models=NUM_SHADOW_MODELS,
-                                                                                    train_size=10000, test_size=10000,
+                                                                                    train_size=15000, test_size=15000,
                                                                                     seed=SEED)
 
-    per_shadow_per_class_data = train_all_shadow_models_and_collect_features(
-        shadow_train_subsets, shadow_test_subsets, NUM_CLASSES, MODEL_ARCH, SHADOW_EPOCHS, BATCH_SIZE, DEVICE, g
-    )
+    per_shadow_per_class_data = train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_test_subsets,
+                                                                             NUM_CLASSES, MODEL_ARCH, SHADOW_EPOCHS,
+                                                                             BATCH_SIZE, DEVICE)
 
     attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data, NUM_CLASSES, SEED)
 
     target_model = load_highest_round_number_target_model()
-    target_train_loader = DataLoader(target_train, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker,
-                                     generator=g)
-    target_test_loader = DataLoader(target_test, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker,
-                                    generator=g)
+    target_train_loader = DataLoader(target_train, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker)
+
+    target_test_loader = DataLoader(target_test, batch_size=BATCH_SIZE, shuffle=False, worker_init_fn=seed_worker)
 
     evaluate_attack_models(attack_models, scalers, target_model, target_train_loader, target_test_loader, NUM_CLASSES)
