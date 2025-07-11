@@ -22,12 +22,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 pyproject_path = os.path.join(current_dir, '..', 'pyproject.toml')
 
 
-def create_model() -> nn.Module:
-    with open(pyproject_path) as file:
-        data = toml.load(file)
-    # Access the model name from the configuration file
-    model_name: str = data["tool"]["flwr"]["app"]["config"]["model"]
-
+def create_model(model_name) -> nn.Module:
     if model_name == "complex_model":
         return NetComplex()
     elif model_name == "simple_model":

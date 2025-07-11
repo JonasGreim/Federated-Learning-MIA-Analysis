@@ -11,7 +11,7 @@ from torchvision.transforms import Compose, Normalize, ToTensor
 def make_prediction():
     # Load untrained model
     device = "cpu"
-    net = create_model()  # create model architecture/structure
+    net = create_model(model_name="mia_paper")  # create model architecture/structure
     net.eval()
     net.to(device)
 

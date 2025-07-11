@@ -10,6 +10,8 @@ from datetime import datetime
 from my_awesome_app.task import set_weights, create_model, get_dataset_split_flag
 
 
+### ////// NOT WORKING OLD STRATEGY ////// ###
+
 #  extends FedAvg and overrides some methods to add custom behavior, such as saving the global model and logging metrics.
 class CustomFedAvg(FedAvg):
     def __init__(self, *args, **kwargs):

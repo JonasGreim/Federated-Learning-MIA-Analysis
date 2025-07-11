@@ -41,9 +41,6 @@ class FlowerClient(NumPyClient):
 
 
 def client_fn(context: Context):
-    # Load model and data
-    net = create_model()
-
     partition_id = context.node_config["partition-id"]
     num_partitions = context.node_config["num-partitions"]
 
@@ -51,6 +48,7 @@ def client_fn(context: Context):
     device_str = context.run_config.get("device", "cpu")
     batch_size = context.run_config.get("batch_size", 32)
     seed = context.run_config.get("seed", 42)
+    model_name = context.run_config.get("model")
 
     # Seed everything for reproducibility
     seed_everything(seed)
@@ -58,6 +56,9 @@ def client_fn(context: Context):
     # check if cuda is available and set device accordingly
     device = torch.device(device_str if torch.cuda.is_available() or "cpu" in device_str else "cpu")
     print(f"[Client {partition_id}] Using device: {device}, gpu available {torch.cuda.is_available()}")
+
+    # Load model and data
+    net = create_model(model_name)
 
     split_type = get_dataset_split_flag()
     if split_type == "target":

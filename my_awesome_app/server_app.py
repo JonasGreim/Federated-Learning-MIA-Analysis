@@ -14,6 +14,7 @@ def server_fn(context: Context):
     split_flag = context.run_config["dataset-split"]
     device = context.run_config["device"]
     seed = context.run_config.get("seed", 42)
+    model_name = context.run_config.get("model")
 
     # Seed everything for reproducibility
     seed_everything(seed)
@@ -23,7 +24,7 @@ def server_fn(context: Context):
 
     # Initialize model parameters
     ndarrays = get_weights(
-        create_model())  # could load check points model here (global_model_round_1) to resume training on last global model
+        create_model(model_name))  # could load check points model here (global_model_round_1) to resume training on last global model
     parameters = ndarrays_to_parameters(ndarrays)
 
     strategy = FedCustom(
@@ -34,6 +35,7 @@ def server_fn(context: Context):
         learning_rate=learning_rate,
         dataset_split=split_flag,
         device=device,
+        model_name=model_name,
     )
     config = ServerConfig(num_rounds=num_rounds)
 

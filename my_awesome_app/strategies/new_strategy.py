@@ -39,6 +39,7 @@ class FedCustom(Strategy):
             learning_rate: float = 0.001,
             dataset_split: str = "target",
             device: str = "cpu",
+            model_name: str = "mia_paper",
     ) -> None:
         # can be overwritten here + abstract methods invoke
         super().__init__()
@@ -55,6 +56,7 @@ class FedCustom(Strategy):
         self.dataset_split = dataset_split
         self.result_to_json_global_model_test = {}
         self.device = torch.device(device)
+        self.model_name = model_name
 
         name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         if not wandb.run:
@@ -145,7 +147,7 @@ class FedCustom(Strategy):
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
         #  save global model each round
-        model = create_model()
+        model = create_model(self.model_name)
         set_weights(model, aggregated_ndarrays)
 
         # save global model from shadow and target model in the standard PyTorch way
