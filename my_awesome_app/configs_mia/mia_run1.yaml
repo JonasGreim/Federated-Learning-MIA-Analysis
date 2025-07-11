@@ -1,0 +1,14 @@
+seed: 42
+batch_size: 32
+shadow_epochs: 40
+learning_rate: 0.05
+learning_rate_decay: 1e-7
+num_classes: 10
+num_shadow_models: 10
+train_size: 10000 # Size of train/test sets for shadow models (>15.000 samples would be with duplicates)
+test_size: 10000
+model_arch: "mia_paper" # <-- loader defined in tasks.create_model()
+target_checkpoint_dir: "model_checkpoints_target"
+data_dir: "data" # directory should lay in root
+split_dir: "splits" # directory should lay in root
+device: "cuda" # <-- "cpu" or "cuda"

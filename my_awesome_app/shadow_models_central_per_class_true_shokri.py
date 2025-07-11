@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import yaml
 from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import CIFAR10
 import numpy as np
@@ -11,38 +12,26 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 from sklearn.utils import resample
-from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
-from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker, release_model
+from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker, release_model, create_model
 from collections import defaultdict
 import re
 import time
 
-# === Configuration ===
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-SEED = 42
-BATCH_SIZE = 32
-SHADOW_EPOCHS = 100
-LEARNING_RATE = 0.001
-LEARNING_RATE_DECAY = 1e-7
-NUM_CLASSES = 10
-NUM_SHADOW_MODELS = 10
-MODEL_ARCH = SimpleCNN
-TRAIN_TEST_SIZE = 10000  # Size of train/test sets for shadow models (>15.000 samples would be with duplicates)
-TARGET_CHECKPOINT_DIR = "../model_checkpoints_target"
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DATA_DIR = os.path.join(ROOT_DIR, "data")
-SPLIT_DIR = os.path.join(ROOT_DIR, "splits")
-
 
 # === Utility Functions ===
-def load_data():
-    train_dataset = CIFAR10(root=DATA_DIR, train=True, download=True, transform=get_transforms_custom())
+def load_data(config) -> tuple[Subset, Subset, Subset, Subset]:
+    split_dir: str = config['split_dir']
+    data_dir: str = config['data_dir']
+    root_dir: str = config['root_dir']
+    data_dir_path: str = os.path.join(root_dir, data_dir)
+
+    train_dataset = CIFAR10(root=data_dir_path, train=True, download=True, transform=get_transforms_custom())
 
     # load split indices
-    D1 = np.load(os.path.join(SPLIT_DIR, "D1_indices.npy")).tolist()
-    D2 = np.load(os.path.join(SPLIT_DIR, "D2_indices.npy")).tolist()
-    D3 = np.load(os.path.join(SPLIT_DIR, "D3_indices.npy")).tolist()
-    D4 = np.load(os.path.join(SPLIT_DIR, "D4_indices.npy")).tolist()
+    D1 = np.load(os.path.join(root_dir, split_dir, "D1_indices.npy")).tolist()
+    D2 = np.load(os.path.join(root_dir, split_dir, "D2_indices.npy")).tolist()
+    D3 = np.load(os.path.join(root_dir, split_dir, "D3_indices.npy")).tolist()
+    D4 = np.load(os.path.join(root_dir, split_dir, "D4_indices.npy")).tolist()
     # D1: train set for target model (10000 samples, 1000 per class)
     # D2: test set for target model (10000 samples, 1000 per class)
     # D3: train set for shadow model (15000 samples, 1500 per class)
@@ -56,8 +45,13 @@ def load_data():
     return shadow_train, target_train, target_test, shadow_test
 
 
-def sample_shadow_datasets_with_overlap(shadow_train_dataset, shadow_test_dataset, num_shadow_models, train_size,
-                                        test_size, seed):
+def sample_shadow_datasets_with_overlap(shadow_train_dataset, shadow_test_dataset, config) -> tuple[
+    list[Subset], list[Subset]]:
+    num_shadow_models: int = config["num_shadow_models"]
+    seed: int = config["seed"]
+    train_size: int = config["train_size"]
+    test_size: int = config["test_size"]
+
     all_indices = np.array(shadow_train_dataset.indices)
     test_indices_pool = np.array(shadow_test_dataset.indices)
 
@@ -77,19 +71,19 @@ def sample_shadow_datasets_with_overlap(shadow_train_dataset, shadow_test_datase
     return shadow_train_sets, shadow_test_sets
 
 
-def train_model(model, dataloader, epochs):
-    model = model.to(DEVICE)
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+def train_model(model, dataloader, epochs, learning_rate, learning_rate_decay, device) -> nn.Module:
+    model = model.to(device)
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.LambdaLR(
         optimizer,
-        lr_lambda=lambda e: 1 / (1 + LEARNING_RATE_DECAY * e)
+        lr_lambda=lambda e: 1 / (1 + learning_rate_decay * e)
     )
     criterion = nn.CrossEntropyLoss()
     model.train()
 
     for epoch in range(epochs):
         for inputs, labels in dataloader:
-            inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
+            inputs, labels = inputs.to(device), labels.to(device)
 
             optimizer.zero_grad()
             loss = criterion(model(inputs), labels)
@@ -101,13 +95,13 @@ def train_model(model, dataloader, epochs):
     return model
 
 
-def extract_features_by_class(model, dataloader, label_indicator):
+def extract_features_by_class(model, dataloader, label_indicator, num_classes, device) -> dict:
     model.eval()
     class_features = defaultdict(list)
 
     with torch.no_grad():
         for inputs, labels in dataloader:
-            inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
+            inputs, labels = inputs.to(device), labels.to(device)
             outputs = model(inputs)
             probs = F.softmax(outputs, dim=1)
 
@@ -115,34 +109,46 @@ def extract_features_by_class(model, dataloader, label_indicator):
             labels_np = labels.cpu().numpy()
 
             for prob_vec, cls_label in zip(probs_np, labels_np):
-                class_one_hot = np.eye(NUM_CLASSES)[cls_label]  # One-hot encoding of class label
+                class_one_hot = np.eye(num_classes)[cls_label]  # One-hot encoding of class label
                 input_vector = np.concatenate([prob_vec, class_one_hot])
                 class_features[cls_label].append((input_vector, label_indicator))
 
     return class_features
 
 
-def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_test_subsets, num_classes, model_arch,
-                                                 shadow_epochs, batch_size, device):
+def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_test_subsets, config, device) -> list[
+    dict]:
+    seed: int = config["seed"]
+    num_classes: int = config["num_classes"]
+    batch_size: int = config["batch_size"]
+    shadow_epochs: int = config["shadow_epochs"]
+    learning_rate: float = config["learning_rate"]
+    learning_rate_decay: float = float(config["learning_rate_decay"])
+    model_name: str = config["model_arch"]
+
     per_shadow_per_class_data = []
 
     for i, (train_subset, test_subset) in enumerate(zip(shadow_train_subsets, shadow_test_subsets)):
         print(f"🔄 Training Shadow Model {i + 1}/{len(shadow_train_subsets)}")
-        model = model_arch()
+        model_arch = create_model(model_name)
 
-        train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker,
-                                  generator=torch.Generator().manual_seed(SEED + i), num_workers=2)
+        train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True,
+                                  worker_init_fn=seed_worker,
+                                  generator=torch.Generator().manual_seed(seed + i), num_workers=2)
         test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=False, num_workers=2)
 
         # Measure training time
         start_time = time.time()
-        model = train_model(model, train_loader, shadow_epochs)
+        model = train_model(model=model_arch, dataloader=train_loader, epochs=shadow_epochs,
+                            learning_rate=learning_rate, learning_rate_decay=learning_rate_decay, device=device)
         end_time = time.time()
         training_time = end_time - start_time
         print(f"⏱️ Shadow Model {i + 1} Training Time: {training_time:.2f} seconds")
 
-        member_features = extract_features_by_class(model, train_loader, label_indicator=1)
-        nonmember_features = extract_features_by_class(model, test_loader, label_indicator=0)
+        member_features = extract_features_by_class(model=model, dataloader=train_loader, label_indicator=1,
+                                                    num_classes=num_classes, device=device)
+        nonmember_features = extract_features_by_class(model=model, dataloader=test_loader, label_indicator=0,
+                                                       num_classes=num_classes, device=device)
 
         per_class_data = defaultdict(lambda: {'member': [], 'nonmember': []})
 
@@ -160,10 +166,13 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
     return per_shadow_per_class_data
 
 
-def train_per_class_attack_models(per_shadow_per_class_data, num_classes, seed):
+def train_per_class_attack_models(per_shadow_per_class_data, config) -> tuple[dict, dict]:
     """
     Trains one attack model per class using features pooled from all shadow models (faithful to Shokri et al.)
     """
+    num_classes: int = config["num_classes"]
+    seed: int = config["seed"]
+
     pooled_per_class_data = defaultdict(lambda: {'member': [], 'nonmember': []})
 
     # Pool features from all shadows
@@ -215,13 +224,25 @@ def train_per_class_attack_models(per_shadow_per_class_data, num_classes, seed):
     return attack_models, scalers
 
 
-def evaluate_attack_models(attack_models, scalers, target_model, target_train_loader, target_test_loader,
-                           num_classes):
+def evaluate_attack_models(attack_models, scalers, target_train, target_test, config, device) -> None:
+    batch_size: int = config["batch_size"]
+    num_classes: int = config["num_classes"]
+    target_checkpoint_dir: str = config["target_checkpoint_dir"]
+    root_dir: str = config["root_dir"]
+    model_name: str = config["model_arch"]
+
+    target_model = load_highest_round_number_target_model(root_dir, target_checkpoint_dir, model_name, device)
+
+    target_train_loader = DataLoader(target_train, batch_size=batch_size, shuffle=False, num_workers=2)
+
+    target_test_loader = DataLoader(target_test, batch_size=batch_size, shuffle=False, num_workers=2)
     target_model.eval()
 
     # Extract features from the target model for members (train) and non-members (test)
-    train_feats = extract_features_by_class(target_model, target_train_loader, label_indicator=1)
-    test_feats = extract_features_by_class(target_model, target_test_loader, label_indicator=0)
+    train_feats = extract_features_by_class(target_model, target_train_loader, label_indicator=1,
+                                            num_classes=num_classes, device=device)
+    test_feats = extract_features_by_class(target_model, target_test_loader, label_indicator=0, num_classes=num_classes,
+                                           device=device)
 
     all_aucs = []
     all_f1s = []
@@ -252,8 +273,6 @@ def evaluate_attack_models(attack_models, scalers, target_model, target_train_lo
         min_len = min(len(X_train), len(X_test))
         X_eval = np.vstack((X_train[:min_len], X_test[:min_len]))
         y_eval = np.array([1] * min_len + [0] * min_len)
-
-        X_eval = np.array(X_eval)
 
         X_scaled = scalers[cls].transform(X_eval)
         y_pred = attack_models[cls].predict(X_scaled)
@@ -291,12 +310,12 @@ def evaluate_attack_models(attack_models, scalers, target_model, target_train_lo
     print(f"F1       = {np.mean(all_f1s):.2f} ± {np.std(all_f1s):.2f}")
 
 
-def load_highest_round_number_target_model():
-    release_model(None, DEVICE.type)
-    model = MODEL_ARCH()
+def load_highest_round_number_target_model(root_dir, target_checkpoint_dir, model_name, device) -> nn.Module:
+    release_model(None, device.type)
+    model = create_model(model_name)
 
     # Get all checkpoint paths
-    checkpoint_paths = glob.glob(f"{TARGET_CHECKPOINT_DIR}/global_model_round_*.pth")
+    checkpoint_paths = glob.glob(os.path.join(root_dir, target_checkpoint_dir, "global_model_round_*.pth"))
 
     if not checkpoint_paths:
         raise FileNotFoundError("No checkpoint files found.")
@@ -315,36 +334,47 @@ def load_highest_round_number_target_model():
     # Get the path with the highest round number
     latest_round, latest_checkpoint_path = max(checkpoints_with_rounds, key=lambda x: x[0])
 
-    model.load_state_dict(torch.load(latest_checkpoint_path, map_location=DEVICE))
-    model.to(DEVICE)
+    model.load_state_dict(torch.load(latest_checkpoint_path, map_location=device))
+    model.to(device)
     model.eval()
     print(f"Loaded target model from: {latest_checkpoint_path} (round {latest_round})")
 
     return model
 
 
+def load_config(config_path: str) -> dict:
+    with open(config_path, 'r') as f:
+        return yaml.safe_load(f)
+
+
 # === Main ===
 if __name__ == "__main__":
-    seed_everything(SEED)
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    config_path = os.path.join(root_dir, "my_awesome_app", "configs_mia", "mia_run1.yaml")
+    config: dict = load_config(config_path)
+    config['root_dir'] = root_dir
 
-    shadow_train, target_train, target_test, shadow_test = load_data()
+    seed_everything(config['seed'])
+    requested_device = config['device']
+
+    if "cuda" in requested_device and not torch.cuda.is_available():
+        print("[FedCustom] ⚠️ CUDA requested but not available. Falling back to CPU.")
+        requested_device = "cpu"
+    device = torch.device(requested_device)
+
+    shadow_train, target_train, target_test, shadow_test = load_data(config=config)
 
     shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_with_overlap(shadow_train_dataset=shadow_train,
                                                                                     shadow_test_dataset=shadow_test,
-                                                                                    num_shadow_models=NUM_SHADOW_MODELS,
-                                                                                    train_size=TRAIN_TEST_SIZE,
-                                                                                    test_size=TRAIN_TEST_SIZE,
-                                                                                    seed=SEED)
+                                                                                    config=config)
 
-    per_shadow_per_class_data = train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_test_subsets,
-                                                                             NUM_CLASSES, MODEL_ARCH, SHADOW_EPOCHS,
-                                                                             BATCH_SIZE, DEVICE)
+    per_shadow_per_class_data = train_all_shadow_models_and_collect_features(shadow_train_subsets=shadow_train_subsets,
+                                                                             shadow_test_subsets=shadow_test_subsets,
+                                                                             config=config, device=device)
 
-    attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data, NUM_CLASSES, SEED)
+    attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
+                                                           config=config)
 
-    target_model = load_highest_round_number_target_model()
-    target_train_loader = DataLoader(target_train, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
-
-    target_test_loader = DataLoader(target_test, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
-
-    evaluate_attack_models(attack_models, scalers, target_model, target_train_loader, target_test_loader, NUM_CLASSES)
+    # if different target model, change model loading function in this function:
+    evaluate_attack_models(attack_models=attack_models, scalers=scalers, target_train=target_train,
+                           target_test=target_test, config=config, device=device)
