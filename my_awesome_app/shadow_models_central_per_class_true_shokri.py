@@ -350,31 +350,33 @@ def load_config(config_path: str) -> dict:
 # === Main ===
 if __name__ == "__main__":
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    config_path = os.path.join(root_dir, "my_awesome_app", "configs_mia", "mia_run1.yaml")
-    config: dict = load_config(config_path)
-    config['root_dir'] = root_dir
+    config_paths = glob.glob(os.path.join(root_dir, "my_awesome_app", "configs_mia", "*.yaml"))
+    for config_path in config_paths:
+        print(f"\n🚀 Running experiment with config: {os.path.basename(config_path)}\n")
+        config: dict = load_config(config_path)
+        config['root_dir'] = root_dir
 
-    seed_everything(config['seed'])
-    requested_device = config['device']
+        seed_everything(config['seed'])
+        requested_device = config['device']
 
-    if "cuda" in requested_device and not torch.cuda.is_available():
-        print("[FedCustom] ⚠️ CUDA requested but not available. Falling back to CPU.")
-        requested_device = "cpu"
-    device = torch.device(requested_device)
+        if "cuda" in requested_device and not torch.cuda.is_available():
+            print("[FedCustom] ⚠️ CUDA requested but not available. Falling back to CPU.")
+            requested_device = "cpu"
+        device = torch.device(requested_device)
 
-    shadow_train, target_train, target_test, shadow_test = load_data(config=config)
+        shadow_train, target_train, target_test, shadow_test = load_data(config=config)
 
-    shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_with_overlap(shadow_train_dataset=shadow_train,
-                                                                                    shadow_test_dataset=shadow_test,
-                                                                                    config=config)
+        shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_with_overlap(shadow_train_dataset=shadow_train,
+                                                                                        shadow_test_dataset=shadow_test,
+                                                                                        config=config)
 
-    per_shadow_per_class_data = train_all_shadow_models_and_collect_features(shadow_train_subsets=shadow_train_subsets,
-                                                                             shadow_test_subsets=shadow_test_subsets,
-                                                                             config=config, device=device)
+        per_shadow_per_class_data = train_all_shadow_models_and_collect_features(shadow_train_subsets=shadow_train_subsets,
+                                                                                 shadow_test_subsets=shadow_test_subsets,
+                                                                                 config=config, device=device)
 
-    attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
-                                                           config=config)
+        attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
+                                                               config=config)
 
-    # if different target model, change model loading function in this function:
-    evaluate_attack_models(attack_models=attack_models, scalers=scalers, target_train=target_train,
-                           target_test=target_test, config=config, device=device)
+        # if different target model, change model loading function in this function:
+        evaluate_attack_models(attack_models=attack_models, scalers=scalers, target_train=target_train,
+                               target_test=target_test, config=config, device=device)
