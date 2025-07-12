@@ -1,10 +1,8 @@
 parameters:
   num_classes: 10
-
   num_shadow_models: 1
   model_arch: "mia_paper" # <-- loader defined in tasks.create_model()
   shadow_epochs: 40
-
   train_size: 1000 # Size of train/test sets for shadow models (>15.000 samples would be with duplicates)
   test_size: 1000
 

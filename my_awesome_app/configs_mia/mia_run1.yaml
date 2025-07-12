@@ -1,13 +1,6 @@
 defaults:
-  - mia_run_base
-
-# do runs with every combination of train_size and test_size
-#hydra:
-#  sweeper:
-#    params:
-#      parameters.train_size: 500,1000
-#      parameters.test_size: 500,1000
+  - /mia_run_base
 
 parameters:
-  train_size: 500
-  test_size: 500
+  train_size: 100
+  test_size: 100
