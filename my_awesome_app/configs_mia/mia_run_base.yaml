@@ -1,0 +1,24 @@
+parameters:
+  num_classes: 10
+
+  num_shadow_models: 1
+  model_arch: "mia_paper" # <-- loader defined in tasks.create_model()
+  shadow_epochs: 40
+
+  train_size: 1000 # Size of train/test sets for shadow models (>15.000 samples would be with duplicates)
+  test_size: 1000
+
+
+parameters_static:
+  device: "cuda"  # <-- "cpu" or "cuda"
+  seed: 42
+  batch_size: 32
+  learning_rate_decay: 1e-7
+  learning_rate: 0.05
+
+
+paths:
+  target_checkpoint_dir: "model_checkpoints_target"
+  data_dir: "data" # directory should lay in root
+  split_dir: "splits" # directory should lay in root
+  current_root: "${hydra:runtime.cwd}"

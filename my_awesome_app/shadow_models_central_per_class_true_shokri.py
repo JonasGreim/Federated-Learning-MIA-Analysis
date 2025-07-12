@@ -12,18 +12,21 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 from sklearn.utils import resample
+from my_awesome_app.types_config_mia import MiaConfig
 from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker, release_model, create_model
 from collections import defaultdict
 import re
 import time
+import hydra
+from pathlib import Path
 
 
 # === Utility Functions ===
 def load_data(config) -> tuple[Subset, Subset, Subset, Subset]:
-    split_dir: str = config['split_dir']
-    data_dir: str = config['data_dir']
-    root_dir: str = config['root_dir']
-    data_dir_path: str = os.path.join(root_dir, data_dir)
+    root_dir = Path(config.paths.current_root).parent
+    data_dir = config.paths.data_dir
+    split_dir = config.paths.split_dir
+    data_dir_path = os.path.join(root_dir, data_dir)
 
     train_dataset = CIFAR10(root=data_dir_path, train=True, download=True, transform=get_transforms_custom())
 
@@ -47,10 +50,10 @@ def load_data(config) -> tuple[Subset, Subset, Subset, Subset]:
 
 def sample_shadow_datasets_with_overlap(shadow_train_dataset, shadow_test_dataset, config) -> tuple[
     list[Subset], list[Subset]]:
-    num_shadow_models: int = config["num_shadow_models"]
-    seed: int = config["seed"]
-    train_size: int = config["train_size"]
-    test_size: int = config["test_size"]
+    num_shadow_models = config.parameters.num_shadow_models
+    seed: int = config.parameters_static.seed
+    train_size: int = config.parameters.train_size
+    test_size: int = config.parameters.test_size
 
     all_indices = np.array(shadow_train_dataset.indices)
     test_indices_pool = np.array(shadow_test_dataset.indices)
@@ -118,13 +121,13 @@ def extract_features_by_class(model, dataloader, label_indicator, num_classes, d
 
 def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_test_subsets, config, device) -> list[
     dict]:
-    seed: int = config["seed"]
-    num_classes: int = config["num_classes"]
-    batch_size: int = config["batch_size"]
-    shadow_epochs: int = config["shadow_epochs"]
-    learning_rate: float = config["learning_rate"]
-    learning_rate_decay: float = float(config["learning_rate_decay"])
-    model_name: str = config["model_arch"]
+    seed = config.parameters_static.seed
+    num_classes = config.parameters.num_classes
+    batch_size = config.parameters_static.batch_size
+    shadow_epochs = config.parameters.shadow_epochs
+    learning_rate = config.parameters_static.learning_rate
+    learning_rate_decay = config.parameters_static.learning_rate_decay
+    model_name = config.parameters.model_arch
 
     per_shadow_per_class_data = []
 
@@ -170,8 +173,8 @@ def train_per_class_attack_models(per_shadow_per_class_data, config) -> tuple[di
     """
     Trains one attack model per class using features pooled from all shadow models (faithful to Shokri et al.)
     """
-    num_classes: int = config["num_classes"]
-    seed: int = config["seed"]
+    num_classes = config.parameters.num_classes
+    seed = config.parameters_static.seed
 
     pooled_per_class_data = defaultdict(lambda: {'member': [], 'nonmember': []})
 
@@ -225,11 +228,11 @@ def train_per_class_attack_models(per_shadow_per_class_data, config) -> tuple[di
 
 
 def evaluate_attack_models(attack_models, scalers, target_train, target_test, config, device) -> None:
-    batch_size: int = config["batch_size"]
-    num_classes: int = config["num_classes"]
-    target_checkpoint_dir: str = config["target_checkpoint_dir"]
-    root_dir: str = config["root_dir"]
-    model_name: str = config["model_arch"]
+    batch_size = config.parameters_static.batch_size
+    num_classes = config.parameters.num_classes
+    target_checkpoint_dir = config.paths.target_checkpoint_dir
+    root_dir = Path(config.paths.current_root).parent
+    model_name = config.parameters.model_arch
 
     target_model = load_highest_round_number_target_model(root_dir, target_checkpoint_dir, model_name, device)
 
@@ -347,36 +350,40 @@ def load_config(config_path: str) -> dict:
         return yaml.safe_load(f)
 
 
-# === Main ===
+@hydra.main(version_base=None, config_path="./configs_mia", config_name="mia_run_base.yaml")
+def main(config: MiaConfig):
+    root_dir = Path(config.paths.current_root).parent
+    print(root_dir)
+
+    print(f"\n🚀 Running experiment with config: {config}\n")
+
+    seed_everything(config.parameters_static.seed)
+    requested_device = config.parameters_static.device
+
+    if "cuda" in requested_device and not torch.cuda.is_available():
+        print("[FedCustom] ⚠️ CUDA requested but not available. Falling back to CPU.")
+        requested_device = "cpu"
+    device = torch.device(requested_device)
+
+    shadow_train, target_train, target_test, shadow_test = load_data(config=config)
+
+    shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_with_overlap(
+        shadow_train_dataset=shadow_train,
+        shadow_test_dataset=shadow_test,
+        config=config)
+
+    per_shadow_per_class_data = train_all_shadow_models_and_collect_features(
+        shadow_train_subsets=shadow_train_subsets,
+        shadow_test_subsets=shadow_test_subsets,
+        config=config, device=device)
+
+    attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
+                                                           config=config)
+
+    # if different target model, change model loading function in this function:
+    evaluate_attack_models(attack_models=attack_models, scalers=scalers, target_train=target_train,
+                           target_test=target_test, config=config, device=device)
+
+
 if __name__ == "__main__":
-    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    config_paths = glob.glob(os.path.join(root_dir, "my_awesome_app", "configs_mia", "*.yaml"))
-    for config_path in config_paths:
-        print(f"\n🚀 Running experiment with config: {os.path.basename(config_path)}\n")
-        config: dict = load_config(config_path)
-        config['root_dir'] = root_dir
-
-        seed_everything(config['seed'])
-        requested_device = config['device']
-
-        if "cuda" in requested_device and not torch.cuda.is_available():
-            print("[FedCustom] ⚠️ CUDA requested but not available. Falling back to CPU.")
-            requested_device = "cpu"
-        device = torch.device(requested_device)
-
-        shadow_train, target_train, target_test, shadow_test = load_data(config=config)
-
-        shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_with_overlap(shadow_train_dataset=shadow_train,
-                                                                                        shadow_test_dataset=shadow_test,
-                                                                                        config=config)
-
-        per_shadow_per_class_data = train_all_shadow_models_and_collect_features(shadow_train_subsets=shadow_train_subsets,
-                                                                                 shadow_test_subsets=shadow_test_subsets,
-                                                                                 config=config, device=device)
-
-        attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
-                                                               config=config)
-
-        # if different target model, change model loading function in this function:
-        evaluate_attack_models(attack_models=attack_models, scalers=scalers, target_train=target_train,
-                               target_test=target_test, config=config, device=device)
+    main()
