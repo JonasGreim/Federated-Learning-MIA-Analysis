@@ -111,3 +111,8 @@ Difference to Shokri:
  -  code currently implements one attack model per class across all shadow models, not per shadow model per class
   improved versions of MIA from later papers (like Salem et al. 2018 or Yeom et al. 2018) where fewer shadow models are used or models are shared.
 
+
+run mia with different configs:
+```
+python shadow_models_central_per_class_true_shokri.py -m --config-name=mia_run1
+```
