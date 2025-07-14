@@ -22,6 +22,8 @@ from pathlib import Path
 import wandb
 from omegaconf import OmegaConf
 
+from my_awesome_app.utils.wandb_logging import log_class_distribution
+
 
 # === Utility Functions ===
 def load_data(config) -> tuple[Subset, Subset, Subset, Subset]:
@@ -47,6 +49,9 @@ def load_data(config) -> tuple[Subset, Subset, Subset, Subset]:
     shadow_train = Subset(train_dataset, D3)
     shadow_test = Subset(train_dataset, D4)
 
+    log_class_distribution(shadow_train, wandb_cluster_name="shadow_train_distribution",
+                           wandb_plot_prefix="shadow_pool_data")
+
     return shadow_train, target_train, target_test, shadow_test
 
 
@@ -69,8 +74,12 @@ def sample_shadow_datasets_with_overlap(shadow_train_dataset, shadow_test_datase
         # Sample train and test sets without replacement
         train_indices = rng.choice(all_indices, size=train_size, replace=False)
         test_indices = rng.choice(test_indices_pool, size=test_size, replace=False)
+        train_subset = Subset(shadow_train_dataset.dataset, train_indices)
 
-        shadow_train_sets.append(Subset(shadow_train_dataset.dataset, train_indices))
+        log_class_distribution(train_subset, wandb_cluster_name="shadow_train_distribution",
+                               wandb_plot_prefix=f"shadow_model_{i + 1}")
+
+        shadow_train_sets.append(train_subset)
         shadow_test_sets.append(Subset(shadow_test_dataset.dataset, test_indices))
 
     return shadow_train_sets, shadow_test_sets
@@ -454,17 +463,17 @@ def main(config: MiaConfig):
         shadow_train_dataset=shadow_train,
         shadow_test_dataset=shadow_test,
         config=config)
-
-    per_shadow_per_class_data = train_all_shadow_models_and_collect_features(
-        shadow_train_subsets=shadow_train_subsets,
-        shadow_test_subsets=shadow_test_subsets,
-        config=config, device=device)
-
-    attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
-                                                           config=config)
-
-    evaluate_attack_models(attack_models=attack_models, scalers=scalers, target_train=target_train,
-                           target_test=target_test, config=config, device=device)
+    #
+    # per_shadow_per_class_data = train_all_shadow_models_and_collect_features(
+    #     shadow_train_subsets=shadow_train_subsets,
+    #     shadow_test_subsets=shadow_test_subsets,
+    #     config=config, device=device)
+    #
+    # attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
+    #                                                        config=config)
+    #
+    # evaluate_attack_models(attack_models=attack_models, scalers=scalers, target_train=target_train,
+    #                        target_test=target_test, config=config, device=device)
 
     # Finish the wandb run
     wandb.finish()
