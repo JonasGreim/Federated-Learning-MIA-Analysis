@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 
 .idea
-/wandb
+wandb
 global_model_round_*
 results.json
 data
