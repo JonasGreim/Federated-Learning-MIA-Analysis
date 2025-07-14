@@ -95,6 +95,9 @@ def train_model(model, dataloader, epochs, learning_rate, learning_rate_decay, d
     criterion = nn.CrossEntropyLoss()
     model.train()
 
+    # Initialize wandb run for the current shadow model (needs to be reinitialized for each model -> wandb step counter gets reset)
+    # current_shadow_run = wandb.init(project="mia-shadow-attack", name=f"shadow_model/{model_idx}/training", reinit=True)
+
     for epoch in range(epochs):
         running_loss = 0.0
         correct_predictions = 0
@@ -118,13 +121,13 @@ def train_model(model, dataloader, epochs, learning_rate, learning_rate_decay, d
         epoch_accuracy = correct_predictions / total_samples
 
         # Log loss and accuracy for the current shadow model and epoch
-        wandb.log({
-            f"shadow_model_{model_idx}_train_loss": epoch_loss,
-            f"shadow_model_{model_idx}_train_accuracy": epoch_accuracy,
-            f"shadow_model_{model_idx}_epoch": epoch
-        })
+        # wandb.log({
+        #     f"shadow_model/{model_idx}/train_loss": epoch_loss,
+        #     f"shadow_model/{model_idx}/train_accuracy": epoch_accuracy
+        # }, step=epoch)
 
         scheduler.step()
+    # current_shadow_run.finish()
 
     return model
 
@@ -181,7 +184,7 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
         print(f"⏱️ Shadow Model {i + 1} Training Time: {training_time:.2f} seconds")
 
         # Log shadow model training time
-        wandb.log({f"shadow_model_{i + 1}_total_training_time": training_time})
+        # wandb.log({f"shadow_model{i + 1}/total_training_time": training_time})
 
         member_features = extract_features_by_class(model=model, dataloader=train_loader, label_indicator=1,
                                                     num_classes=num_classes, device=device)
@@ -463,12 +466,12 @@ def main(config: MiaConfig):
         shadow_train_dataset=shadow_train,
         shadow_test_dataset=shadow_test,
         config=config)
-    #
-    # per_shadow_per_class_data = train_all_shadow_models_and_collect_features(
-    #     shadow_train_subsets=shadow_train_subsets,
-    #     shadow_test_subsets=shadow_test_subsets,
-    #     config=config, device=device)
-    #
+
+    per_shadow_per_class_data = train_all_shadow_models_and_collect_features(
+        shadow_train_subsets=shadow_train_subsets,
+        shadow_test_subsets=shadow_test_subsets,
+        config=config, device=device)
+
     # attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
     #                                                        config=config)
     #
