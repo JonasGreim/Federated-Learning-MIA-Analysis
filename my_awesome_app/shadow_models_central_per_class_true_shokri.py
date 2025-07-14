@@ -19,6 +19,8 @@ import re
 import time
 import hydra
 from pathlib import Path
+import wandb
+from omegaconf import OmegaConf
 
 
 # === Utility Functions ===
@@ -148,6 +150,9 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
         training_time = end_time - start_time
         print(f"⏱️ Shadow Model {i + 1} Training Time: {training_time:.2f} seconds")
 
+        # Log shadow model training time
+        wandb.log({f"shadow_model_{i+1}_training_time": training_time})
+
         member_features = extract_features_by_class(model=model, dataloader=train_loader, label_indicator=1,
                                                     num_classes=num_classes, device=device)
         nonmember_features = extract_features_by_class(model=model, dataloader=test_loader, label_indicator=0,
@@ -194,6 +199,8 @@ def train_per_class_attack_models(per_shadow_per_class_data, config) -> tuple[di
 
         if not member or not nonmember:
             print(f"⚠️ Skipping Class {cls}: insufficient data (Members: {len(member)}, Non-members: {len(nonmember)})")
+            # Log skipped classes for attack model training
+            wandb.log({f"attack_model_class_{cls}_skipped": True})
             continue
 
         X_member, y_member = zip(*member)
@@ -223,6 +230,7 @@ def train_per_class_attack_models(per_shadow_per_class_data, config) -> tuple[di
         scalers[cls] = scaler
 
         print(f"✅ Trained attack model for Class {cls} (Samples: {len(y)})")
+        wandb.log({f"attack_model_class_{cls}_samples": len(y)})
 
     return attack_models, scalers
 
@@ -250,16 +258,18 @@ def evaluate_attack_models(attack_models, scalers, target_train, target_test, co
     all_aucs = []
     all_f1s = []
     all_accs = []
+    all_precisions = []
+    all_recs = []
+    all_fars = []
 
-    per_class_aucs = {}
-    per_class_f1s = {}
-    per_class_accs = {}
+    per_class_metrics = defaultdict(dict)
 
     print(f"\n=== Evaluating Pooled Per-Class Attack Models ===")
 
     for cls in range(num_classes):
         if cls not in attack_models:
             print(f"⚠️ Skipping Class {cls} — no attack model trained.")
+            wandb.log({f"per_class_attack_eval/class_{cls}_skipped": True})
             continue
 
         train_cls_feats = train_feats.get(cls, [])
@@ -268,6 +278,7 @@ def evaluate_attack_models(attack_models, scalers, target_train, target_test, co
         if not train_cls_feats or not test_cls_feats:
             print(
                 f"⚠️ Skipping Class {cls} — insufficient data: Train={len(train_cls_feats)}, Test={len(test_cls_feats)}")
+            wandb.log({f"per_class_attack_eval/class_{cls}_insufficient_data": True})
             continue
 
         X_train, _ = zip(*train_cls_feats)
@@ -282,35 +293,89 @@ def evaluate_attack_models(attack_models, scalers, target_train, target_test, co
         y_scores = attack_models[cls].predict_proba(X_scaled)[:, 1]
 
         acc = accuracy_score(y_eval, y_pred)
+        prec = precision_score(y_eval, y_pred, zero_division=0)
+        rec = recall_score(y_eval, y_pred, zero_division=0)
+        f1 = f1_score(y_eval, y_pred, zero_division=0)
         auc = roc_auc_score(y_eval, y_scores)
-        f1 = f1_score(y_eval, y_pred)
 
         tn, fp, fn, tp = confusion_matrix(y_eval, y_pred).ravel()
         far = fp / (fp + tn) if (fp + tn) > 0 else 0.0
 
         # Store per-class metrics
-        per_class_accs[cls] = acc
-        per_class_aucs[cls] = auc
-        per_class_f1s[cls] = f1
+        per_class_metrics[cls]['accuracy'] = acc
+        per_class_metrics[cls]['precision'] = prec
+        per_class_metrics[cls]['recall'] = rec
+        per_class_metrics[cls]['f1_score'] = f1
+        per_class_metrics[cls]['auc'] = auc
+        per_class_metrics[cls]['far'] = far
+
+        # Log per-class metrics to WandB
+        wandb.log({
+            f"per_class_attack_eval/class_{cls}/accuracy": acc,
+            f"per_class_attack_eval/class_{cls}/precision": prec,
+            f"per_class_attack_eval/class_{cls}/recall": rec,
+            f"per_class_attack_eval/class_{cls}/f1_score": f1,
+            f"per_class_attack_eval/class_{cls}/auc": auc,
+            f"per_class_attack_eval/class_{cls}/far": far
+        })
 
         # Store for global averages
         all_accs.append(acc)
-        all_aucs.append(auc)
+        all_precisions.append(prec)
+        all_recs.append(rec)
         all_f1s.append(f1)
+        all_aucs.append(auc)
+        all_fars.append(far)
 
-        print(f"Class {cls}: Acc={acc:.2f}, Prec={precision_score(y_eval, y_pred, zero_division=0):.2f}, "
-              f"Rec={recall_score(y_eval, y_pred):.2f}, F1={f1:.2f}, AUC={auc:.2f}, FAR={far:.2f}")
+
+        print(f"Class {cls}: Acc={acc:.2f}, Prec={prec:.2f}, Rec={rec:.2f}, F1={f1:.2f}, AUC={auc:.2f}, FAR={far:.2f}")
 
     # === Per-Class Summary ===
     print(f"\n=== Per-Class Attack Metrics ===")
-    for cls in sorted(per_class_accs.keys()):
-        print(f"Class {cls}: Acc={per_class_accs[cls]:.2f}, AUC={per_class_aucs[cls]:.2f}, F1={per_class_f1s[cls]:.2f}")
+    for cls in sorted(per_class_metrics.keys()):
+        metrics = per_class_metrics[cls]
+        print(f"Class {cls}: Acc={metrics['accuracy']:.2f}, AUC={metrics['auc']:.2f}, F1={metrics['f1_score']:.2f}")
 
     # === Overall Summary ===
+    overall_accuracy = np.mean(all_accs) if all_accs else 0
+    overall_precision = np.mean(all_precisions) if all_precisions else 0
+    overall_recall = np.mean(all_recs) if all_recs else 0
+    overall_f1 = np.mean(all_f1s) if all_f1s else 0
+    overall_auc = np.mean(all_aucs) if all_aucs else 0
+    overall_far = np.mean(all_fars) if all_fars else 0
+
+    overall_std_accuracy = np.std(all_accs) if all_accs else 0
+    overall_std_precision = np.std(all_precisions) if all_precisions else 0
+    overall_std_recall = np.std(all_recs) if all_recs else 0
+    overall_std_f1 = np.std(all_f1s) if all_f1s else 0
+    overall_std_auc = np.std(all_aucs) if all_aucs else 0
+    overall_std_far = np.std(all_fars) if all_fars else 0
+
+
     print(f"\n=== Overall Attack Performance ===")
-    print(f"Accuracy = {np.mean(all_accs):.2f} ± {np.std(all_accs):.2f}")
-    print(f"AUC      = {np.mean(all_aucs):.2f} ± {np.std(all_aucs):.2f}")
-    print(f"F1       = {np.mean(all_f1s):.2f} ± {np.std(all_f1s):.2f}")
+    print(f"Accuracy = {overall_accuracy:.2f} ± {overall_std_accuracy:.2f}")
+    print(f"Precision = {overall_precision:.2f} ± {overall_std_precision:.2f}")
+    print(f"Recall = {overall_recall:.2f} ± {overall_std_recall:.2f}")
+    print(f"F1       = {overall_f1:.2f} ± {overall_std_f1:.2f}")
+    print(f"AUC      = {overall_auc:.2f} ± {overall_std_auc:.2f}")
+    print(f"FAR      = {overall_far:.2f} ± {overall_std_far:.2f}")
+
+
+    # Log overall metrics to WandB
+    wandb.log({
+        "overall_attack_metrics/accuracy_mean": overall_accuracy,
+        "overall_attack_metrics/accuracy_std": overall_std_accuracy,
+        "overall_attack_metrics/precision_mean": overall_precision,
+        "overall_attack_metrics/precision_std": overall_std_precision,
+        "overall_attack_metrics/recall_mean": overall_recall,
+        "overall_attack_metrics/recall_std": overall_std_recall,
+        "overall_attack_metrics/f1_mean": overall_f1,
+        "overall_attack_metrics/f1_std": overall_std_f1,
+        "overall_attack_metrics/auc_mean": overall_auc,
+        "overall_attack_metrics/auc_std": overall_std_auc,
+        "overall_attack_metrics/far_mean": overall_far,
+        "overall_attack_metrics/far_std": overall_std_far,
+    })
 
 
 def load_highest_round_number_target_model(root_dir, target_checkpoint_dir, model_name, device) -> nn.Module:
@@ -341,6 +406,7 @@ def load_highest_round_number_target_model(root_dir, target_checkpoint_dir, mode
     model.to(device)
     model.eval()
     print(f"Loaded target model from: {latest_checkpoint_path} (round {latest_round})")
+    wandb.log({"target_model_loaded_round": latest_round, "target_model_path": latest_checkpoint_path})
 
     return model
 
@@ -352,10 +418,9 @@ def load_config(config_path: str) -> dict:
 
 @hydra.main(version_base=None, config_path="./configs_mia", config_name="mia_run_base.yaml")
 def main(config: MiaConfig):
-    root_dir = Path(config.paths.current_root).parent
-    print(root_dir)
-
     print(f"\n🚀 Running experiment with config: {config}\n")
+    # Initialize wandb run
+    wandb.init(project="mia-shadow-attack", config=OmegaConf.to_container(config, resolve=True), name="mia_run")
 
     seed_everything(config.parameters_static.seed)
     requested_device = config.parameters_static.device
@@ -380,9 +445,11 @@ def main(config: MiaConfig):
     attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
                                                            config=config)
 
-    # if different target model, change model loading function in this function:
     evaluate_attack_models(attack_models=attack_models, scalers=scalers, target_train=target_train,
                            target_test=target_test, config=config, device=device)
+
+    # Finish the wandb run
+    wandb.finish()
 
 
 if __name__ == "__main__":
