@@ -22,7 +22,7 @@ from pathlib import Path
 import wandb
 from omegaconf import OmegaConf
 
-from my_awesome_app.utils.wandb_logging import log_class_distribution
+from my_awesome_app.utils.wandb_logging import log_class_distribution, log_training_to_wandb
 
 
 # === Utility Functions ===
@@ -85,7 +85,7 @@ def sample_shadow_datasets_with_overlap(shadow_train_dataset, shadow_test_datase
     return shadow_train_sets, shadow_test_sets
 
 
-def train_model(model, dataloader, epochs, learning_rate, learning_rate_decay, device, model_idx) -> nn.Module:
+def train_model(model, dataloader, epochs, learning_rate, learning_rate_decay, device) -> tuple[nn.Module, list[dict]]:
     model = model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.LambdaLR(
@@ -95,9 +95,7 @@ def train_model(model, dataloader, epochs, learning_rate, learning_rate_decay, d
     criterion = nn.CrossEntropyLoss()
     model.train()
 
-    # Initialize wandb run for the current shadow model (needs to be reinitialized as subprocess for each model -> wandb step counter gets reset)
-    current_shadow_run = wandb.init(project="mia-shadow-attack", name=f"shadow_model/{model_idx}/training",
-                                    group="shadow_models", job_type="training", reinit=True)
+    history = []
 
     for epoch in range(epochs):
         running_loss = 0.0
@@ -120,18 +118,15 @@ def train_model(model, dataloader, epochs, learning_rate, learning_rate_decay, d
 
         epoch_loss = running_loss / total_samples
         epoch_accuracy = correct_predictions / total_samples
-
-        # Log loss and accuracy for the current shadow model and epoch
-        if epoch % 10 == 0:
-            current_shadow_run.log({
-                f"shadow_model/{model_idx}/train_loss": epoch_loss,
-                f"shadow_model/{model_idx}/train_accuracy": epoch_accuracy
-            }, step=epoch)
-
         scheduler.step()
-    current_shadow_run.finish()
 
-    return model
+        history.append({
+            "epoch": epoch,
+            "train_loss": epoch_loss,
+            "train_accuracy": epoch_accuracy,
+        })
+
+    return model, history
 
 
 def extract_features_by_class(model, dataloader, label_indicator, num_classes, device) -> dict:
@@ -178,15 +173,14 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
 
         # Measure training time
         start_time = time.time()
-        model = train_model(model=model_arch, dataloader=train_loader, epochs=shadow_epochs,
-                            learning_rate=learning_rate, learning_rate_decay=learning_rate_decay, device=device,
-                            model_idx=i + 1)  # Pass model_idx for logging
-        end_time = time.time()
-        training_time = end_time - start_time
-        print(f"⏱️ Shadow Model {i + 1} Training Time: {training_time:.2f} seconds")
+        model, history = train_model(model=model_arch, dataloader=train_loader, epochs=shadow_epochs,
+                                     learning_rate=learning_rate, learning_rate_decay=learning_rate_decay,
+                                     device=device)
 
-        # Log shadow model training time
-        # wandb.log({f"shadow_model{i + 1}/total_training_time": training_time})
+        training_time = time.time() - start_time
+        log_training_to_wandb(history, training_time, model_idx=i)
+
+        print(f"⏱️ Shadow Model {i + 1} Training Time: {training_time:.2f} seconds")
 
         member_features = extract_features_by_class(model=model, dataloader=train_loader, label_indicator=1,
                                                     num_classes=num_classes, device=device)
