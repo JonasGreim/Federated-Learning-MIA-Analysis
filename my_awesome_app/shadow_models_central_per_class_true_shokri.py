@@ -7,7 +7,6 @@ from torchvision.datasets import CIFAR10
 import numpy as np
 import os
 import glob
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
@@ -21,8 +20,8 @@ import hydra
 from pathlib import Path
 import wandb
 from omegaconf import OmegaConf
-
-from my_awesome_app.utils.wandb_logging import log_class_distribution, log_training_to_wandb
+from my_awesome_app.utils.wandb_logging import log_class_distribution, log_training_to_wandb, log_per_class_metrics, \
+    log_overall_metrics_with_error_bars
 
 
 # === Utility Functions ===
@@ -221,6 +220,8 @@ def train_per_class_attack_models(per_shadow_per_class_data, config) -> tuple[di
     attack_models = {}
     scalers = {}
 
+    start_time_attack_train = time.time()
+
     # Train one attack model per class
     for cls in range(num_classes):
         member = pooled_per_class_data[cls]['member']
@@ -228,8 +229,6 @@ def train_per_class_attack_models(per_shadow_per_class_data, config) -> tuple[di
 
         if not member or not nonmember:
             print(f"⚠️ Skipping Class {cls}: insufficient data (Members: {len(member)}, Non-members: {len(nonmember)})")
-            # Log skipped classes for attack model training
-            wandb.log({f"attack_model_class_{cls}_skipped": True})
             continue
 
         X_member, y_member = zip(*member)
@@ -259,7 +258,10 @@ def train_per_class_attack_models(per_shadow_per_class_data, config) -> tuple[di
         scalers[cls] = scaler
 
         print(f"✅ Trained attack model for Class {cls} (Samples: {len(y)})")
-        wandb.log({f"attack_model_class_{cls}_samples": len(y)})
+        print(f" Class before balancing:  Members: {len(member)}, Non-members: {len(nonmember)}")
+
+    total_attack_training_time = time.time() - start_time_attack_train
+    print(f"⏱️ Total Attack Model Training Time: {total_attack_training_time:.2f} seconds")
 
     return attack_models, scalers
 
@@ -298,7 +300,6 @@ def evaluate_attack_models(attack_models, scalers, target_train, target_test, co
     for cls in range(num_classes):
         if cls not in attack_models:
             print(f"⚠️ Skipping Class {cls} — no attack model trained.")
-            wandb.log({f"per_class_attack_eval/class_{cls}_skipped": True})
             continue
 
         train_cls_feats = train_feats.get(cls, [])
@@ -307,7 +308,6 @@ def evaluate_attack_models(attack_models, scalers, target_train, target_test, co
         if not train_cls_feats or not test_cls_feats:
             print(
                 f"⚠️ Skipping Class {cls} — insufficient data: Train={len(train_cls_feats)}, Test={len(test_cls_feats)}")
-            wandb.log({f"per_class_attack_eval/class_{cls}_insufficient_data": True})
             continue
 
         X_train, _ = zip(*train_cls_feats)
@@ -338,16 +338,6 @@ def evaluate_attack_models(attack_models, scalers, target_train, target_test, co
         per_class_metrics[cls]['auc'] = auc
         per_class_metrics[cls]['far'] = far
 
-        # Log per-class metrics to WandB
-        wandb.log({
-            f"per_class_attack_eval/class_{cls}/accuracy": acc,
-            f"per_class_attack_eval/class_{cls}/precision": prec,
-            f"per_class_attack_eval/class_{cls}/recall": rec,
-            f"per_class_attack_eval/class_{cls}/f1_score": f1,
-            f"per_class_attack_eval/class_{cls}/auc": auc,
-            f"per_class_attack_eval/class_{cls}/far": far
-        })
-
         # Store for global averages
         all_accs.append(acc)
         all_precisions.append(prec)
@@ -357,6 +347,8 @@ def evaluate_attack_models(attack_models, scalers, target_train, target_test, co
         all_fars.append(far)
 
         print(f"Class {cls}: Acc={acc:.2f}, Prec={prec:.2f}, Rec={rec:.2f}, F1={f1:.2f}, AUC={auc:.2f}, FAR={far:.2f}")
+
+    log_per_class_metrics(per_class_metrics)
 
     # === Per-Class Summary ===
     print(f"\n=== Per-Class Attack Metrics ===")
@@ -387,21 +379,14 @@ def evaluate_attack_models(attack_models, scalers, target_train, target_test, co
     print(f"AUC      = {overall_auc:.2f} ± {overall_std_auc:.2f}")
     print(f"FAR      = {overall_far:.2f} ± {overall_std_far:.2f}")
 
-    # Log overall metrics to WandB
-    wandb.log({
-        "overall_attack_metrics/accuracy_mean": overall_accuracy,
-        "overall_attack_metrics/accuracy_std": overall_std_accuracy,
-        "overall_attack_metrics/precision_mean": overall_precision,
-        "overall_attack_metrics/precision_std": overall_std_precision,
-        "overall_attack_metrics/recall_mean": overall_recall,
-        "overall_attack_metrics/recall_std": overall_std_recall,
-        "overall_attack_metrics/f1_mean": overall_f1,
-        "overall_attack_metrics/f1_std": overall_std_f1,
-        "overall_attack_metrics/auc_mean": overall_auc,
-        "overall_attack_metrics/auc_std": overall_std_auc,
-        "overall_attack_metrics/far_mean": overall_far,
-        "overall_attack_metrics/far_std": overall_std_far,
-    })
+    log_overall_metrics_with_error_bars(
+        accuracy=overall_accuracy, std_accuracy=overall_std_accuracy,
+        precision=overall_precision, std_precision=overall_std_precision,
+        recall=overall_recall, std_recall=overall_std_recall,
+        f1=overall_f1, std_f1=overall_std_f1,
+        auc=overall_auc, std_auc=overall_std_auc,
+        far=overall_far, std_far=overall_std_far
+    )
 
 
 def load_highest_round_number_target_model(root_dir, target_checkpoint_dir, model_name, device) -> nn.Module:
@@ -432,7 +417,6 @@ def load_highest_round_number_target_model(root_dir, target_checkpoint_dir, mode
     model.to(device)
     model.eval()
     print(f"Loaded target model from: {latest_checkpoint_path} (round {latest_round})")
-    wandb.log({"target_model_loaded_round": latest_round, "target_model_path": latest_checkpoint_path})
 
     return model
 
@@ -468,11 +452,11 @@ def main(config: MiaConfig):
         shadow_test_subsets=shadow_test_subsets,
         config=config, device=device)
 
-    # attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
-    #                                                        config=config)
-    #
-    # evaluate_attack_models(attack_models=attack_models, scalers=scalers, target_train=target_train,
-    #                        target_test=target_test, config=config, device=device)
+    attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
+                                                           config=config)
+
+    evaluate_attack_models(attack_models=attack_models, scalers=scalers, target_train=target_train,
+                           target_test=target_test, config=config, device=device)
 
     # Finish the wandb run
     wandb.finish()

@@ -116,3 +116,8 @@ run mia with different configs:
 ```
 python shadow_models_central_per_class_true_shokri.py -m --config-name=mia_run1
 ```
+
+Run first time setup:
+```
+wandb login
+```
