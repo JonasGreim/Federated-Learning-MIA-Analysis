@@ -95,8 +95,9 @@ def train_model(model, dataloader, epochs, learning_rate, learning_rate_decay, d
     criterion = nn.CrossEntropyLoss()
     model.train()
 
-    # Initialize wandb run for the current shadow model (needs to be reinitialized for each model -> wandb step counter gets reset)
-    # current_shadow_run = wandb.init(project="mia-shadow-attack", name=f"shadow_model/{model_idx}/training", reinit=True)
+    # Initialize wandb run for the current shadow model (needs to be reinitialized as subprocess for each model -> wandb step counter gets reset)
+    current_shadow_run = wandb.init(project="mia-shadow-attack", name=f"shadow_model/{model_idx}/training",
+                                    group="shadow_models", job_type="training", reinit=True)
 
     for epoch in range(epochs):
         running_loss = 0.0
@@ -121,13 +122,14 @@ def train_model(model, dataloader, epochs, learning_rate, learning_rate_decay, d
         epoch_accuracy = correct_predictions / total_samples
 
         # Log loss and accuracy for the current shadow model and epoch
-        # wandb.log({
-        #     f"shadow_model/{model_idx}/train_loss": epoch_loss,
-        #     f"shadow_model/{model_idx}/train_accuracy": epoch_accuracy
-        # }, step=epoch)
+        if epoch % 10 == 0:
+            current_shadow_run.log({
+                f"shadow_model/{model_idx}/train_loss": epoch_loss,
+                f"shadow_model/{model_idx}/train_accuracy": epoch_accuracy
+            }, step=epoch)
 
         scheduler.step()
-    # current_shadow_run.finish()
+    current_shadow_run.finish()
 
     return model
 
