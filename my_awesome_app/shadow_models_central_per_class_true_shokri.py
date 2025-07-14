@@ -76,7 +76,7 @@ def sample_shadow_datasets_with_overlap(shadow_train_dataset, shadow_test_datase
     return shadow_train_sets, shadow_test_sets
 
 
-def train_model(model, dataloader, epochs, learning_rate, learning_rate_decay, device) -> nn.Module:
+def train_model(model, dataloader, epochs, learning_rate, learning_rate_decay, device, model_idx) -> nn.Module:
     model = model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.LambdaLR(
@@ -87,13 +87,33 @@ def train_model(model, dataloader, epochs, learning_rate, learning_rate_decay, d
     model.train()
 
     for epoch in range(epochs):
+        running_loss = 0.0
+        correct_predictions = 0
+        total_samples = 0
+
         for inputs, labels in dataloader:
             inputs, labels = inputs.to(device), labels.to(device)
 
             optimizer.zero_grad()
-            loss = criterion(model(inputs), labels)
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
+
+            running_loss += loss.item() * inputs.size(0)
+            _, predicted = torch.max(outputs.data, 1)
+            total_samples += labels.size(0)
+            correct_predictions += (predicted == labels).sum().item()
+
+        epoch_loss = running_loss / total_samples
+        epoch_accuracy = correct_predictions / total_samples
+
+        # Log loss and accuracy for the current shadow model and epoch
+        wandb.log({
+            f"shadow_model_{model_idx}_train_loss": epoch_loss,
+            f"shadow_model_{model_idx}_train_accuracy": epoch_accuracy,
+            f"shadow_model_{model_idx}_epoch": epoch
+        })
 
         scheduler.step()
 
@@ -145,13 +165,14 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
         # Measure training time
         start_time = time.time()
         model = train_model(model=model_arch, dataloader=train_loader, epochs=shadow_epochs,
-                            learning_rate=learning_rate, learning_rate_decay=learning_rate_decay, device=device)
+                            learning_rate=learning_rate, learning_rate_decay=learning_rate_decay, device=device,
+                            model_idx=i + 1)  # Pass model_idx for logging
         end_time = time.time()
         training_time = end_time - start_time
         print(f"⏱️ Shadow Model {i + 1} Training Time: {training_time:.2f} seconds")
 
         # Log shadow model training time
-        wandb.log({f"shadow_model_{i+1}_training_time": training_time})
+        wandb.log({f"shadow_model_{i + 1}_total_training_time": training_time})
 
         member_features = extract_features_by_class(model=model, dataloader=train_loader, label_indicator=1,
                                                     num_classes=num_classes, device=device)
@@ -327,7 +348,6 @@ def evaluate_attack_models(attack_models, scalers, target_train, target_test, co
         all_aucs.append(auc)
         all_fars.append(far)
 
-
         print(f"Class {cls}: Acc={acc:.2f}, Prec={prec:.2f}, Rec={rec:.2f}, F1={f1:.2f}, AUC={auc:.2f}, FAR={far:.2f}")
 
     # === Per-Class Summary ===
@@ -351,7 +371,6 @@ def evaluate_attack_models(attack_models, scalers, target_train, target_test, co
     overall_std_auc = np.std(all_aucs) if all_aucs else 0
     overall_std_far = np.std(all_fars) if all_fars else 0
 
-
     print(f"\n=== Overall Attack Performance ===")
     print(f"Accuracy = {overall_accuracy:.2f} ± {overall_std_accuracy:.2f}")
     print(f"Precision = {overall_precision:.2f} ± {overall_std_precision:.2f}")
@@ -359,7 +378,6 @@ def evaluate_attack_models(attack_models, scalers, target_train, target_test, co
     print(f"F1       = {overall_f1:.2f} ± {overall_std_f1:.2f}")
     print(f"AUC      = {overall_auc:.2f} ± {overall_std_auc:.2f}")
     print(f"FAR      = {overall_far:.2f} ± {overall_std_far:.2f}")
-
 
     # Log overall metrics to WandB
     wandb.log({
