@@ -6,7 +6,7 @@ from collections import defaultdict
 
 def create_split_files() -> None:
     # Define paths
-    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     data_dir = os.path.join(root_dir, "data")
     split_dir = os.path.join(root_dir, "splits")
 
