@@ -67,8 +67,8 @@ def load_data_custom(partition_id: int, num_partitions: int, indices: list, batc
     g = torch.Generator()
     g.manual_seed(seed)
 
-    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker, generator=g)
-    testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, worker_init_fn=seed_worker, generator=g)
+    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker, generator=g, num_workers=2)
+    testloader = DataLoader(testset, batch_size=batch_size, shuffle=False)
     return trainloader, testloader
 
 
