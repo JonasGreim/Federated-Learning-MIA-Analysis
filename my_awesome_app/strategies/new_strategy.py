@@ -204,7 +204,7 @@ class FedCustom(Strategy):
         )
         testloader = DataLoader(testset, batch_size=32)
 
-        net = create_model()
+        net = create_model(self.model_name)
         set_weights(net, parameters_to_ndarrays(parameters))  # parameters = tensors -> ndarray parameters
         net.to(self.device)
         loss, accuracy = test(net, testloader, self.device)
