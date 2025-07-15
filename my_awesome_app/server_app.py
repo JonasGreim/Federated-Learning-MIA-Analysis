@@ -1,9 +1,9 @@
 """my-awesome-app: A Flower / PyTorch app."""
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
-from my_awesome_app.split_cifar10_mia import create_split_files
+from my_awesome_app.utils.split_cifar10_mia import create_split_files
 from my_awesome_app.strategies.new_strategy import FedCustom
-from my_awesome_app.task import get_weights, create_model, seed_everything
+from my_awesome_app.utils.task import get_weights, create_model, seed_everything
 
 
 def server_fn(context: Context):

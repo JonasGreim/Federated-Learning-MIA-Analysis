@@ -14,7 +14,7 @@ from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from typing import Optional, List, Tuple, Dict
-from my_awesome_app.task import set_weights, test, create_model, get_transforms_custom, release_model
+from my_awesome_app.utils.task import set_weights, test, create_model, get_transforms_custom, release_model
 from torch.utils.data import DataLoader
 import os
 import wandb

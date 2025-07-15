@@ -15,11 +15,12 @@ from torchvision.datasets import CIFAR10
 from torch.utils.data import Subset, DataLoader
 from torchvision import transforms
 import numpy as np
+from sklearn.utils import check_random_state
 
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DATA_DIR = os.path.join(ROOT_DIR, "data")
 current_dir = os.path.dirname(os.path.abspath(__file__))
-pyproject_path = os.path.join(current_dir, '..', 'pyproject.toml')
+pyproject_path = os.path.join(current_dir, '..', '..', 'pyproject.toml')
 
 
 def create_model(model_name) -> nn.Module:
@@ -51,8 +52,7 @@ def get_flower_partition(data_indices) -> Subset:
     return Subset(full_dataset, data_indices)
 
 
-def load_data_custom(partition_id: int, num_partitions: int, indices: list, batch_size: int, seed: int) -> tuple[
-    DataLoader, DataLoader]:
+def load_data_custom(partition_id: int, num_partitions: int, indices: list, batch_size: int, seed: int) -> tuple[DataLoader, DataLoader]:
     # Handle edge case if data doesn't divide evenly
     partition_sizes = np.array_split(indices, num_partitions)
     client_indices = partition_sizes[partition_id]
@@ -72,9 +72,7 @@ def load_data_custom(partition_id: int, num_partitions: int, indices: list, batc
     return trainloader, testloader
 
 
-fds = None  # Cache FederatedDataset
-
-
+# fds = None  # Cache FederatedDataset
 # def load_data(partition_id: int, num_partitions: int):
 #     """Load partition CIFAR10 data."""
 #     # Only initialize `FederatedDataset` once
@@ -208,8 +206,6 @@ def set_weights(net: nn.Module, parameters: List[np.ndarray]) -> None:
 
 
 def get_dataset_split_flag() -> str:
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    pyproject_path = os.path.join(current_dir, "..", "pyproject.toml")
     with open(pyproject_path) as f:
         config = toml.load(f)
     return config["tool"]["flwr"]["app"]["config"].get("dataset-split", "target")
@@ -229,8 +225,6 @@ def seed_everything(seed: int = 42) -> None:
     torch.use_deterministic_algorithms(True)
 
     try:
-        import sklearn
-        from sklearn.utils import check_random_state
         _ = check_random_state(seed)
     except ImportError:
         pass

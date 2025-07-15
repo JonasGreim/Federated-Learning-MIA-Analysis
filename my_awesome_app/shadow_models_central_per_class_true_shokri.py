@@ -11,8 +11,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 from sklearn.utils import resample
-from my_awesome_app.types_config_mia import MiaConfig
-from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker, release_model, create_model
+from my_awesome_app.utils.types_config_mia import MiaConfig
+from my_awesome_app.utils.task import get_transforms_custom, seed_everything, seed_worker, release_model, create_model
 from collections import defaultdict
 import re
 import time

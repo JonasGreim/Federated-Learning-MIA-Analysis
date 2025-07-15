@@ -7,7 +7,7 @@ import torch
 import json
 import wandb
 from datetime import datetime
-from my_awesome_app.task import set_weights, create_model, get_dataset_split_flag
+from my_awesome_app.utils.task import set_weights, create_model, get_dataset_split_flag
 
 
 ### ////// NOT WORKING OLD STRATEGY ////// ###

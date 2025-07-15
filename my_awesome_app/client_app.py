@@ -3,7 +3,7 @@
 import torch
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
-from my_awesome_app.task import get_weights, set_weights, test, train, create_model, load_data_custom, \
+from my_awesome_app.utils.task import get_weights, set_weights, test, train, create_model, load_data_custom, \
     get_dataset_split_flag, seed_everything
 import numpy as np
 
