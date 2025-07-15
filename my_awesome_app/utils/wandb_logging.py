@@ -1,8 +1,8 @@
 from collections import Counter
-from torchvision.utils import make_grid
 import matplotlib.pyplot as plt
 from torch.utils.data import Subset
 import wandb
+from pathlib import Path
 
 
 def log_class_distribution(dataset: Subset, wandb_cluster_name: str = "dataset_distribution",
@@ -35,12 +35,13 @@ def log_class_distribution(dataset: Subset, wandb_cluster_name: str = "dataset_d
     plt.close()
 
 
-def log_training_to_wandb(history: list[dict], training_time: float, model_idx: int):
+def log_training_to_wandb(history: list[dict], training_time: float, model_idx: int, root_dir: Path):
     run = wandb.init(
         project="mia-shadow-attack",
         name=f"shadow_model_{model_idx}_training",
         group="shadow_models",
         job_type="training",
+        dir=root_dir,
         reinit=True
     )
 

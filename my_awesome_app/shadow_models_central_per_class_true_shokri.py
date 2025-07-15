@@ -158,6 +158,7 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
     learning_rate = config.parameters_static.learning_rate
     learning_rate_decay = config.parameters_static.learning_rate_decay
     model_name = config.parameters.model_arch
+    root_dir = Path(config.paths.current_root).parent
 
     per_shadow_per_class_data = []
 
@@ -177,7 +178,7 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
                                      device=device)
 
         training_time = time.time() - start_time
-        log_training_to_wandb(history, training_time, model_idx=i)
+        log_training_to_wandb(history=history, training_time=training_time, model_idx=i, root_dir=root_dir)
 
         print(f"⏱️ Shadow Model {i + 1} Training Time: {training_time:.2f} seconds")
 
@@ -430,7 +431,7 @@ def load_config(config_path: str) -> dict:
 def main(config: MiaConfig):
     print(f"\n🚀 Running experiment with config: {config}\n")
     # Initialize wandb run
-    wandb.init(project="mia-shadow-attack", config=OmegaConf.to_container(config, resolve=True), name="mia_run")
+    wandb.init(project="mia-shadow-attack", config=OmegaConf.to_container(config, resolve=True), name="mia_run", dir=Path(config.paths.current_root).parent)
 
     seed_everything(config.parameters_static.seed)
     requested_device = config.parameters_static.device
