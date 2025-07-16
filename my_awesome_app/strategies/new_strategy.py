@@ -129,15 +129,15 @@ class FedCustom(Strategy):
 
         loss_aggregated = weighted_loss_avg(
             [
-                (evaluate_res.num_examples, evaluate_res.metrics["train_loss"])
-                for _, evaluate_res in results
+                (fit_res.num_examples, fit_res.metrics.get("train_loss", 0.0))
+                for _, fit_res in results
             ]
         )
 
         accuracy_aggregated = weighted_loss_avg(  # same functionality as loss
             [
-                (evaluate_res.num_examples, evaluate_res.metrics["train_accuracy"])
-                for _, evaluate_res in results
+                (fit_res.num_examples, fit_res.metrics.get("train_accuracy", 0.0))
+                for _, fit_res in results
             ]
         )
         metrics_aggregated = {"client_weighted_train_loss": loss_aggregated, "client_weighted_train_accuracy": accuracy_aggregated}
