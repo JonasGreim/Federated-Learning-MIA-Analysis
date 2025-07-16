@@ -1,4 +1,6 @@
 from typing import Union
+
+from datasets import load_from_disk
 from flwr.common import (
     EvaluateIns,
     EvaluateRes,
@@ -14,6 +16,8 @@ from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from typing import Optional, List, Tuple, Dict
+
+from my_awesome_app.utils.huggingface_to_pytorch import HFDatasetToTorch
 from my_awesome_app.utils.task import set_weights, test, create_model, get_transforms_custom, release_model
 from torch.utils.data import DataLoader
 import os
@@ -21,9 +25,6 @@ import wandb
 import json
 import torch
 from datetime import datetime
-from torchvision.datasets import CIFAR10
-from torch.utils.data import Subset
-import numpy as np
 
 
 class FedCustom(Strategy):
@@ -40,6 +41,7 @@ class FedCustom(Strategy):
             dataset_split: str = "target",
             device: str = "cpu",
             model_name: str = "mia_paper",
+            batch_size: int = 32,
     ) -> None:
         # can be overwritten here + abstract methods invoke
         super().__init__()
@@ -57,6 +59,7 @@ class FedCustom(Strategy):
         self.result_to_json_global_model_test = {}
         self.device = torch.device(device)
         self.model_name = model_name
+        self.batch_size = batch_size
 
         name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         if not wandb.run:
@@ -140,7 +143,8 @@ class FedCustom(Strategy):
                 for _, fit_res in results
             ]
         )
-        metrics_aggregated = {"client_weighted_train_loss": loss_aggregated, "client_weighted_train_accuracy": accuracy_aggregated}
+        metrics_aggregated = {"client_weighted_train_loss": loss_aggregated,
+                              "client_weighted_train_accuracy": accuracy_aggregated}
         wandb.log(metrics_aggregated, step=server_round)
 
         aggregated_ndarrays = aggregate(weights_results)
@@ -183,7 +187,8 @@ class FedCustom(Strategy):
             ]
         )
 
-        metrics_aggregated = {"client_weighted_evaluate_loss": loss_aggregated, "client_weighted_evaluate_accuracy": accuracy_aggregated}
+        metrics_aggregated = {"client_weighted_evaluate_loss": loss_aggregated,
+                              "client_weighted_evaluate_accuracy": accuracy_aggregated}
         wandb.log(metrics_aggregated, step=server_round)
 
         return loss_aggregated, metrics_aggregated
@@ -194,15 +199,19 @@ class FedCustom(Strategy):
         """Evaluate global model parameters using an evaluation function."""
 
         if self.dataset_split == "target":
-            test_indices = np.load("splits/D2_indices.npy").tolist()
+            test_split = "splits/D2"
         else:
-            test_indices = np.load("splits/D4_indices.npy").tolist()
+            test_split = "splits/D4"
 
-        testset = Subset(
-            CIFAR10(root="./data", train=True, download=True, transform=get_transforms_custom()),
-            test_indices
-        )
-        testloader = DataLoader(testset, batch_size=32)
+        try:
+            test_split_dataset = load_from_disk(test_split)
+        except FileNotFoundError:
+            print(f"Error: The dataset at path '{test_split}' was not found.")
+            test_split_dataset = None
+
+        testset = HFDatasetToTorch(test_split_dataset, transform=get_transforms_custom())
+
+        testloader = DataLoader(testset, batch_size=self.batch_size)
 
         net = create_model(self.model_name)
         set_weights(net, parameters_to_ndarrays(parameters))  # parameters = tensors -> ndarray parameters

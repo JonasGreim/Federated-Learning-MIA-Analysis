@@ -5,6 +5,7 @@ __pycache__/
 
 .idea
 wandb
+metrics_of_run
 global_model_round_*
 results.json
 data
@@ -171,3 +172,5 @@ cython_debug/
 #.idea/
 /my_awesome_app/multirun/
 /my_awesome_app/outputs/
+/metrics_of_run/
+/metrics_of_run/

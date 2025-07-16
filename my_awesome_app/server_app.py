@@ -1,7 +1,7 @@
 """my-awesome-app: A Flower / PyTorch app."""
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
-from my_awesome_app.utils.split_cifar10_mia import create_split_files
+from my_awesome_app.utils.split_cifar10_mia import create_split_files_hf
 from my_awesome_app.strategies.new_strategy import FedCustom
 from my_awesome_app.utils.task import get_weights, create_model, seed_everything
 
@@ -15,12 +15,13 @@ def server_fn(context: Context):
     device = context.run_config["device"]
     seed = context.run_config.get("seed", 42)
     model_name = context.run_config.get("model")
+    batch_size = context.run_config.get("batch-size", 32)
 
     # Seed everything for reproducibility
     seed_everything(seed)
 
     # Create dataset splits if they do not exist
-    create_split_files()
+    create_split_files_hf()
 
     # Initialize model parameters
     ndarrays = get_weights(
@@ -36,6 +37,7 @@ def server_fn(context: Context):
         dataset_split=split_flag,
         device=device,
         model_name=model_name,
+        batch_size=batch_size,
     )
     config = ServerConfig(num_rounds=num_rounds)
 

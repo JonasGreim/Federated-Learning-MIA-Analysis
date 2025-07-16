@@ -62,13 +62,13 @@ def client_fn(context: Context):
 
     split_type = get_dataset_split_flag()
     if split_type == "target":
-        indices = np.load("splits/D1_indices.npy").tolist()
+        split = "splits/D1"
     elif split_type == "shadow":
-        indices = np.load("splits/D3_indices.npy").tolist()
+        split = "splits/D3"
     else:
         raise ValueError(f"Unknown dataset-split: {split_type}")
 
-    trainloader, valloader = load_data_custom(partition_id=partition_id, num_partitions=num_partitions, indices=indices,
+    trainloader, valloader = load_data_custom(partition_id=partition_id, num_partitions=num_partitions, split=split,
                                               batch_size=batch_size, seed=seed)
 
     # Return Client instance

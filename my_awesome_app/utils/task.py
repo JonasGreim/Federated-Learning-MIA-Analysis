@@ -7,6 +7,9 @@ import random
 import torch
 import torch.nn as nn
 import toml
+from datasets import load_from_disk
+from flwr_datasets.partitioner import DirichletPartitioner
+from flwr_datasets.visualization import plot_label_distributions
 from my_awesome_app.models.complex_model import NetComplex
 from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
 from my_awesome_app.models.resnet_18 import create_resnet18_model
@@ -16,6 +19,8 @@ from torch.utils.data import Subset, DataLoader
 from torchvision import transforms
 import numpy as np
 from sklearn.utils import check_random_state
+from my_awesome_app.utils.huggingface_to_pytorch import HFDatasetToTorch
+from my_awesome_app.utils.wandb_logging_target import visualize_label_distribution
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DATA_DIR = os.path.join(ROOT_DIR, "data")
@@ -52,23 +57,41 @@ def get_flower_partition(data_indices) -> Subset:
     return Subset(full_dataset, data_indices)
 
 
-def load_data_custom(partition_id: int, num_partitions: int, indices: list, batch_size: int, seed: int) -> tuple[DataLoader, DataLoader]:
-    # Handle edge case if data doesn't divide evenly
-    partition_sizes = np.array_split(indices, num_partitions)
-    client_indices = partition_sizes[partition_id]
+def load_data_custom(partition_id: int, num_partitions: int, split: str, batch_size: int, seed: int) -> tuple[
+    DataLoader, DataLoader]:
 
-    train_size = int(0.8 * len(client_indices))
-    train_idx = client_indices[:train_size]
-    test_idx = client_indices[train_size:]
+    try:
+        split_dataset = load_from_disk(split)
+    except FileNotFoundError:
+        print(f"Error: The dataset at path '{split}' was not found.")
+        split_dataset = None
 
-    trainset = get_flower_partition(train_idx)
-    testset = get_flower_partition(test_idx)
+    # Apply Dirichlet partitioning to the client data subset
+    partitioner = DirichletPartitioner(
+        num_partitions=num_partitions,
+        partition_by="label",
+        alpha=1.0,
+        min_partition_size=0,
+    )
+    partitioner.dataset = split_dataset
+    client_dataset = partitioner.load_partition(partition_id=partition_id)
+
+    visualize_label_distribution(partitioner, "metrics_of_run")
+
+    data_split = client_dataset.train_test_split(test_size=0.2, seed=seed)
+
+    transform = get_transforms_custom()
+    trainset = HFDatasetToTorch(data_split["train"], transform=transform)
+    testset = HFDatasetToTorch(data_split["test"], transform=transform)
 
     g = torch.Generator()
     g.manual_seed(seed)
 
-    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker, generator=g, num_workers=2)
-    testloader = DataLoader(testset, batch_size=batch_size, shuffle=False)
+    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker, generator=g,
+                             num_workers=2)
+    testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2)
+
+    print(f"[Client {partition_id}] Loaded {len(trainset)} train samples, {len(testset)} test samples.")
     return trainloader, testloader
 
 
