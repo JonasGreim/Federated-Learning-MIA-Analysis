@@ -1,4 +1,3 @@
-from torchvision.datasets import CIFAR10
 import os
 import numpy as np
 from collections import defaultdict

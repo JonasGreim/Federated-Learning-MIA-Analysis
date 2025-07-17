@@ -2,10 +2,6 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 
-import numpy as np
-from PIL import Image
-from torch.utils.data import Dataset
-
 
 class HFDatasetToTorch(Dataset):
     def __init__(self, hf_dataset, transform=None):

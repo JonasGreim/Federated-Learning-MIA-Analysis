@@ -59,12 +59,10 @@ def get_flower_partition(data_indices) -> Subset:
 
 def load_data_custom(partition_id: int, num_partitions: int, split: str, batch_size: int, seed: int) -> tuple[
     DataLoader, DataLoader]:
-
     try:
         split_dataset = load_from_disk(split)
-    except FileNotFoundError:
-        print(f"Error: The dataset at path '{split}' was not found.")
-        split_dataset = None
+    except Exception as e:
+        raise RuntimeError(f"Target model: Failed to load datasets from disk: {e}") from e
 
     # Apply Dirichlet partitioning to the client data subset
     partitioner = DirichletPartitioner(
@@ -93,62 +91,6 @@ def load_data_custom(partition_id: int, num_partitions: int, split: str, batch_s
 
     print(f"[Client {partition_id}] Loaded {len(trainset)} train samples, {len(testset)} test samples.")
     return trainloader, testloader
-
-
-# fds = None  # Cache FederatedDataset
-# def load_data(partition_id: int, num_partitions: int):
-#     """Load partition CIFAR10 data."""
-#     # Only initialize `FederatedDataset` once
-#     global fds
-#     if fds is None:
-#         # Initialize FederatedDataset with Dirichlet partitioning
-#         fds = FederatedDataset(
-#             dataset="uoft-cs/cifar10",
-#             partitioners={
-#                 "train": DirichletPartitioner(
-#                     num_partitions=num_partitions,
-#                     partition_by="label",
-#                     alpha=0.3,  # Lower alpha -> more imbalanced partitions
-#                     seed=42,
-#                     min_partition_size=0,
-#                 ),
-#             },
-#         )
-#
-#         # Visualize label distribution across partitions
-#         # partitioner = fds.partitioners["train"]
-#         # fig, ax, df = plot_label_distributions(
-#         #     partitioner,
-#         #     label_name="label",
-#         #     plot_type="bar",
-#         #     size_unit="absolute",
-#         #     partition_id_axis="x",
-#         #     legend=True,
-#         #     verbose_labels=True,
-#         #     title="Per Partition Labels Distribution",
-#         # )
-#         # fig2, ax2, df2 = plot_label_distributions(
-#         #     partitioner,
-#         #     label_name="label",
-#         #     plot_type="heatmap",
-#         #     size_unit="absolute",
-#         #     partition_id_axis="x",
-#         #     legend=True,
-#         #     verbose_labels=True,
-#         #     title="Per Partition Labels Distribution",
-#         #     plot_kwargs={"annot": True},
-#         # )
-#         # fig.savefig("metrics_of_run/bar_label_distribution.png", dpi=300)
-#         # fig2.savefig("metrics_of_run/heatmap_label_distribution.png", dpi=300)
-#
-#     partition = fds.load_partition(partition_id)
-#     # Divide data on each node: 80% train, 20% test
-#     partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
-#
-#     partition_train_test = partition_train_test.with_transform(get_transforms())
-#     trainloader = DataLoader(partition_train_test["train"], batch_size=32, shuffle=True)
-#     testloader = DataLoader(partition_train_test["test"], batch_size=32)
-#     return trainloader, testloader
 
 
 def train(net, trainloader, epochs, lr, device) -> tuple[float, float]:

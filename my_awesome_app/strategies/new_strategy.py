@@ -205,9 +205,8 @@ class FedCustom(Strategy):
 
         try:
             test_split_dataset = load_from_disk(test_split)
-        except FileNotFoundError:
-            print(f"Error: The dataset at path '{test_split}' was not found.")
-            test_split_dataset = None
+        except Exception as e:
+            raise RuntimeError(f"Target model: Failed to load test dataset from disk: {e}") from e
 
         testset = HFDatasetToTorch(test_split_dataset, transform=get_transforms_custom())
 

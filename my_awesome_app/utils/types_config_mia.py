@@ -31,6 +31,8 @@ class ParametersStatic:
     device: str
     learning_rate_decay: float
     learning_rate: float
+    num_workers: int
+    class_names: list[str]
 
 
 @dataclass

@@ -8,7 +8,6 @@ wandb
 metrics_of_run
 global_model_round_*
 results.json
-data
 splits
 
 

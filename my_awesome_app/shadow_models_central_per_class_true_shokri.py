@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import yaml
-from torch.utils.data import DataLoader, Subset
-from torchvision.datasets import CIFAR10
+from datasets import load_from_disk, Dataset
+from torch.utils.data import DataLoader
 import numpy as np
 import os
 import glob
@@ -11,6 +11,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 from sklearn.utils import resample
+from my_awesome_app.utils.huggingface_to_pytorch import HFDatasetToTorch
 from my_awesome_app.utils.types_config_mia import MiaConfig
 from my_awesome_app.utils.task import get_transforms_custom, seed_everything, seed_worker, release_model, create_model
 from collections import defaultdict
@@ -20,71 +21,70 @@ import hydra
 from pathlib import Path
 import wandb
 from omegaconf import OmegaConf
-from my_awesome_app.utils.wandb_logging import log_class_distribution, log_training_to_wandb, log_per_class_metrics, \
-    log_overall_metrics_with_error_bars
+from my_awesome_app.utils.wandb_logging import log_training_to_wandb, log_per_class_metrics, \
+    log_overall_metrics_with_error_bars, log_class_distribution
 
 
 # === Utility Functions ===
-def load_data(config) -> tuple[Subset, Subset, Subset, Subset]:
+def load_data(config: MiaConfig) -> tuple[Dataset, Dataset, Dataset, Dataset]:
     root_dir = Path(config.paths.current_root).parent
-    data_dir = config.paths.data_dir
     split_dir = config.paths.split_dir
-    data_dir_path = os.path.join(root_dir, data_dir)
+    split_dir_path = os.path.join(root_dir, split_dir)
+    class_names = config.parameters_static.class_names
 
-    train_dataset = CIFAR10(root=data_dir_path, train=True, download=True, transform=get_transforms_custom())
+    # Load datasets from disk -> run split script before running this: split_cifar10_mia.py (auto. run by target model)
+    try:
+        target_train_hf = load_from_disk(os.path.join(split_dir_path, "D1"))
+        target_test_hf = load_from_disk(os.path.join(split_dir_path, "D2"))
+        shadow_train_hf = load_from_disk(os.path.join(split_dir_path, "D3"))
+        shadow_test_hf = load_from_disk(os.path.join(split_dir_path, "D4"))
+    except Exception as e:
+        raise RuntimeError(f"MIA: Failed to load datasets from disk: {e}") from e
 
-    # load split indices
-    D1 = np.load(os.path.join(root_dir, split_dir, "D1_indices.npy")).tolist()
-    D2 = np.load(os.path.join(root_dir, split_dir, "D2_indices.npy")).tolist()
-    D3 = np.load(os.path.join(root_dir, split_dir, "D3_indices.npy")).tolist()
-    D4 = np.load(os.path.join(root_dir, split_dir, "D4_indices.npy")).tolist()
-    # D1: train set for target model (10000 samples, 1000 per class)
-    # D2: test set for target model (10000 samples, 1000 per class)
-    # D3: train set for shadow model (15000 samples, 1500 per class)
-    # D4: test set for shadow model (15000 samples, 1500 per class)
+    log_class_distribution(hf_dataset=target_train_hf, wandb_cluster_name="shadow_train_distribution",
+                           wandb_plot_prefix="shadow_pool_data", class_names=class_names)
 
-    target_train = Subset(train_dataset, D1)
-    target_test = Subset(train_dataset, D2)
-    shadow_train = Subset(train_dataset, D3)
-    shadow_test = Subset(train_dataset, D4)
-
-    log_class_distribution(shadow_train, wandb_cluster_name="shadow_train_distribution",
-                           wandb_plot_prefix="shadow_pool_data")
-
-    return shadow_train, target_train, target_test, shadow_test
+    return shadow_train_hf, target_train_hf, target_test_hf, shadow_test_hf
 
 
-def sample_shadow_datasets_with_overlap(shadow_train_dataset, shadow_test_dataset, config) -> tuple[
-    list[Subset], list[Subset]]:
+def sample_shadow_datasets_with_overlap(shadow_train_dataset: Dataset, shadow_test_dataset: Dataset, config: MiaConfig) -> tuple[list[Dataset], list[Dataset]]:
+    # Sample shadow train and test datasets from the shadow data train/test pool
+    # Sample without duplicates, but with overlap between shadow model datasets
     num_shadow_models = config.parameters.num_shadow_models
-    seed: int = config.parameters_static.seed
-    train_size: int = config.parameters.train_size
-    test_size: int = config.parameters.test_size
+    seed = config.parameters_static.seed
+    train_size = config.parameters.train_size
+    test_size = config.parameters.test_size
+    class_names = config.parameters_static.class_names
 
-    all_indices = np.array(shadow_train_dataset.indices)
-    test_indices_pool = np.array(shadow_test_dataset.indices)
+    all_train_indices = np.arange(len(shadow_train_dataset))
+    all_test_indices = np.arange(len(shadow_test_dataset))
 
     shadow_train_sets = []
     shadow_test_sets = []
 
     for i in range(num_shadow_models):
-        rng = np.random.RandomState(seed + i)  # different seed for each shadow model
+        rng = np.random.RandomState(seed + i)
 
-        # Sample train and test sets without replacement
-        train_indices = rng.choice(all_indices, size=train_size, replace=False)
-        test_indices = rng.choice(test_indices_pool, size=test_size, replace=False)
-        train_subset = Subset(shadow_train_dataset.dataset, train_indices)
+        train_indices = rng.choice(all_train_indices, size=train_size, replace=False)
+        test_indices = rng.choice(all_test_indices, size=test_size, replace=False)
 
-        log_class_distribution(train_subset, wandb_cluster_name="shadow_train_distribution",
-                               wandb_plot_prefix=f"shadow_model_{i + 1}")
+        train_subset = shadow_train_dataset.select(train_indices.tolist())
+        test_subset = shadow_test_dataset.select(test_indices.tolist())
+
+        log_class_distribution(
+            hf_dataset=train_subset,
+            wandb_cluster_name="shadow_train_distribution",
+            wandb_plot_prefix=f"shadow_model_{i + 1}",
+            class_names=class_names
+        )
 
         shadow_train_sets.append(train_subset)
-        shadow_test_sets.append(Subset(shadow_test_dataset.dataset, test_indices))
+        shadow_test_sets.append(test_subset)
 
     return shadow_train_sets, shadow_test_sets
 
 
-def train_model(model, dataloader, epochs, learning_rate, learning_rate_decay, device) -> tuple[nn.Module, list[dict]]:
+def train_model(model: nn.Module, dataloader: DataLoader, epochs: int, learning_rate: float, learning_rate_decay: float, device: torch.device) -> tuple[nn.Module, list[dict]]:
     model = model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.LambdaLR(
@@ -128,7 +128,7 @@ def train_model(model, dataloader, epochs, learning_rate, learning_rate_decay, d
     return model, history
 
 
-def extract_features_by_class(model, dataloader, label_indicator, num_classes, device) -> dict:
+def extract_features_by_class(model: nn.Module, dataloader: DataLoader, label_indicator: int, num_classes: int, device: torch.device) -> dict:
     model.eval()
     class_features = defaultdict(list)
 
@@ -149,27 +149,31 @@ def extract_features_by_class(model, dataloader, label_indicator, num_classes, d
     return class_features
 
 
-def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_test_subsets, config, device) -> list[
-    dict]:
+def train_all_shadow_models_and_collect_features(shadow_train_subsets: list[Dataset], shadow_test_subsets: list[Dataset], config: MiaConfig, device: torch.device) -> list[dict]:
     seed = config.parameters_static.seed
     num_classes = config.parameters.num_classes
     batch_size = config.parameters_static.batch_size
     shadow_epochs = config.parameters.shadow_epochs
     learning_rate = config.parameters_static.learning_rate
     learning_rate_decay = config.parameters_static.learning_rate_decay
+    num_workers = config.parameters_static.num_workers
     model_name = config.parameters.model_arch
     root_dir = Path(config.paths.current_root).parent
 
     per_shadow_per_class_data = []
+    transform = get_transforms_custom()
 
     for i, (train_subset, test_subset) in enumerate(zip(shadow_train_subsets, shadow_test_subsets)):
         print(f"🔄 Training Shadow Model {i + 1}/{len(shadow_train_subsets)}")
         model_arch = create_model(model_name)
 
-        train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True,
+        torch_train_dataset = HFDatasetToTorch(train_subset, transform=transform)
+        torch_test_dataset = HFDatasetToTorch(test_subset, transform=transform)
+
+        train_loader = DataLoader(torch_train_dataset, batch_size=batch_size, shuffle=True,
                                   worker_init_fn=seed_worker,
-                                  generator=torch.Generator().manual_seed(seed + i), num_workers=2)
-        test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=False, num_workers=2)
+                                  generator=torch.Generator().manual_seed(seed + i), num_workers=num_workers)
+        test_loader = DataLoader(torch_test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
         # Measure training time
         start_time = time.time()
@@ -203,7 +207,7 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets, shadow_te
     return per_shadow_per_class_data
 
 
-def train_per_class_attack_models(per_shadow_per_class_data, config) -> tuple[dict, dict]:
+def train_per_class_attack_models(per_shadow_per_class_data: list, config: MiaConfig) -> tuple[dict, dict]:
     """
     Trains one attack model per class using features pooled from all shadow models (faithful to Shokri et al.)
     """
@@ -267,18 +271,23 @@ def train_per_class_attack_models(per_shadow_per_class_data, config) -> tuple[di
     return attack_models, scalers
 
 
-def evaluate_attack_models(attack_models, scalers, target_train, target_test, config, device) -> None:
+def evaluate_attack_models(attack_models: dict, scalers: dict, target_train: Dataset, target_test: Dataset, config: MiaConfig, device: torch.device) -> None:
     batch_size = config.parameters_static.batch_size
     num_classes = config.parameters.num_classes
     target_checkpoint_dir = config.paths.target_checkpoint_dir
     root_dir = Path(config.paths.current_root).parent
     model_name = config.parameters.model_arch
+    class_names = config.parameters_static.class_names
+    num_workers = config.parameters_static.num_workers
 
     target_model = load_highest_round_number_target_model(root_dir, target_checkpoint_dir, model_name, device)
 
-    target_train_loader = DataLoader(target_train, batch_size=batch_size, shuffle=False, num_workers=2)
+    transform = get_transforms_custom()
+    target_train_torch = HFDatasetToTorch(target_train, transform=transform)
+    target_test_torch = HFDatasetToTorch(target_test, transform=transform)
 
-    target_test_loader = DataLoader(target_test, batch_size=batch_size, shuffle=False, num_workers=2)
+    target_train_loader = DataLoader(target_train_torch, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    target_test_loader = DataLoader(target_test_torch, batch_size=batch_size, shuffle=False, num_workers=num_workers)
     target_model.eval()
 
     # Extract features from the target model for members (train) and non-members (test)
@@ -349,7 +358,7 @@ def evaluate_attack_models(attack_models, scalers, target_train, target_test, co
 
         print(f"Class {cls}: Acc={acc:.2f}, Prec={prec:.2f}, Rec={rec:.2f}, F1={f1:.2f}, AUC={auc:.2f}, FAR={far:.2f}")
 
-    log_per_class_metrics(per_class_metrics)
+    log_per_class_metrics(per_class_metrics=per_class_metrics, class_names=class_names)
 
     # === Per-Class Summary ===
     print(f"\n=== Per-Class Attack Metrics ===")
@@ -390,7 +399,7 @@ def evaluate_attack_models(attack_models, scalers, target_train, target_test, co
     )
 
 
-def load_highest_round_number_target_model(root_dir, target_checkpoint_dir, model_name, device) -> nn.Module:
+def load_highest_round_number_target_model(root_dir: Path, target_checkpoint_dir: str, model_name: str, device: torch.device) -> nn.Module:
     release_model(None, device.type)
     model = create_model(model_name)
 
