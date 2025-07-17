@@ -38,7 +38,7 @@ class FedCustom(Strategy):
             min_available_clients: int = 2,
             initial_parameters: Optional[Parameters] = None,
             learning_rate: float = 0.001,
-            dataset_split: str = "target",
+            train_target_model_as_shadow_model: bool = False,
             device: str = "cpu",
             model_name: str = "mia_paper",
             batch_size: int = 32,
@@ -55,7 +55,7 @@ class FedCustom(Strategy):
         self.min_available_clients = min_available_clients
         self.initial_parameters = initial_parameters
         self.learning_rate = learning_rate
-        self.dataset_split = dataset_split
+        self.train_target_model_as_shadow_model = train_target_model_as_shadow_model
         self.result_to_json_global_model_test = {}
         self.device = torch.device(device)
         self.model_name = model_name
@@ -65,7 +65,7 @@ class FedCustom(Strategy):
         if not wandb.run:
             wandb.init(project="flower-simulation-tutorial", name=f"custom-strategy-{name}")
 
-        print(f"[FedCustom] Config: lr={self.learning_rate}, split={self.dataset_split}, device={self.device}")
+        print(f"[FedCustom] Config: lr={self.learning_rate}, data_target_model={not self.train_target_model_as_shadow_model}, device={self.device}")
 
     def __repr__(self) -> str:
         return "FedCustom"
@@ -155,7 +155,11 @@ class FedCustom(Strategy):
         set_weights(model, aggregated_ndarrays)
 
         # save global model from shadow and target model in the standard PyTorch way
-        save_dir = f"model_checkpoints_{self.dataset_split}"
+        if self.train_target_model_as_shadow_model:
+            save_dir = "model_checkpoints_shadow"
+        else:
+            save_dir = "model_checkpoints_target"
+
         os.makedirs(save_dir, exist_ok=True)
         model_path = os.path.join(save_dir, f"global_model_round_{server_round}.pth")
         torch.save(model.state_dict(), model_path)
@@ -198,13 +202,13 @@ class FedCustom(Strategy):
     ) -> Optional[Tuple[float, Dict[str, Scalar]]]:
         """Evaluate global model parameters using an evaluation function."""
 
-        if self.dataset_split == "target":
-            test_split = "splits/D2"
+        if self.train_target_model_as_shadow_model:
+            split = "splits/D4"
         else:
-            test_split = "splits/D4"
+            split = "splits/D2"
 
         try:
-            test_split_dataset = load_from_disk(test_split)
+            test_split_dataset = load_from_disk(split)
         except Exception as e:
             raise RuntimeError(f"Target model: Failed to load test dataset from disk: {e}") from e
 

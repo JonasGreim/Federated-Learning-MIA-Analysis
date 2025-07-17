@@ -9,13 +9,11 @@ import torch.nn as nn
 import toml
 from datasets import load_from_disk
 from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner
-from flwr_datasets.visualization import plot_label_distributions
 from my_awesome_app.models.complex_model import NetComplex
 from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
 from my_awesome_app.models.resnet_18 import create_resnet18_model
 from my_awesome_app.models.simple_model import NetSimple
-from torchvision.datasets import CIFAR10
-from torch.utils.data import Subset, DataLoader
+from torch.utils.data import DataLoader
 from torchvision import transforms
 import numpy as np
 from sklearn.utils import check_random_state
@@ -23,7 +21,6 @@ from my_awesome_app.utils.huggingface_to_pytorch import HFDatasetToTorch
 from my_awesome_app.utils.wandb_logging_target import visualize_label_distribution
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-DATA_DIR = os.path.join(ROOT_DIR, "data")
 current_dir = os.path.dirname(os.path.abspath(__file__))
 pyproject_path = os.path.join(current_dir, '..', '..', 'pyproject.toml')
 
@@ -48,13 +45,6 @@ def get_transforms_custom() -> transforms.Compose:
         # Normalize with CIFAR-10 mean and std (shokri does not use normalization -> better overfitting)
         # transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     ])
-
-
-def get_flower_partition(data_indices) -> Subset:
-    # Return only a subset of CIFAR10
-    os.makedirs(DATA_DIR, exist_ok=True)
-    full_dataset = CIFAR10(root=DATA_DIR, train=True, download=True, transform=get_transforms_custom())
-    return Subset(full_dataset, data_indices)
 
 
 def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_partitions: int, split: str, batch_size: int, seed: int) -> tuple[DataLoader, DataLoader]:
@@ -175,12 +165,6 @@ def set_weights(net: nn.Module, parameters: List[np.ndarray]) -> None:
     params_dict = zip(net.state_dict().keys(), parameters)
     state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
     net.load_state_dict(state_dict, strict=True)
-
-
-def get_dataset_split_flag() -> str:
-    with open(pyproject_path) as f:
-        config = toml.load(f)
-    return config["tool"]["flwr"]["app"]["config"].get("dataset-split", "target")
 
 
 def seed_everything(seed: int = 42) -> None:

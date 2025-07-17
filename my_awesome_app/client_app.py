@@ -3,9 +3,7 @@
 import torch
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
-from my_awesome_app.utils.task import get_weights, set_weights, test, train, create_model, load_data_custom, \
-    get_dataset_split_flag, seed_everything
-import numpy as np
+from my_awesome_app.utils.task import get_weights, set_weights, test, train, create_model, load_data_custom, seed_everything
 
 
 # Define Flower Client and client_fn
@@ -51,6 +49,7 @@ def client_fn(context: Context):
     model_name = context.run_config.get("model")
     iid = context.run_config.get("iid_data_distribution", True)
     alpha = context.run_config.get("dirichlet_alpha", 1.0)
+    train_target_model_as_shadow_model = context.run_config.get("train_target_model_as_shadow_model", False)
 
     # Seed everything for reproducibility
     seed_everything(seed)
@@ -62,13 +61,10 @@ def client_fn(context: Context):
     # Load model and data
     net = create_model(model_name)
 
-    split_type = get_dataset_split_flag()
-    if split_type == "target":
-        split = "splits/D1"
-    elif split_type == "shadow":
+    if train_target_model_as_shadow_model:
         split = "splits/D3"
     else:
-        raise ValueError(f"Unknown dataset-split: {split_type}")
+        split = "splits/D1"
 
     trainloader, valloader = load_data_custom(iid=iid, dirichlet_alpha=alpha, partition_id=partition_id, num_partitions=num_partitions, split=split,
                                               batch_size=batch_size, seed=seed)

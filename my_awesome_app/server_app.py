@@ -11,7 +11,7 @@ def server_fn(context: Context):
     num_rounds = context.run_config["num-server-rounds"]
     fraction_fit = context.run_config.get("fraction_fit", 1.0)  # weird error that fraction_fit is not in run_config
     learning_rate = context.run_config["learning-rate"]
-    split_flag = context.run_config["dataset-split"]
+    train_target_model_as_shadow_model = context.run_config["train_target_model_as_shadow_model"]
     device = context.run_config["device"]
     seed = context.run_config.get("seed", 42)
     model_name = context.run_config.get("model")
@@ -38,7 +38,7 @@ def server_fn(context: Context):
         min_available_clients=2,
         initial_parameters=parameters,
         learning_rate=learning_rate,
-        dataset_split=split_flag,
+        train_target_model_as_shadow_model=train_target_model_as_shadow_model,
         device=device,
         model_name=model_name,
         batch_size=batch_size,
