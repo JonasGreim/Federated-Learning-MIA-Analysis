@@ -23,6 +23,7 @@ class FlowerClient(NumPyClient):
             self.trainloader,
             self.local_epochs,
             config['lr'],
+            config['lr_decay'],
             self.device,
         )
 

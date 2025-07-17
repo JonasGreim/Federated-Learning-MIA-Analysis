@@ -6,7 +6,6 @@ from typing import List
 import random
 import torch
 import torch.nn as nn
-import toml
 from datasets import load_from_disk
 from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner
 from my_awesome_app.models.complex_model import NetComplex
@@ -19,10 +18,6 @@ import numpy as np
 from sklearn.utils import check_random_state
 from my_awesome_app.utils.huggingface_to_pytorch import HFDatasetToTorch
 from my_awesome_app.utils.wandb_logging_target import visualize_label_distribution
-
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-current_dir = os.path.dirname(os.path.abspath(__file__))
-pyproject_path = os.path.join(current_dir, '..', '..', 'pyproject.toml')
 
 
 def create_model(model_name) -> nn.Module:
@@ -90,21 +85,17 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
     return trainloader, testloader
 
 
-def train(net, trainloader, epochs, lr, device) -> tuple[float, float]:
+def train(net, trainloader, epochs, lr, lr_decay, device) -> tuple[float, float]:
     """Train the model on the training set."""
     net.to(device)  # move model to GPU if available
     criterion = torch.nn.CrossEntropyLoss().to(device)
     optimizer = torch.optim.SGD(net.parameters(), lr=lr)
     net.train()
 
-    with open(pyproject_path) as file:
-        data = toml.load(file)
-    learning_rate_decay = data["tool"]["flwr"]["app"]["config"]["learning-rate-decay"]
-
     # Learning rate decay matching paper: decay = 1e-7
     scheduler = torch.optim.lr_scheduler.LambdaLR(
         optimizer,
-        lr_lambda=lambda e: 1 / (1 + learning_rate_decay * e)
+        lr_lambda=lambda e: 1 / (1 + lr_decay * e)
     )
 
     running_loss = 0.0
