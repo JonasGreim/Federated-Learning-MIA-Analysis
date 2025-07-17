@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 import toml
 from datasets import load_from_disk
-from flwr_datasets.partitioner import DirichletPartitioner
+from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner
 from flwr_datasets.visualization import plot_label_distributions
 from my_awesome_app.models.complex_model import NetComplex
 from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
@@ -57,20 +57,27 @@ def get_flower_partition(data_indices) -> Subset:
     return Subset(full_dataset, data_indices)
 
 
-def load_data_custom(partition_id: int, num_partitions: int, split: str, batch_size: int, seed: int) -> tuple[
-    DataLoader, DataLoader]:
+def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_partitions: int, split: str, batch_size: int, seed: int) -> tuple[DataLoader, DataLoader]:
     try:
         split_dataset = load_from_disk(split)
     except Exception as e:
         raise RuntimeError(f"Target model: Failed to load datasets from disk: {e}") from e
 
-    # Apply Dirichlet partitioning to the client data subset
-    partitioner = DirichletPartitioner(
-        num_partitions=num_partitions,
-        partition_by="label",
-        alpha=1.0,
-        min_partition_size=0,
-    )
+    if iid:
+        split_dataset = split_dataset.shuffle(seed=seed)
+        partitioner = IidPartitioner(
+            num_partitions=num_partitions,
+        )
+        print("[INFO] Using IID data partitioning.")
+    else:
+        partitioner = DirichletPartitioner(
+            num_partitions=num_partitions,
+            partition_by="label",
+            alpha=dirichlet_alpha,
+            min_partition_size=0,
+        )
+        print("[INFO] Using non-IID Dirichlet data partitioning.")
+
     partitioner.dataset = split_dataset
     client_dataset = partitioner.load_partition(partition_id=partition_id)
 

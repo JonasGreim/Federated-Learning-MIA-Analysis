@@ -1,7 +1,7 @@
 """my-awesome-app: A Flower / PyTorch app."""
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
-from my_awesome_app.utils.split_cifar10_mia import create_split_files_hf, split_cifar10_for_target_and_shadow
+from my_awesome_app.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
 from my_awesome_app.strategies.new_strategy import FedCustom
 from my_awesome_app.utils.task import get_weights, create_model, seed_everything
 

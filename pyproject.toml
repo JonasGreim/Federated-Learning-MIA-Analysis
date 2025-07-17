@@ -42,6 +42,8 @@ device = "cuda" # <-- "cpu" or "cuda"
 model = "mia_paper" # <-- loader defined in tasks.create_model()
 dataset-split = "target" # <-- "target" or "shadow"
 seed = 42
+iid_data_distribution = true # if true, data is distributed iid among clients
+dirichlet_alpha = 1.0 # if iid_data_distribution is false, this is the dirichlet alpha parameter
 
 [tool.flwr.federations]
 default = "local-simulation-cpu"  # default setting for local simulation

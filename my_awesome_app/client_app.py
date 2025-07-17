@@ -49,6 +49,8 @@ def client_fn(context: Context):
     batch_size = context.run_config.get("batch_size", 32)
     seed = context.run_config.get("seed", 42)
     model_name = context.run_config.get("model")
+    iid = context.run_config.get("iid_data_distribution", True)
+    alpha = context.run_config.get("dirichlet_alpha", 1.0)
 
     # Seed everything for reproducibility
     seed_everything(seed)
@@ -68,7 +70,7 @@ def client_fn(context: Context):
     else:
         raise ValueError(f"Unknown dataset-split: {split_type}")
 
-    trainloader, valloader = load_data_custom(partition_id=partition_id, num_partitions=num_partitions, split=split,
+    trainloader, valloader = load_data_custom(iid=iid, dirichlet_alpha=alpha, partition_id=partition_id, num_partitions=num_partitions, split=split,
                                               batch_size=batch_size, seed=seed)
 
     # Return Client instance
