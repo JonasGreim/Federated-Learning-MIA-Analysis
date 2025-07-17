@@ -1,7 +1,7 @@
 """my-awesome-app: A Flower / PyTorch app."""
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
-from my_awesome_app.utils.split_cifar10_mia import create_split_files_hf
+from my_awesome_app.utils.split_cifar10_mia import create_split_files_hf, split_cifar10_for_target_and_shadow
 from my_awesome_app.strategies.new_strategy import FedCustom
 from my_awesome_app.utils.task import get_weights, create_model, seed_everything
 
@@ -21,11 +21,10 @@ def server_fn(context: Context):
     seed_everything(seed)
 
     # Create dataset splits if they do not exist
-    create_split_files_hf(
-        target_train_split_ratio=0.2,
-        target_test_split_ratio=0.2,
-        shadow_train_split_ratio=0.3,
-        shadow_test_split_ratio=0.3
+    split_cifar10_for_target_and_shadow(
+        target_train_ratio=0.4,
+        shadow_train_ratio=0.3,
+        shadow_test_ratio=0.3
     )
 
     # Initialize model parameters
