@@ -24,7 +24,9 @@ def split_cifar10_for_target_and_shadow(
         "D4": shadow_test_ratio,
     }
 
-    split_dir = os.path.join("splits")
+    # Create directory for splits
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    split_dir = os.path.join(root_dir, "splits")
     os.makedirs(split_dir, exist_ok=True)
 
     # Load CIFAR-10 datasets
@@ -68,9 +70,3 @@ def split_cifar10_for_target_and_shadow(
     print(f"D2: {len(dataset_test)} samples (from CIFAR-10 test set)")
 
     print("✅ CIFAR-10 custom splits created and saved.")
-
-
-split_cifar10_for_target_and_shadow(
-    target_train_ratio=0.4,
-    shadow_train_ratio=0.3,
-    shadow_test_ratio=0.3)
