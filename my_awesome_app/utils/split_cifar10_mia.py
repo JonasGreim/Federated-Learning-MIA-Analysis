@@ -5,7 +5,23 @@ from collections import defaultdict
 from datasets import load_dataset, Dataset, DatasetDict
 
 
-def create_split_files_hf() -> None:
+# Function to create CIFAR-10 splits for target model and MIA using Hugging Face datasets
+def create_split_files_hf(
+    target_train_split_ratio: float,
+    target_test_split_ratio: float,
+    shadow_train_split_ratio: float,
+    shadow_test_split_ratio: float
+) -> None:
+    total = target_train_split_ratio + target_test_split_ratio + shadow_train_split_ratio + shadow_test_split_ratio
+    assert abs(total - 1.0) < 1e-6, "Split ratios must sum to 1.0"
+
+    split_ratios = {
+        "D1": target_train_split_ratio,
+        "D2": target_test_split_ratio,
+        "D3": shadow_train_split_ratio,
+        "D4": shadow_test_split_ratio,
+    }
+
     # Define paths
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     split_dir = os.path.join(root_dir, "splits")
@@ -24,33 +40,33 @@ def create_split_files_hf() -> None:
     for label in class_indices:
         np.random.shuffle(class_indices[label])
 
-    # Build D1–D4 splits
-    D1, D2, D3, D4 = [], [], [], []
+    # Initialize index containers for splits
+    split_indices = {name: [] for name in split_ratios}
+
+    # Split per class
     for cls in range(10):
-        D1 += class_indices[cls][:1000]
-        D2 += class_indices[cls][1000:2000]
-        D3 += class_indices[cls][2000:3500]
-        D4 += class_indices[cls][3500:5000]
+        cls_indices = class_indices[cls]
+        total_cls = len(cls_indices)
+        start = 0
 
-    # Shuffle each split globally
-    for split in [D1, D2, D3, D4]:
-        np.random.shuffle(split)
+        for name, ratio in split_ratios.items():
+            count = int(ratio * total_cls)
+            split_indices[name] += cls_indices[start:start + count]
+            start += count
 
-    # Create datasets from indices
-    dataset_splits = {
-        "D1": dataset.select(D1),
-        "D2": dataset.select(D2),
-        "D3": dataset.select(D3),
-        "D4": dataset.select(D4),
-    }
+    # Shuffle indices in each split
+    for name in split_indices:
+        np.random.shuffle(split_indices[name])
 
-    # Save each split to disk (Arrow format is fast)
-    for name, ds in dataset_splits.items():
-        ds.save_to_disk(os.path.join(split_dir, f"{name}"))
-        print(f"{name}: {len(ds)} samples")
+    # Select and save datasets
+    for name, indices in split_indices.items():
+        ds_split = dataset.select(indices)
+        ds_split.save_to_disk(os.path.join(split_dir, name))
+        print(f"{name}: {len(ds_split)} samples")
 
     print("✅ Hugging Face CIFAR-10 splits created and saved.")
     # D1: train set for target model (10000 samples, 1000 per class)
     # D2: test set for target model (10000 samples, 1000 per class)
     # D3: train set for shadow model (15000 samples, 1500 per class)
     # D4: test set for shadow model (15000 samples, 1500 per class)
+

@@ -21,7 +21,12 @@ def server_fn(context: Context):
     seed_everything(seed)
 
     # Create dataset splits if they do not exist
-    create_split_files_hf()
+    create_split_files_hf(
+        target_train_split_ratio=0.2,
+        target_test_split_ratio=0.2,
+        shadow_train_split_ratio=0.3,
+        shadow_test_split_ratio=0.3
+    )
 
     # Initialize model parameters
     ndarrays = get_weights(
