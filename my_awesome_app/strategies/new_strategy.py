@@ -74,9 +74,6 @@ class FedCustom(Strategy):
         if not wandb.run:
             wandb.init(project="flower-simulation-tutorial", name=f"custom-strategy-{name}")
 
-        print(
-            f"[FedCustom] Config: lr={self.learning_rate}, data_target_model={not self.train_target_model_as_shadow_model}, device={self.device}")
-
     def __repr__(self) -> str:
         return "FedCustom"
 

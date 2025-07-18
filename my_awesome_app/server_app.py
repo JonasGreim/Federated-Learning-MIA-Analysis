@@ -21,6 +21,11 @@ def server_fn(context: Context):
     # Seed everything for reproducibility
     seed_everything(seed)
 
+    # Config: print the run_config dict
+    print("\n[Config] run_config:")
+    for k, v in context.run_config.items():
+        print(f"  {k}: {v}")
+
     # Create dataset splits if they do not exist
     split_cifar10_for_target_and_shadow(
         target_train_ratio=0.4,
