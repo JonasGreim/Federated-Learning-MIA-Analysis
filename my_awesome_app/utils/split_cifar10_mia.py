@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from collections import defaultdict
-from datasets import load_dataset, Dataset, DatasetDict
+from datasets import load_dataset
 
 
 # Function to create CIFAR-10 splits for target model and MIA using Hugging Face datasets

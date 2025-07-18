@@ -6,10 +6,10 @@ import wandb
 
 
 def log_class_distribution(
-    hf_dataset: Dataset,
-    class_names: list = None,
-    wandb_cluster_name: str = "dataset_distribution",
-    wandb_plot_prefix: str = "split"
+        hf_dataset: Dataset,
+        class_names: list = None,
+        wandb_cluster_name: str = "dataset_distribution",
+        wandb_plot_prefix: str = "split"
 ) -> None:
     try:
         labels = hf_dataset["label"]
@@ -45,7 +45,6 @@ def log_class_distribution(
     plt.tight_layout()
     wandb.log({f"{wandb_cluster_name}/{wandb_plot_prefix}_class_histogram": wandb.Image(plt)})
     plt.close()
-
 
 
 def log_training_to_wandb(history: list[dict], training_time: float, model_idx: int, root_dir: Path):

@@ -182,7 +182,7 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets: list[Data
                                      device=device)
 
         training_time = time.time() - start_time
-        log_training_to_wandb(history=history, training_time=training_time, model_idx=i, root_dir=root_dir)
+        # log_training_to_wandb(history=history, training_time=training_time, model_idx=i, root_dir=root_dir)
 
         print(f"⏱️ Shadow Model {i + 1} Training Time: {training_time:.2f} seconds")
 
