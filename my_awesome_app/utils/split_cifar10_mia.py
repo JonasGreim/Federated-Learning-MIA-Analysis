@@ -1,7 +1,8 @@
-import os
 import numpy as np
 from collections import defaultdict
 from datasets import load_dataset
+from path_settings import SPLITS_DIR, ensure_dir_exist
+from pathlib import Path
 
 
 # Function to create CIFAR-10 splits for target model and MIA using Hugging Face datasets
@@ -11,7 +12,8 @@ from datasets import load_dataset
 def split_cifar10_for_target_and_shadow(
         target_train_ratio: float,
         shadow_train_ratio: float,
-        shadow_test_ratio: float
+        shadow_test_ratio: float,
+        split_save_dir: Path = SPLITS_DIR
 ) -> None:
     # The remaining ratio must be ≤ 1.0 since D2 comes from test set
     total_ratio = target_train_ratio + shadow_train_ratio + shadow_test_ratio
@@ -24,9 +26,7 @@ def split_cifar10_for_target_and_shadow(
     }
 
     # Create directory for splits
-    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    split_dir = os.path.join(root_dir, "splits")
-    os.makedirs(split_dir, exist_ok=True)
+    ensure_dir_exist(split_save_dir)
 
     # Load CIFAR-10 datasets
     dataset_train = load_dataset("cifar10", split="train")  # 50,000
@@ -61,11 +61,10 @@ def split_cifar10_for_target_and_shadow(
     # Save D1, D3, D4 from training set
     for name, indices in split_indices.items():
         ds_split = dataset_train.select(indices)
-        ds_split.save_to_disk(os.path.join(split_dir, name))
+        ds_split.save_to_disk(split_save_dir / name)
         print(f"{name}: {len(ds_split)} samples")
 
     # Save D2 directly from test set
-    dataset_test.save_to_disk(os.path.join(split_dir, "D2"))
+    dataset_test.save_to_disk(split_save_dir / "D2")
     print(f"D2: {len(dataset_test)} samples (from CIFAR-10 test set)")
-
-    print("✅ CIFAR-10 custom splits created and saved.")
+    print(f"✅ CIFAR-10 custom splits created and saved in: {split_save_dir.resolve()}")

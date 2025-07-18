@@ -5,8 +5,6 @@ import yaml
 from datasets import load_from_disk, Dataset
 from torch.utils.data import DataLoader
 import numpy as np
-import os
-import glob
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
@@ -18,26 +16,24 @@ from collections import defaultdict
 import re
 import time
 import hydra
-from pathlib import Path
 import wandb
 from omegaconf import OmegaConf
-from my_awesome_app.utils.wandb_logging import log_training_to_wandb, log_per_class_metrics, \
+from my_awesome_app.utils.wandb_logging_mia import log_training_to_wandb, log_per_class_metrics, \
     log_overall_metrics_with_error_bars, log_class_distribution
+from path_settings import ROOT_DIR
 
 
 # === Utility Functions ===
 def load_data(config: MiaConfig) -> tuple[Dataset, Dataset, Dataset, Dataset]:
-    root_dir = Path(config.paths.current_root).parent
-    split_dir = config.paths.split_dir
-    split_dir_path = os.path.join(root_dir, split_dir)
+    split_dir_path = ROOT_DIR / config.paths.split_dir
     class_names = config.parameters_static.class_names
 
     # Load datasets from disk -> run split script before running this: split_cifar10_mia.py (auto. run by target model)
     try:
-        target_train_hf = load_from_disk(os.path.join(split_dir_path, "D1"))
-        target_test_hf = load_from_disk(os.path.join(split_dir_path, "D2"))
-        shadow_train_hf = load_from_disk(os.path.join(split_dir_path, "D3"))
-        shadow_test_hf = load_from_disk(os.path.join(split_dir_path, "D4"))
+        target_train_hf = load_from_disk(split_dir_path / "D1")
+        target_test_hf = load_from_disk(split_dir_path / "D2")
+        shadow_train_hf = load_from_disk(split_dir_path / "D3")
+        shadow_test_hf = load_from_disk(split_dir_path / "D4")
     except Exception as e:
         raise RuntimeError(f"MIA: Failed to load datasets from disk: {e}") from e
 
@@ -158,7 +154,6 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets: list[Data
     learning_rate_decay = config.parameters_static.learning_rate_decay
     num_workers = config.parameters_static.num_workers
     model_name = config.parameters.model_arch
-    root_dir = Path(config.paths.current_root).parent
 
     per_shadow_per_class_data = []
     transform = get_transforms_custom()
@@ -182,7 +177,7 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets: list[Data
                                      device=device)
 
         training_time = time.time() - start_time
-        # log_training_to_wandb(history=history, training_time=training_time, model_idx=i, root_dir=root_dir)
+        # log_training_to_wandb(history=history, training_time=training_time, model_idx=i)
 
         print(f"⏱️ Shadow Model {i + 1} Training Time: {training_time:.2f} seconds")
 
@@ -275,12 +270,11 @@ def evaluate_attack_models(attack_models: dict, scalers: dict, target_train: Dat
     batch_size = config.parameters_static.batch_size
     num_classes = config.parameters.num_classes
     target_checkpoint_dir = config.paths.target_checkpoint_dir
-    root_dir = Path(config.paths.current_root).parent
     model_name = config.parameters.model_arch
     class_names = config.parameters_static.class_names
     num_workers = config.parameters_static.num_workers
 
-    target_model = load_highest_round_number_target_model(root_dir, target_checkpoint_dir, model_name, device)
+    target_model = load_highest_round_number_target_model(target_checkpoint_dir, model_name, device)
 
     transform = get_transforms_custom()
     target_train_torch = HFDatasetToTorch(target_train, transform=transform)
@@ -399,12 +393,13 @@ def evaluate_attack_models(attack_models: dict, scalers: dict, target_train: Dat
     )
 
 
-def load_highest_round_number_target_model(root_dir: Path, target_checkpoint_dir: str, model_name: str, device: torch.device) -> nn.Module:
+def load_highest_round_number_target_model(target_checkpoint_dir: str, model_name: str, device: torch.device) -> nn.Module:
     release_model(None, device.type)
     model = create_model(model_name)
 
     # Get all checkpoint paths
-    checkpoint_paths = glob.glob(os.path.join(root_dir, target_checkpoint_dir, "global_model_round_*.pth"))
+    checkpoint_dir = ROOT_DIR / target_checkpoint_dir
+    checkpoint_paths = list(checkpoint_dir.glob("global_model_round_*.pth"))
 
     if not checkpoint_paths:
         raise FileNotFoundError("No checkpoint files found.")
@@ -412,7 +407,7 @@ def load_highest_round_number_target_model(root_dir: Path, target_checkpoint_dir
     # Extract round numbers and map to paths
     checkpoints_with_rounds = []
     for path in checkpoint_paths:
-        match = re.search(r'global_model_round_(\d+)\.pth', os.path.basename(path))
+        match = re.search(r'global_model_round_(\d+)\.pth', path.name)
         if match:
             round_number = int(match.group(1))
             checkpoints_with_rounds.append((round_number, path))
@@ -440,7 +435,7 @@ def load_config(config_path: str) -> dict:
 def main(config: MiaConfig):
     print(f"\n🚀 Running experiment with config: {config}\n")
     # Initialize wandb run
-    wandb.init(project="mia-shadow-attack", config=OmegaConf.to_container(config, resolve=True), name="mia_run", dir=Path(config.paths.current_root).parent)
+    wandb.init(project="mia-shadow-attack", config=OmegaConf.to_container(config, resolve=True), name="mia_run", dir=ROOT_DIR)
 
     seed_everything(config.parameters_static.seed)
     requested_device = config.parameters_static.device

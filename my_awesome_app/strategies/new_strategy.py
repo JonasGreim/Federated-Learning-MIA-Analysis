@@ -20,11 +20,18 @@ from typing import Optional, List, Tuple, Dict
 from my_awesome_app.utils.huggingface_to_pytorch import HFDatasetToTorch
 from my_awesome_app.utils.task import set_weights, test, create_model, get_transforms_custom, release_model
 from torch.utils.data import DataLoader
-import os
 import wandb
 import json
 import torch
 from datetime import datetime
+from path_settings import (
+    CHECKPOINTS_DIR_TARGET,
+    CHECKPOINTS_DIR_SHADOW,
+    D2_SPLIT_PATH,
+    D4_SPLIT_PATH,
+    METRICS_DIR,
+    ensure_dir_exist,
+)
 
 
 class FedCustom(Strategy):
@@ -67,7 +74,8 @@ class FedCustom(Strategy):
         if not wandb.run:
             wandb.init(project="flower-simulation-tutorial", name=f"custom-strategy-{name}")
 
-        print(f"[FedCustom] Config: lr={self.learning_rate}, data_target_model={not self.train_target_model_as_shadow_model}, device={self.device}")
+        print(
+            f"[FedCustom] Config: lr={self.learning_rate}, data_target_model={not self.train_target_model_as_shadow_model}, device={self.device}")
 
     def __repr__(self) -> str:
         return "FedCustom"
@@ -158,12 +166,12 @@ class FedCustom(Strategy):
 
         # save global model from shadow and target model in the standard PyTorch way
         if self.train_target_model_as_shadow_model:
-            save_dir = "model_checkpoints_shadow"
+            save_dir = CHECKPOINTS_DIR_SHADOW
         else:
-            save_dir = "model_checkpoints_target"
+            save_dir = CHECKPOINTS_DIR_TARGET
 
-        os.makedirs(save_dir, exist_ok=True)
-        model_path = os.path.join(save_dir, f"global_model_round_{server_round}.pth")
+        ensure_dir_exist(save_dir)
+        model_path = save_dir / f"global_model_round_{server_round}.pth"
         torch.save(model.state_dict(), model_path)
         release_model(model, self.device.type)
         return parameters_aggregated, metrics_aggregated
@@ -205,9 +213,9 @@ class FedCustom(Strategy):
         """Evaluate global model parameters using an evaluation function."""
 
         if self.train_target_model_as_shadow_model:
-            split = "splits/D4"
+            split = D4_SPLIT_PATH
         else:
-            split = "splits/D2"
+            split = D2_SPLIT_PATH
 
         try:
             test_split_dataset = load_from_disk(split)
@@ -228,8 +236,8 @@ class FedCustom(Strategy):
         self.result_to_json_global_model_test[server_round] = result
 
         # save metrics as json
-        os.makedirs("metrics_of_run", exist_ok=True)
-        with open("metrics_of_run/results.json", 'w') as json_file:
+        ensure_dir_exist(METRICS_DIR)
+        with open(METRICS_DIR / "results.json", "w") as json_file:
             json.dump(self.result_to_json_global_model_test, json_file, indent=4)
 
         # log to W&B (also json metrics)

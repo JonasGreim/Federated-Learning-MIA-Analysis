@@ -4,6 +4,7 @@ import torch
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
 from my_awesome_app.utils.task import get_weights, set_weights, test, train, create_model, load_data_custom, seed_everything
+from path_settings import D3_SPLIT_PATH, D1_SPLIT_PATH
 
 
 # Define Flower Client and client_fn
@@ -63,9 +64,9 @@ def client_fn(context: Context):
     net = create_model(model_name)
 
     if train_target_model_as_shadow_model:
-        split = "splits/D3"
+        split = D3_SPLIT_PATH
     else:
-        split = "splits/D1"
+        split = D1_SPLIT_PATH
 
     trainloader, valloader = load_data_custom(iid=iid, dirichlet_alpha=alpha, partition_id=partition_id, num_partitions=num_partitions, split=split,
                                               batch_size=batch_size, seed=seed)

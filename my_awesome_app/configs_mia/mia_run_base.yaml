@@ -20,4 +20,3 @@ parameters_static:
 paths:
   target_checkpoint_dir: "model_checkpoints_target"
   split_dir: "splits" # directory should lay in root
-  current_root: "${hydra:runtime.cwd}"

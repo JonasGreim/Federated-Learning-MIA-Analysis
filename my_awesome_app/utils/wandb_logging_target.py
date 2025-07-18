@@ -1,12 +1,11 @@
-import os
 from flwr_datasets.visualization import plot_label_distributions
+from path_settings import METRICS_DIR, ensure_dir_exist
+from pathlib import Path
 
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-
-def visualize_label_distribution(partitioner, output_dir: str):
+def visualize_label_distribution(partitioner, output_dir: Path = METRICS_DIR):
     """Save bar and heatmap plots of label distribution per partition."""
-    os.makedirs(output_dir, exist_ok=True)
+    ensure_dir_exist(output_dir)
 
     fig_bar, _, _ = plot_label_distributions(
         partitioner,
@@ -31,5 +30,5 @@ def visualize_label_distribution(partitioner, output_dir: str):
         plot_kwargs={"annot": True},
     )
 
-    fig_bar.savefig(os.path.join(ROOT_DIR, output_dir, "bar_label_distribution.png"), dpi=300)
-    fig_heatmap.savefig(os.path.join(ROOT_DIR, output_dir, "heatmap_label_distribution.png"), dpi=300)
+    fig_bar.savefig(output_dir / "bar_label_distribution.png", dpi=300)
+    fig_heatmap.savefig(output_dir / "heatmap_label_distribution.png", dpi=300)

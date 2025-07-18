@@ -18,6 +18,8 @@ import numpy as np
 from sklearn.utils import check_random_state
 from my_awesome_app.utils.huggingface_to_pytorch import HFDatasetToTorch
 from my_awesome_app.utils.wandb_logging_target import visualize_label_distribution
+from pathlib import Path
+from path_settings import METRICS_DIR
 
 
 def create_model(model_name) -> nn.Module:
@@ -42,7 +44,7 @@ def get_transforms_custom() -> transforms.Compose:
     ])
 
 
-def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_partitions: int, split: str, batch_size: int, seed: int) -> tuple[DataLoader, DataLoader]:
+def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_partitions: int, split: Path, batch_size: int, seed: int) -> tuple[DataLoader, DataLoader]:
     try:
         split_dataset = load_from_disk(split)
     except Exception as e:
@@ -66,7 +68,7 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
     partitioner.dataset = split_dataset
     client_dataset = partitioner.load_partition(partition_id=partition_id)
 
-    visualize_label_distribution(partitioner, "metrics_of_run")
+    visualize_label_distribution(partitioner, METRICS_DIR)
 
     data_split = client_dataset.train_test_split(test_size=0.2, seed=seed)
 

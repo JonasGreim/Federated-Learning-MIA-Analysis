@@ -7,7 +7,6 @@ class Paths:
     target_checkpoint_dir: str
     data_dir: str
     split_dir: str
-    current_root: str
 
 
 @dataclass

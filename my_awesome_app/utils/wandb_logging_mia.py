@@ -3,6 +3,7 @@ from datasets import Dataset
 from collections import Counter
 import matplotlib.pyplot as plt
 import wandb
+from path_settings import WANDB_DIR
 
 
 def log_class_distribution(
@@ -47,7 +48,7 @@ def log_class_distribution(
     plt.close()
 
 
-def log_training_to_wandb(history: list[dict], training_time: float, model_idx: int, root_dir: Path):
+def log_training_to_wandb(history: list[dict], training_time: float, model_idx: int, root_dir: Path = WANDB_DIR):
     run = wandb.init(
         project="mia-shadow-attack",
         name=f"shadow_model_{model_idx}_training",
