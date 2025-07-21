@@ -17,9 +17,7 @@ import numpy as np
 from sklearn.utils import check_random_state
 from my_awesome_app.models.shokri_simple_cnn_with_dropout import SimpleCnnWithDropout
 from my_awesome_app.utils.huggingface_to_pytorch import HFDatasetToTorch
-from my_awesome_app.utils.wandb_logging_target import visualize_label_distribution
 from pathlib import Path
-from path_settings import METRICS_DIR
 
 
 def create_model(model_name) -> nn.Module:
@@ -39,7 +37,7 @@ def get_transforms_custom() -> transforms.Compose:
     return transforms.Compose([
         transforms.ToTensor(),
         # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        # Normalize with CIFAR-10 mean and std (shokri does not use normalization -> better overfitting)
+        # Normalize with CIFAR-10 mean and std
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     ])
 
@@ -67,8 +65,6 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
 
     partitioner.dataset = split_dataset
     client_dataset = partitioner.load_partition(partition_id=partition_id)
-
-    visualize_label_distribution(partitioner, METRICS_DIR)
 
     data_split = client_dataset.train_test_split(test_size=0.2, seed=seed)
 

@@ -20,10 +20,9 @@ from typing import Optional, List, Tuple, Dict
 from my_awesome_app.utils.huggingface_to_pytorch import HFDatasetToTorch
 from my_awesome_app.utils.task import set_weights, test, create_model, get_transforms_custom, release_model
 from torch.utils.data import DataLoader
-import wandb
 import json
 import torch
-from datetime import datetime
+from my_awesome_app.utils.wandb_logging_target import wandb_log_metrics
 from path_settings import (
     CHECKPOINTS_DIR_TARGET,
     CHECKPOINTS_DIR_SHADOW,
@@ -72,10 +71,6 @@ class FedCustom(Strategy):
         self.model_name = model_name
         self.batch_size = batch_size
 
-        name = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        if not wandb.run:
-            wandb.init(project="flower-simulation-tutorial", name=f"custom-strategy-{name}")
-
     def __repr__(self) -> str:
         return "FedCustom"
 
@@ -102,7 +97,7 @@ class FedCustom(Strategy):
             num_clients=sample_size, min_num_clients=min_num_clients
         )
 
-        # Single learning rate for all clients
+        # spread fit parameters and config to clients
         config = {"lr": self.learning_rate, "lr_decay": self.lr_decay, "weight_decay": self.weight_decay}
         return [(client, FitIns(parameters, config)) for client in clients]
 
@@ -154,7 +149,7 @@ class FedCustom(Strategy):
         )
         metrics_aggregated = {"client_weighted_train_loss": loss_aggregated,
                               "client_weighted_train_accuracy": accuracy_aggregated}
-        wandb.log(metrics_aggregated, step=server_round)
+        wandb_log_metrics(metrics=metrics_aggregated, step=server_round)
 
         aggregated_ndarrays = aggregate(weights_results)
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
@@ -202,7 +197,8 @@ class FedCustom(Strategy):
 
         metrics_aggregated = {"client_weighted_evaluate_loss": loss_aggregated,
                               "client_weighted_evaluate_accuracy": accuracy_aggregated}
-        wandb.log(metrics_aggregated, step=server_round)
+
+        wandb_log_metrics(metrics=metrics_aggregated, step=server_round)
 
         return loss_aggregated, metrics_aggregated
 
@@ -240,7 +236,7 @@ class FedCustom(Strategy):
             json.dump(self.result_to_json_global_model_test, json_file, indent=4)
 
         # log to W&B (also json metrics)
-        wandb.log(result, step=server_round)
+        wandb_log_metrics(metrics=result, step=server_round)
         release_model(net, self.device.type)
         return loss, result
 

@@ -4,6 +4,8 @@ from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from my_awesome_app.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
 from my_awesome_app.strategies.new_strategy import FedCustom
 from my_awesome_app.utils.task import get_weights, create_model, seed_everything
+from my_awesome_app.utils.wandb_logging_target import run_data_partitioning_for_visualization, initialize_wandb_run
+from path_settings import D1_SPLIT_PATH
 
 
 def server_fn(context: Context):
@@ -27,12 +29,24 @@ def server_fn(context: Context):
     for k, v in context.run_config.items():
         print(f"  {k}: {v}")
 
+    initialize_wandb_run("flower_mia", "flower_mia_custom_strategy")
+
     # Create dataset splits if they do not exist
     split_cifar10_for_target_and_shadow(
         target_train_ratio=0.4,
         shadow_train_ratio=0.3,
         shadow_test_ratio=0.3
     )
+
+    # Run data partitioning for visualization
+    iid = context.run_config.get("iid_data_distribution", True)
+    dirichlet_alpha = context.run_config.get("dirichlet_alpha", 0.5)
+    num_clients = context.run_config.get("num_clients", 5)
+    run_data_partitioning_for_visualization(iid=iid,
+                                            dirichlet_alpha=dirichlet_alpha,
+                                            num_partitions=num_clients,
+                                            split=D1_SPLIT_PATH,
+                                            seed=seed)
 
     # Initialize model parameters
     ndarrays = get_weights(
