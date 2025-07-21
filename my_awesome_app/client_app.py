@@ -25,6 +25,7 @@ class FlowerClient(NumPyClient):
             self.local_epochs,
             config['lr'],
             config['lr_decay'],
+            config['weight_decay'],
             self.device,
         )
 

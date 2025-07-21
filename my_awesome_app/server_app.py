@@ -12,6 +12,7 @@ def server_fn(context: Context):
     fraction_fit = context.run_config.get("fraction_fit", 1.0)  # weird error that fraction_fit is not in run_config
     learning_rate = context.run_config["learning-rate"]
     lr_decay = context.run_config.get("learning-rate-decay", 0.0)
+    weight_decay = context.run_config.get("weight-decay", 0.0)
     train_target_model_as_shadow_model = context.run_config["train_target_model_as_shadow_model"]
     device = context.run_config["device"]
     seed = context.run_config.get("seed", 42)
@@ -45,6 +46,7 @@ def server_fn(context: Context):
         initial_parameters=parameters,
         learning_rate=learning_rate,
         lr_decay=lr_decay,
+        weight_decay=weight_decay,
         train_target_model_as_shadow_model=train_target_model_as_shadow_model,
         device=device,
         model_name=model_name,

@@ -6,6 +6,7 @@ parameters:
   shadow_epochs: 40
   train_size: 100 # Size of train/test sets for shadow models (>15.000 samples would be with duplicates)
   test_size: 100
+  weight_decay: 0.0  # shokri used 0.0, 5e-4 is common for federated learning
 
 
 parameters_static:

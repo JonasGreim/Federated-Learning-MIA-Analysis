@@ -46,6 +46,7 @@ class FedCustom(Strategy):
             initial_parameters: Optional[Parameters] = None,
             learning_rate: float = 0.001,
             lr_decay: float = 0.0,
+            weight_decay: float = 0.0,
             train_target_model_as_shadow_model: bool = False,
             device: str = "cpu",
             model_name: str = "mia_paper",
@@ -64,6 +65,7 @@ class FedCustom(Strategy):
         self.initial_parameters = initial_parameters
         self.learning_rate = learning_rate
         self.lr_decay = lr_decay
+        self.weight_decay = weight_decay
         self.train_target_model_as_shadow_model = train_target_model_as_shadow_model
         self.result_to_json_global_model_test = {}
         self.device = torch.device(device)
@@ -101,7 +103,7 @@ class FedCustom(Strategy):
         )
 
         # Single learning rate for all clients
-        config = {"lr": self.learning_rate, "lr_decay": self.lr_decay}
+        config = {"lr": self.learning_rate, "lr_decay": self.lr_decay, "weight_decay": self.weight_decay}
         return [(client, FitIns(parameters, config)) for client in clients]
 
     def configure_evaluate(

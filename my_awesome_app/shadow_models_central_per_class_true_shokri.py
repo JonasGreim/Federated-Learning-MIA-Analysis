@@ -80,9 +80,9 @@ def sample_shadow_datasets_with_overlap(shadow_train_dataset: Dataset, shadow_te
     return shadow_train_sets, shadow_test_sets
 
 
-def train_model(model: nn.Module, dataloader: DataLoader, epochs: int, learning_rate: float, learning_rate_decay: float, device: torch.device) -> tuple[nn.Module, list[dict]]:
+def train_model(model: nn.Module, dataloader: DataLoader, epochs: int, learning_rate: float, learning_rate_decay: float, weight_decay: float, device: torch.device) -> tuple[nn.Module, list[dict]]:
     model = model.to(device)
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=0.9)
     scheduler = torch.optim.lr_scheduler.LambdaLR(
         optimizer,
         lr_lambda=lambda e: 1 / (1 + learning_rate_decay * e)
@@ -154,6 +154,7 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets: list[Data
     learning_rate_decay = config.parameters_static.learning_rate_decay
     num_workers = config.parameters_static.num_workers
     model_name = config.parameters.model_arch
+    weight_decay = config.parameters.weight_decay
 
     per_shadow_per_class_data = []
     transform = get_transforms_custom()
@@ -174,7 +175,7 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets: list[Data
         start_time = time.time()
         model, history = train_model(model=model_arch, dataloader=train_loader, epochs=shadow_epochs,
                                      learning_rate=learning_rate, learning_rate_decay=learning_rate_decay,
-                                     device=device)
+                                     weight_decay=weight_decay, device=device)
 
         training_time = time.time() - start_time
         # log_training_to_wandb(history=history, training_time=training_time, model_idx=i)

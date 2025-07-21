@@ -8,11 +8,9 @@ import torch
 import torch.nn as nn
 from datasets import load_from_disk
 from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner
-
 from my_awesome_app.models.resnet_18_cifar import ResNet18
 from my_awesome_app.models.resnet_18_cifar_with_dropout import ResNet18WithDropout
 from my_awesome_app.models.shokri_simple_cnn import SimpleCnn
-from my_awesome_app.models.resnet_18 import create_resnet18_model
 from torch.utils.data import DataLoader
 from torchvision import transforms
 import numpy as np
@@ -89,11 +87,11 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
     return trainloader, testloader
 
 
-def train(net, trainloader, epochs, lr, lr_decay, device) -> tuple[float, float]:
+def train(net, trainloader, epochs, lr, lr_decay, weight_decay, device) -> tuple[float, float]:
     """Train the model on the training set."""
     net.to(device)  # move model to GPU if available
     criterion = torch.nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.SGD(net.parameters(), lr=lr)
+    optimizer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=weight_decay, momentum=0.9)
     net.train()
 
     # Learning rate decay matching paper: decay = 1e-7

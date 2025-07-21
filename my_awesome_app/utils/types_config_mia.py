@@ -21,6 +21,8 @@ class Parameters:
     train_size: int
     test_size: int
 
+    weight_decay: float
+
 
 @dataclass
 class ParametersStatic:
