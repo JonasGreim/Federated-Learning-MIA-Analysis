@@ -34,7 +34,7 @@ clientapp = "my_awesome_app.client_app:app"
 [tool.flwr.app.config]
 num-server-rounds = 50 # number of rounds for the server (shokri used 100 but with central training)
 local-epochs = 20 # clients train for 1 epoch per round
-learning-rate = 0.001 # shokri used 0.001
+learning-rate = 0.01 # shokri used 0.001
 learning-rate-decay = 1e-7 # shokri used 1e-7
 weight_decay = 0.0 # shokri used 0.0, 5e-4 is common for federated learning
 batch_size = 32
