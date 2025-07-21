@@ -48,6 +48,7 @@ def log_class_distribution(
     plt.close()
 
 
+# Not working -> wandb sub process cancels main wandb run & couldn't include in main run because of a global counter conflict
 def log_training_to_wandb(history: list[dict], training_time: float, model_idx: int, root_dir: Path = WANDB_DIR):
     run = wandb.init(
         project="mia-shadow-attack",
