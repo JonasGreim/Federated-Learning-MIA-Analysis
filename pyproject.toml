@@ -39,7 +39,8 @@ learning-rate-decay = 1e-7 # shokri used 1e-7
 batch_size = 32
 fraction-fit = 1.0  # all clients participate in each round
 device = "cuda" # <-- "cpu" or "cuda"
-model = "mia_paper" # <-- loader defined in tasks.create_model()
+# loader defined in tasks.create_model()
+model = "simple_model" # <-- simple_model, simple_model_with_dropout, complex_model, complex_model_with_dropout
 train_target_model_as_shadow_model = false
 seed = 42
 iid_data_distribution = true # if true, data is distributed iid among clients

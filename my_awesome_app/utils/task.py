@@ -8,14 +8,16 @@ import torch
 import torch.nn as nn
 from datasets import load_from_disk
 from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner
-from my_awesome_app.models.complex_model import NetComplex
-from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
+
+from my_awesome_app.models.resnet_18_cifar import ResNet18
+from my_awesome_app.models.resnet_18_cifar_with_dropout import ResNet18WithDropout
+from my_awesome_app.models.shokri_simple_cnn import SimpleCnn
 from my_awesome_app.models.resnet_18 import create_resnet18_model
-from my_awesome_app.models.simple_model import NetSimple
 from torch.utils.data import DataLoader
 from torchvision import transforms
 import numpy as np
 from sklearn.utils import check_random_state
+from my_awesome_app.models.shokri_simple_cnn_with_dropout import SimpleCnnWithDropout
 from my_awesome_app.utils.huggingface_to_pytorch import HFDatasetToTorch
 from my_awesome_app.utils.wandb_logging_target import visualize_label_distribution
 from pathlib import Path
@@ -23,14 +25,14 @@ from path_settings import METRICS_DIR
 
 
 def create_model(model_name) -> nn.Module:
-    if model_name == "complex_model":
-        return NetComplex()
-    elif model_name == "simple_model":
-        return NetSimple()
-    elif model_name == "mia_paper":
-        return SimpleCNN()
-    elif model_name == "resnet18":
-        return create_resnet18_model()
+    if model_name == "simple_model":
+        return SimpleCnn()
+    elif model_name == "simple_model_with_dropout":
+        return SimpleCnnWithDropout()
+    elif model_name == "complex_model":
+        return ResNet18()
+    elif model_name == "complex_model_with_dropout":
+        return ResNet18WithDropout()
     else:
         raise ValueError(f"Unknown model name: {model_name}")
 
