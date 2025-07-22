@@ -69,7 +69,7 @@ def visualize_label_distribution(partitioner, output_dir: Path = METRICS_DIR):
     wandb.log({
         "Label Distribution Bar": wandb.Image(fig_bar),
         "Label Distribution Heatmap": wandb.Image(fig_heatmap)
-    })
+    }, step=0)
 
 
 def initialize_wandb_run(project_name: str, run_name: str):
