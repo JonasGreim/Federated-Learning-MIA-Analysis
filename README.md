@@ -124,5 +124,5 @@ wandb login
 
 Flower run different configs:
 ```
-flwr run . local-simulation-gpu --run-config 'num-server-rounds=1 local-epochs=1'
+flwr run . --run-config 'num-server-rounds=1 local-epochs=1'
 ```

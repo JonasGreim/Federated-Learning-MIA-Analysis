@@ -9,6 +9,7 @@ metrics_of_run
 global_model_round_*
 results.json
 splits
+outputs
 
 membership_inference_attack/outputs
 # Flower directory

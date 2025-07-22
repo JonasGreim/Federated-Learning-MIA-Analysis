@@ -6,6 +6,8 @@ import wandb
 from path_settings import WANDB_DIR
 
 
+# all wandb logging is executed from the server side (server collects all metrics from clients)
+
 def log_class_distribution(
         hf_dataset: Dataset,
         class_names: list = None,

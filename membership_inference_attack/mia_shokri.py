@@ -45,7 +45,8 @@ def load_data(config: MiaConfig) -> tuple[Dataset, Dataset, Dataset, Dataset]:
     return shadow_train_hf, target_train_hf, target_test_hf, shadow_test_hf
 
 
-def sample_shadow_datasets_with_overlap(shadow_train_dataset: Dataset, shadow_test_dataset: Dataset, config: MiaConfig) -> tuple[list[Dataset], list[Dataset]]:
+def sample_shadow_datasets_with_overlap(shadow_train_dataset: Dataset, shadow_test_dataset: Dataset,
+                                        config: MiaConfig) -> tuple[list[Dataset], list[Dataset]]:
     # Sample shadow train and test datasets from the shadow data train/test pool
     # Sample without duplicates, but with overlap between shadow model datasets
     num_shadow_models = config.parameters.num_shadow_models
@@ -82,7 +83,8 @@ def sample_shadow_datasets_with_overlap(shadow_train_dataset: Dataset, shadow_te
     return shadow_train_sets, shadow_test_sets
 
 
-def train_model(model: nn.Module, dataloader: DataLoader, epochs: int, learning_rate: float, learning_rate_decay: float, weight_decay: float, device: torch.device) -> tuple[nn.Module, list[dict]]:
+def train_model(model: nn.Module, dataloader: DataLoader, epochs: int, learning_rate: float, learning_rate_decay: float,
+                weight_decay: float, device: torch.device) -> tuple[nn.Module, list[dict]]:
     model = model.to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay, momentum=0.9)
     scheduler = torch.optim.lr_scheduler.LambdaLR(
@@ -126,7 +128,8 @@ def train_model(model: nn.Module, dataloader: DataLoader, epochs: int, learning_
     return model, history
 
 
-def extract_features_by_class(model: nn.Module, dataloader: DataLoader, label_indicator: int, num_classes: int, device: torch.device) -> dict:
+def extract_features_by_class(model: nn.Module, dataloader: DataLoader, label_indicator: int, num_classes: int,
+                              device: torch.device) -> dict:
     model.eval()
     class_features = defaultdict(list)
 
@@ -147,7 +150,9 @@ def extract_features_by_class(model: nn.Module, dataloader: DataLoader, label_in
     return class_features
 
 
-def train_all_shadow_models_and_collect_features(shadow_train_subsets: list[Dataset], shadow_test_subsets: list[Dataset], config: MiaConfig, device: torch.device) -> list[dict]:
+def train_all_shadow_models_and_collect_features(shadow_train_subsets: list[Dataset],
+                                                 shadow_test_subsets: list[Dataset], config: MiaConfig,
+                                                 device: torch.device) -> list[dict]:
     seed = config.parameters_static.seed
     num_classes = config.parameters.num_classes
     batch_size = config.parameters_static.batch_size
@@ -269,7 +274,8 @@ def train_per_class_attack_models(per_shadow_per_class_data: list, config: MiaCo
     return attack_models, scalers
 
 
-def evaluate_attack_models(attack_models: dict, scalers: dict, target_train: Dataset, target_test: Dataset, config: MiaConfig, device: torch.device) -> None:
+def evaluate_attack_models(attack_models: dict, scalers: dict, target_train: Dataset, target_test: Dataset,
+                           config: MiaConfig, device: torch.device) -> None:
     batch_size = config.parameters_static.batch_size
     num_classes = config.parameters.num_classes
     target_checkpoint_dir = config.paths.target_checkpoint_dir
@@ -396,7 +402,8 @@ def evaluate_attack_models(attack_models: dict, scalers: dict, target_train: Dat
     )
 
 
-def load_highest_round_number_target_model(target_checkpoint_dir: str, model_name: str, device: torch.device) -> nn.Module:
+def load_highest_round_number_target_model(target_checkpoint_dir: str, model_name: str,
+                                           device: torch.device) -> nn.Module:
     release_model(None, device.type)
     model = create_model(model_name)
 
@@ -434,11 +441,11 @@ def load_config(config_path: str) -> dict:
         return yaml.safe_load(f)
 
 
-@hydra.main(version_base=None, config_path="configs_mia", config_name="mia_run_base.yaml")
-def main(config: MiaConfig):
+def run_mia(config: MiaConfig):
     print(f"\n🚀 Running experiment with config: {config}\n")
     # Initialize wandb run
-    wandb.init(project="mia-shadow-attack", config=OmegaConf.to_container(config, resolve=True), name="mia_run", dir=ROOT_DIR)
+    wandb.init(project="mia-shadow-attack", config=OmegaConf.to_container(config, resolve=True), name="mia_run",
+               dir=ROOT_DIR)
 
     seed_everything(config.parameters_static.seed)
     requested_device = config.parameters_static.device
@@ -471,4 +478,4 @@ def main(config: MiaConfig):
 
 
 if __name__ == "__main__":
-    main()
+    run_mia()

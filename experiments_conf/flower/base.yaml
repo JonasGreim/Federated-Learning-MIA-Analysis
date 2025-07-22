@@ -1,0 +1,9 @@
+num_server_rounds: 50
+local_epochs: 20
+weight_decay: 0.0
+fraction_fit: 1.0
+device: "cuda"
+model: "simple_model"
+iid_data_distribution: true
+dirichlet_alpha: 0.5
+num_clients: 4

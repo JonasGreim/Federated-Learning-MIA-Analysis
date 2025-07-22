@@ -1,5 +1,5 @@
 defaults:
-  - /mia_run_base
+  - base
 
 parameters:
   train_size: 100

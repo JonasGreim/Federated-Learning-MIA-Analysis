@@ -12,6 +12,7 @@ CHECKPOINTS_DIR_SHADOW = ROOT_DIR / "model_checkpoints_shadow"
 OUTPUTS_DIR = ROOT_DIR / "outputs"
 WANDB_DIR = ROOT_DIR / "wandb"
 SPLITS_DIR = ROOT_DIR / "splits"
+EXPERIMENTS_CONF_DIR = ROOT_DIR / "experiments_conf"
 
 # Config or metadata paths
 PYPROJECT_PATH = ROOT_DIR / "pyproject.toml"

@@ -4,8 +4,8 @@ parameters:
   # loader defined in utils.model_factory.create_model
   model_arch: "simple_model" # <-- simple_model, simple_model_with_dropout, complex_model, complex_model_with_dropout
   shadow_epochs: 40
-  train_size: 100 # Size of train/test sets for shadow models (>15.000 samples would be with duplicates)
-  test_size: 100
+  train_size: 1000 # Size of train/test sets for shadow models (>15.000 samples would be with duplicates)
+  test_size: 1000 # usually 10.000
   weight_decay: 0.0  # shokri used 0.0, 5e-4 is common for federated learning
 
 
