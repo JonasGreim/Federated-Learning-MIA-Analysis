@@ -16,13 +16,16 @@ from flwr.server.client_proxy import ClientProxy
 from flwr.server.strategy import Strategy
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from typing import Optional, List, Tuple, Dict
-
+from flower.utils.data_loading import get_transforms_custom
 from flower.utils.huggingface_to_pytorch import HFDatasetToTorch
-from flower.utils.task import set_weights, test, create_model, get_transforms_custom, release_model
 from torch.utils.data import DataLoader
 import json
 import torch
-from flower.utils.wandb_logging_target import wandb_log_metrics
+from flower.utils.model_factory import create_model
+from flower.utils.training import test
+from flower.utils.model_utils import set_weights
+from flower.utils.reproducibility import release_model
+from flower.utils.wandb_logging import wandb_log_metrics
 from path_settings import (
     CHECKPOINTS_DIR_TARGET,
     CHECKPOINTS_DIR_SHADOW,

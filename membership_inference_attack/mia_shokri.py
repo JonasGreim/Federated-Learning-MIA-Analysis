@@ -9,16 +9,18 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 from sklearn.utils import resample
+from flower.utils.data_loading import get_transforms_custom
 from flower.utils.huggingface_to_pytorch import HFDatasetToTorch
-from flower.utils.types_config_mia import MiaConfig
-from flower.utils.task import get_transforms_custom, seed_everything, seed_worker, release_model, create_model
+from flower.utils.reproducibility import seed_worker, release_model, seed_everything
+from flower.utils.model_factory import create_model
+from membership_inference_attack.utils.types_config_mia import MiaConfig
 from collections import defaultdict
 import re
 import time
 import hydra
 import wandb
 from omegaconf import OmegaConf
-from flower.utils.wandb_logging_mia import log_training_to_wandb, log_per_class_metrics, \
+from membership_inference_attack.utils.wandb_logging_mia import log_per_class_metrics, \
     log_overall_metrics_with_error_bars, log_class_distribution
 from path_settings import ROOT_DIR
 
@@ -432,7 +434,7 @@ def load_config(config_path: str) -> dict:
         return yaml.safe_load(f)
 
 
-@hydra.main(version_base=None, config_path="./configs_mia", config_name="mia_run_base.yaml")
+@hydra.main(version_base=None, config_path="configs_mia", config_name="mia_run_base.yaml")
 def main(config: MiaConfig):
     print(f"\n🚀 Running experiment with config: {config}\n")
     # Initialize wandb run

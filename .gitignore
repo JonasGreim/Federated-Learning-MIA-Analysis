@@ -10,7 +10,7 @@ global_model_round_*
 results.json
 splits
 
-
+membership_inference_attack/outputs
 # Flower directory
 .flwr
 

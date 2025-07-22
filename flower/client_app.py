@@ -1,13 +1,14 @@
-"""my-awesome-app: A Flower / PyTorch app."""
-
 import torch
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
-from flower.utils.task import get_weights, set_weights, test, train, create_model, load_data_custom, seed_everything
+from flower.utils.data_loading import load_data_custom
+from flower.utils.model_utils import get_weights, set_weights
+from flower.utils.reproducibility import seed_everything
+from flower.utils.training import test, train
 from path_settings import D3_SPLIT_PATH, D1_SPLIT_PATH
+from flower.utils.model_factory import create_model
 
 
-# Define Flower Client and client_fn
 class FlowerClient(NumPyClient):
     def __init__(self, net, trainloader, valloader, local_epochs, device):
         self.net = net
@@ -69,7 +70,8 @@ def client_fn(context: Context):
     else:
         split = D1_SPLIT_PATH
 
-    trainloader, valloader = load_data_custom(iid=iid, dirichlet_alpha=alpha, partition_id=partition_id, num_partitions=num_partitions, split=split,
+    trainloader, valloader = load_data_custom(iid=iid, dirichlet_alpha=alpha, partition_id=partition_id,
+                                              num_partitions=num_partitions, split=split,
                                               batch_size=batch_size, seed=seed)
 
     # Return Client instance

@@ -1,11 +1,12 @@
-"""my-awesome-app: A Flower / PyTorch app."""
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
+from flower.utils.model_utils import get_weights
+from flower.utils.reproducibility import seed_everything
 from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
-from flower.strategies.new_strategy import FedCustom
-from flower.utils.task import get_weights, create_model, seed_everything
-from flower.utils.wandb_logging_target import run_data_partitioning_for_visualization, initialize_wandb_run
+from flower.strategies.custom_weighted_fedavg import FedCustom
+from flower.utils.wandb_logging import run_data_partitioning_for_visualization, initialize_wandb_run
 from path_settings import D1_SPLIT_PATH
+from flower.utils.model_factory import create_model
 
 
 def server_fn(context: Context):
@@ -50,7 +51,8 @@ def server_fn(context: Context):
 
     # Initialize model parameters
     ndarrays = get_weights(
-        create_model(model_name))  # could load check points model here (global_model_round_1) to resume training on last global model
+        create_model(
+            model_name))  # could load check points model here (global_model_round_1) to resume training on last global model
     parameters = ndarrays_to_parameters(ndarrays)
 
     strategy = FedCustom(
