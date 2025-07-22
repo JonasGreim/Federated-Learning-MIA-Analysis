@@ -40,7 +40,7 @@ weight_decay = 0.0 # shokri used 0.0, 5e-4 is common for federated learning
 batch_size = 32
 fraction-fit = 1.0  # all clients participate in each round
 device = "cuda" # <-- "cpu" or "cuda"
-# loader defined in tasks.create_model()
+# loader defined in utils.model_factory.create_model
 model = "simple_model" # <-- simple_model, simple_model_with_dropout, complex_model, complex_model_with_dropout
 train_target_model_as_shadow_model = false
 seed = 42

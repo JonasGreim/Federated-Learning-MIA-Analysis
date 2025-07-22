@@ -1,7 +1,7 @@
 parameters:
   num_classes: 10
   num_shadow_models: 1
-  # loader defined in tasks.create_model()
+  # loader defined in utils.model_factory.create_model
   model_arch: "simple_model" # <-- simple_model, simple_model_with_dropout, complex_model, complex_model_with_dropout
   shadow_epochs: 40
   train_size: 100 # Size of train/test sets for shadow models (>15.000 samples would be with duplicates)
