@@ -28,8 +28,8 @@ packages = ["."]
 publisher = "jionnnas"
 
 [tool.flwr.app.components]
-serverapp = "my_awesome_app.server_app:app"
-clientapp = "my_awesome_app.client_app:app"
+serverapp = "flower.server_app:app"
+clientapp = "flower.client_app:app"
 
 [tool.flwr.app.config]
 num-server-rounds = 50 # number of rounds for the server (shokri used 100 but with central training)

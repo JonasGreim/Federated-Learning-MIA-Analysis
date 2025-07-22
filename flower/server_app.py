@@ -1,10 +1,10 @@
 """my-awesome-app: A Flower / PyTorch app."""
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
-from my_awesome_app.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
-from my_awesome_app.strategies.new_strategy import FedCustom
-from my_awesome_app.utils.task import get_weights, create_model, seed_everything
-from my_awesome_app.utils.wandb_logging_target import run_data_partitioning_for_visualization, initialize_wandb_run
+from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
+from flower.strategies.new_strategy import FedCustom
+from flower.utils.task import get_weights, create_model, seed_everything
+from flower.utils.wandb_logging_target import run_data_partitioning_for_visualization, initialize_wandb_run
 from path_settings import D1_SPLIT_PATH
 
 

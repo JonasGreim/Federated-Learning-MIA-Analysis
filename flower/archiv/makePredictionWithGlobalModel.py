@@ -3,7 +3,7 @@
 # import os
 #
 # import torch
-# from my_awesome_app.task import get_weights, load_data, set_weights, test, train, create_model
+# from flower.task import get_weights, load_data, set_weights, test, train, create_model
 # from PIL import Image
 # from torchvision.transforms import Compose, Normalize, ToTensor
 #

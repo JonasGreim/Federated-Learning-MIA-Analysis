@@ -17,12 +17,12 @@ from flwr.server.strategy import Strategy
 from flwr.server.strategy.aggregate import aggregate, weighted_loss_avg
 from typing import Optional, List, Tuple, Dict
 
-from my_awesome_app.utils.huggingface_to_pytorch import HFDatasetToTorch
-from my_awesome_app.utils.task import set_weights, test, create_model, get_transforms_custom, release_model
+from flower.utils.huggingface_to_pytorch import HFDatasetToTorch
+from flower.utils.task import set_weights, test, create_model, get_transforms_custom, release_model
 from torch.utils.data import DataLoader
 import json
 import torch
-from my_awesome_app.utils.wandb_logging_target import wandb_log_metrics
+from flower.utils.wandb_logging_target import wandb_log_metrics
 from path_settings import (
     CHECKPOINTS_DIR_TARGET,
     CHECKPOINTS_DIR_SHADOW,

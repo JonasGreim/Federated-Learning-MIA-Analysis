@@ -9,16 +9,16 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 from sklearn.utils import resample
-from my_awesome_app.utils.huggingface_to_pytorch import HFDatasetToTorch
-from my_awesome_app.utils.types_config_mia import MiaConfig
-from my_awesome_app.utils.task import get_transforms_custom, seed_everything, seed_worker, release_model, create_model
+from flower.utils.huggingface_to_pytorch import HFDatasetToTorch
+from flower.utils.types_config_mia import MiaConfig
+from flower.utils.task import get_transforms_custom, seed_everything, seed_worker, release_model, create_model
 from collections import defaultdict
 import re
 import time
 import hydra
 import wandb
 from omegaconf import OmegaConf
-from my_awesome_app.utils.wandb_logging_mia import log_training_to_wandb, log_per_class_metrics, \
+from flower.utils.wandb_logging_mia import log_training_to_wandb, log_per_class_metrics, \
     log_overall_metrics_with_error_bars, log_class_distribution
 from path_settings import ROOT_DIR
 

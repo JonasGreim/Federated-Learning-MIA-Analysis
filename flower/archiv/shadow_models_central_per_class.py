@@ -11,8 +11,8 @@
 # from sklearn.preprocessing import StandardScaler
 # from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 # from sklearn.utils import resample
-# from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
-# from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker, release_model
+# from flower.models.mia_paper_target_shadow_model import SimpleCNN
+# from flower.task import get_transforms_custom, seed_everything, seed_worker, release_model
 # import re
 # from collections import defaultdict
 #

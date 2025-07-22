@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent
 
 # Subdirectories
-MY_APP_DIR = ROOT_DIR / "my_awesome_app"
+MY_APP_DIR = ROOT_DIR / "flower"
 IMAGES_DIR = ROOT_DIR / "images"
 METRICS_DIR = ROOT_DIR / "metrics_of_run"
 CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"

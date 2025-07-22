@@ -3,7 +3,7 @@
 # import torch
 # import torch.nn as nn
 # import torch.nn.functional as F
-# from my_awesome_app.models.mia_paper_target_shadow_model import SimpleCNN
+# from flower.models.mia_paper_target_shadow_model import SimpleCNN
 # from sklearn.ensemble import RandomForestClassifier
 # import numpy as np
 # import glob
@@ -22,7 +22,7 @@
 # from sklearn.utils import resample
 # from torchvision.datasets import CIFAR10
 # from torch.utils.data import Subset
-# from my_awesome_app.task import get_transforms_custom, seed_everything, seed_worker, release_model
+# from flower.task import get_transforms_custom, seed_everything, seed_worker, release_model
 # import re
 #
 # # === Config ===

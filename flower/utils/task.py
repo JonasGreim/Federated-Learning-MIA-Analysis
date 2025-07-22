@@ -8,15 +8,15 @@ import torch
 import torch.nn as nn
 from datasets import load_from_disk
 from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner
-from my_awesome_app.models.resnet_18_cifar import ResNet18
-from my_awesome_app.models.resnet_18_cifar_with_dropout import ResNet18WithDropout
-from my_awesome_app.models.shokri_simple_cnn import SimpleCnn
+from flower.models.resnet_18_cifar import ResNet18
+from flower.models.resnet_18_cifar_with_dropout import ResNet18WithDropout
+from flower.models.shokri_simple_cnn import SimpleCnn
 from torch.utils.data import DataLoader
 from torchvision import transforms
 import numpy as np
 from sklearn.utils import check_random_state
-from my_awesome_app.models.shokri_simple_cnn_with_dropout import SimpleCnnWithDropout
-from my_awesome_app.utils.huggingface_to_pytorch import HFDatasetToTorch
+from flower.models.shokri_simple_cnn_with_dropout import SimpleCnnWithDropout
+from flower.utils.huggingface_to_pytorch import HFDatasetToTorch
 from pathlib import Path
 
 

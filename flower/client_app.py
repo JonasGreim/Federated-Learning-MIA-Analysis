@@ -3,7 +3,7 @@
 import torch
 from flwr.client import ClientApp, NumPyClient
 from flwr.common import Context
-from my_awesome_app.utils.task import get_weights, set_weights, test, train, create_model, load_data_custom, seed_everything
+from flower.utils.task import get_weights, set_weights, test, train, create_model, load_data_custom, seed_everything
 from path_settings import D3_SPLIT_PATH, D1_SPLIT_PATH
 
 
