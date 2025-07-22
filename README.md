@@ -126,3 +126,14 @@ Flower run different configs:
 ```
 flwr run . --run-config 'num-server-rounds=1 local-epochs=1'
 ```
+
+
+start mia: or without mia= -> base config is taken
+```
+python3 run_mia_experiments.py mia=run1
+```
+
+
+```
+python3 run_flower_experiments.py flower=run1
+```

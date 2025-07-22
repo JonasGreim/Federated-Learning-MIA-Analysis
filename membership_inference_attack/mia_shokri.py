@@ -476,6 +476,3 @@ def run_mia(config: MiaConfig):
     # Finish the wandb run
     wandb.finish()
 
-
-if __name__ == "__main__":
-    run_mia()
