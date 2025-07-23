@@ -144,3 +144,4 @@ real federated run:
 - data split creation (Split in script verteilen an clients oder script einfach auf jeden client laufen lassen)
 - pyproject anpassen package (non simulation) + federation anpassen ohne supernodes
 - Script schreiben (Setup auf jedem Node, run all tests)
+- alle localen daten downloaden (jsons, checkpoints)

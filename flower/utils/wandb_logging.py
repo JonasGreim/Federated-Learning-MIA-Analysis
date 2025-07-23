@@ -1,5 +1,5 @@
 from flwr_datasets.visualization import plot_label_distributions
-from path_settings import METRICS_DIR, ensure_dir_exist
+from path_settings import METRICS_DIR, ensure_dir_exist, D3_SPLIT_PATH, D1_SPLIT_PATH
 from pathlib import Path
 import wandb
 from datetime import datetime
@@ -8,8 +8,14 @@ from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner
 import matplotlib
 
 
-def run_data_partitioning_for_visualization(iid: bool, dirichlet_alpha: float, num_partitions: int, split: Path,
+def run_data_partitioning_for_visualization(iid: bool, dirichlet_alpha: float, num_partitions: int,
+                                            train_target_model_as_shadow_model: bool,
                                             seed: int) -> None:
+    if train_target_model_as_shadow_model:
+        split = D3_SPLIT_PATH
+    else:
+        split = D1_SPLIT_PATH
+
     try:
         split_dataset = load_from_disk(split)
     except Exception as e:
@@ -80,3 +86,11 @@ def initialize_wandb_run(project_name: str, run_name: str):
 
 def wandb_log_metrics(metrics: dict, step: int):
     wandb.log(metrics, step=step)
+
+
+def wandb_upload_artifact_model(artifact_name: str, artifact_path: Path):
+    """Upload an artifact to the current wandb run."""
+    artifact = wandb.Artifact(name=artifact_name, type="model")
+    artifact.add_file(str(artifact_path))
+    wandb.log_artifact(artifact)
+    print(f"Artifact {artifact_name} uploaded to wandb successfully.")

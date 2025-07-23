@@ -1,11 +1,11 @@
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
-from flower.utils.model_utils import get_weights
+from flower.utils.model_utils import get_weights, create_model_save_folder
 from flower.utils.reproducibility import seed_everything
 from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
 from flower.strategies.custom_weighted_fedavg import FedCustom
 from flower.utils.wandb_logging import run_data_partitioning_for_visualization, initialize_wandb_run
-from path_settings import D1_SPLIT_PATH
+from path_settings import CHECKPOINTS_DIR_TARGET
 from flower.utils.model_factory import create_model
 
 
@@ -21,6 +21,10 @@ def server_fn(context: Context):
     seed = context.run_config.get("seed", 42)
     model_name = context.run_config.get("model")
     batch_size = context.run_config.get("batch-size", 32)
+    # Only used for visualization and naming
+    dirichlet_alpha = context.run_config.get("dirichlet_alpha", 0.5)
+    iid = context.run_config.get("iid_data_distribution", True)
+    num_clients = context.run_config.get("num_clients", 5)
 
     # Seed everything for reproducibility
     seed_everything(seed)
@@ -30,7 +34,7 @@ def server_fn(context: Context):
     for k, v in context.run_config.items():
         print(f"  {k}: {v}")
 
-    initialize_wandb_run("flower_mia", "flower_mia_custom_strategy")
+    initialize_wandb_run(project_name="flower_mia", run_name=f"{model_name}-{num_rounds}-{dirichlet_alpha}")
 
     # Create dataset splits if they do not exist
     split_cifar10_for_target_and_shadow(
@@ -39,14 +43,14 @@ def server_fn(context: Context):
         shadow_test_ratio=0.3
     )
 
+    # Creates each run a unique folder in the save_dir for saving model checkpoints
+    model_saving_folder = create_model_save_folder(save_dir=CHECKPOINTS_DIR_TARGET)
+
     # Run data partitioning for visualization
-    iid = context.run_config.get("iid_data_distribution", True)
-    dirichlet_alpha = context.run_config.get("dirichlet_alpha", 0.5)
-    num_clients = context.run_config.get("num_clients", 5)
     run_data_partitioning_for_visualization(iid=iid,
                                             dirichlet_alpha=dirichlet_alpha,
                                             num_partitions=num_clients,
-                                            split=D1_SPLIT_PATH,
+                                            train_target_model_as_shadow_model=train_target_model_as_shadow_model,
                                             seed=seed)
 
     # Initialize model parameters
@@ -67,6 +71,8 @@ def server_fn(context: Context):
         device=device,
         model_name=model_name,
         batch_size=batch_size,
+        max_server_rounds=num_rounds,
+        model_saving_folder=model_saving_folder
     )
     config = ServerConfig(num_rounds=num_rounds)
 

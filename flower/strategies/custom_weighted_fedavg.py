@@ -21,14 +21,14 @@ from flower.utils.huggingface_to_pytorch import HFDatasetToTorch
 from torch.utils.data import DataLoader
 import json
 import torch
+from pathlib import Path
 from flower.utils.model_factory import create_model
 from flower.utils.training import test
 from flower.utils.model_utils import set_weights
 from flower.utils.reproducibility import release_model
-from flower.utils.wandb_logging import wandb_log_metrics
+from flower.utils.wandb_logging import wandb_log_metrics, wandb_upload_artifact_model
 from path_settings import (
     CHECKPOINTS_DIR_TARGET,
-    CHECKPOINTS_DIR_SHADOW,
     D2_SPLIT_PATH,
     D4_SPLIT_PATH,
     METRICS_DIR,
@@ -53,6 +53,8 @@ class FedCustom(Strategy):
             device: str = "cpu",
             model_name: str = "mia_paper",
             batch_size: int = 32,
+            max_server_rounds: int = 0,
+            model_saving_folder: Path = CHECKPOINTS_DIR_TARGET/"1",
     ) -> None:
         # can be overwritten here + abstract methods invoke
         super().__init__()
@@ -73,6 +75,8 @@ class FedCustom(Strategy):
         self.device = torch.device(device)
         self.model_name = model_name
         self.batch_size = batch_size
+        self.max_server_rounds = max_server_rounds
+        self.model_saving_folder = model_saving_folder
 
     def __repr__(self) -> str:
         return "FedCustom"
@@ -162,14 +166,17 @@ class FedCustom(Strategy):
         set_weights(model, aggregated_ndarrays)
 
         # save global model from shadow and target model in the standard PyTorch way
-        if self.train_target_model_as_shadow_model:
-            save_dir = CHECKPOINTS_DIR_SHADOW
-        else:
-            save_dir = CHECKPOINTS_DIR_TARGET
+        ensure_dir_exist(self.model_saving_folder)
+        model_path = self.model_saving_folder / f"global_model_round_{server_round}.pth"
 
-        ensure_dir_exist(save_dir)
-        model_path = save_dir / f"global_model_round_{server_round}.pth"
-        torch.save(model.state_dict(), model_path)
+        # save model every 5 rounds or at the last round
+        if server_round % 5 == 0 or server_round == self.max_server_rounds:
+            torch.save(model.state_dict(), model_path)
+
+        # Upload the final model to W&B as an artifact
+        if self.max_server_rounds == server_round:
+            wandb_upload_artifact_model(artifact_name=f"{self.model_name}-{server_round}", artifact_path=model_path)
+
         release_model(model, self.device.type)
         return parameters_aggregated, metrics_aggregated
 

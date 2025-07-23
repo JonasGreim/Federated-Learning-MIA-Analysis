@@ -17,12 +17,12 @@ from membership_inference_attack.utils.types_config_mia import MiaConfig
 from collections import defaultdict
 import re
 import time
-import hydra
 import wandb
 from omegaconf import OmegaConf
 from membership_inference_attack.utils.wandb_logging_mia import log_per_class_metrics, \
     log_overall_metrics_with_error_bars, log_class_distribution
-from path_settings import ROOT_DIR
+from path_settings import ROOT_DIR, CHECKPOINTS_DIR_TARGET
+from pathlib import Path
 
 
 # === Utility Functions ===
@@ -274,16 +274,13 @@ def train_per_class_attack_models(per_shadow_per_class_data: list, config: MiaCo
     return attack_models, scalers
 
 
-def evaluate_attack_models(attack_models: dict, scalers: dict, target_train: Dataset, target_test: Dataset,
+def evaluate_attack_models(attack_models: dict, target_model: nn.Module, scalers: dict, target_train: Dataset,
+                           target_test: Dataset,
                            config: MiaConfig, device: torch.device) -> None:
     batch_size = config.parameters_static.batch_size
     num_classes = config.parameters.num_classes
-    target_checkpoint_dir = config.paths.target_checkpoint_dir
-    model_name = config.parameters.model_arch
     class_names = config.parameters_static.class_names
     num_workers = config.parameters_static.num_workers
-
-    target_model = load_highest_round_number_target_model(target_checkpoint_dir, model_name, device)
 
     transform = get_transforms_custom()
     target_train_torch = HFDatasetToTorch(target_train, transform=transform)
@@ -402,13 +399,23 @@ def evaluate_attack_models(attack_models: dict, scalers: dict, target_train: Dat
     )
 
 
-def load_highest_round_number_target_model(target_checkpoint_dir: str, model_name: str,
-                                           device: torch.device) -> nn.Module:
+def load_latest_target_model(model_name: str, device: torch.device) -> nn.Module:
     release_model(None, device.type)
     model = create_model(model_name)
 
     # Get all checkpoint paths
-    checkpoint_dir = ROOT_DIR / target_checkpoint_dir
+    checkpoint_dir_target = CHECKPOINTS_DIR_TARGET
+
+    numeric_dirs = [
+        int(p.name) for p in checkpoint_dir_target.iterdir()
+        if p.is_dir() and p.name.isdigit()
+    ]
+    if numeric_dirs:
+        highest_folder_number = max(numeric_dirs)
+    else:
+        raise FileNotFoundError("No checkpoint folder found.")
+
+    checkpoint_dir = checkpoint_dir_target / str(highest_folder_number)
     checkpoint_paths = list(checkpoint_dir.glob("global_model_round_*.pth"))
 
     if not checkpoint_paths:
@@ -432,6 +439,18 @@ def load_highest_round_number_target_model(target_checkpoint_dir: str, model_nam
     model.to(device)
     model.eval()
     print(f"Loaded target model from: {latest_checkpoint_path} (round {latest_round})")
+
+    return model
+
+
+def load_specific_target_model(model_name: str, checkpoint_path: Path, device: torch.device) -> nn.Module:
+    release_model(None, device.type)
+    model = create_model(model_name)
+
+    model.load_state_dict(torch.load(checkpoint_path, map_location=device))
+    model.to(device)
+    model.eval()
+    print(f"Loaded target model from: {checkpoint_path})")
 
     return model
 
@@ -470,9 +489,13 @@ def run_mia(config: MiaConfig):
     attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
                                                            config=config)
 
-    evaluate_attack_models(attack_models=attack_models, scalers=scalers, target_train=target_train,
+    target_model = load_latest_target_model(model_name=config.parameters.model_arch, device=device)
+    # checkpoint_path: Path = CHECKPOINTS_DIR_TARGET / "0" / "global_model_round_1.pth"
+    # target_model = load_specific_target_model(checkpoint_path=CHECKPOINTS_DIR_TARGET, model_name="simple_model", device=device)
+
+    evaluate_attack_models(attack_models=attack_models, target_model=target_model, scalers=scalers,
+                           target_train=target_train,
                            target_test=target_test, config=config, device=device)
 
     # Finish the wandb run
     wandb.finish()
-
