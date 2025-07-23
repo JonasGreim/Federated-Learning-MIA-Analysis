@@ -137,3 +137,10 @@ python3 run_mia_experiments.py mia=run1
 ```
 python3 run_flower_experiments.py flower=run1
 ```
+
+
+real federated run:
+- wandb init on server
+- data split creation (Split in script verteilen an clients oder script einfach auf jeden client laufen lassen)
+- pyproject anpassen package (non simulation) + federation anpassen ohne supernodes
+- Script schreiben (Setup auf jedem Node, run all tests)
