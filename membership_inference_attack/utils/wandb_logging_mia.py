@@ -4,9 +4,10 @@ from collections import Counter
 import matplotlib.pyplot as plt
 import wandb
 from path_settings import WANDB_DIR
+import matplotlib
 
+matplotlib.use("Agg")
 
-# all wandb logging is executed from the server side (server collects all metrics from clients)
 
 def log_class_distribution(
         hf_dataset: Dataset,

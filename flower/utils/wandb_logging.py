@@ -7,6 +7,9 @@ from datasets import load_from_disk
 from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner
 import matplotlib
 
+# all wandb logging is executed from the server side (server collects all metrics from clients)
+matplotlib.use("Agg")
+
 
 def run_data_partitioning_for_visualization(iid: bool, dirichlet_alpha: float, num_partitions: int,
                                             train_target_model_as_shadow_model: bool,
@@ -39,7 +42,6 @@ def run_data_partitioning_for_visualization(iid: bool, dirichlet_alpha: float, n
 
     partitioner.dataset = split_dataset
 
-    matplotlib.use("Agg")
     visualize_label_distribution(partitioner, METRICS_DIR)
 
 
