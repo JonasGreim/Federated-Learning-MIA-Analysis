@@ -12,11 +12,11 @@ from flower.utils.model_factory import create_model
 def server_fn(context: Context):
     # Read from config
     num_rounds = context.run_config["num-server-rounds"]
-    fraction_fit = context.run_config.get("fraction_fit", 1.0)  # weird error that fraction_fit is not in run_config
+    fraction_fit = context.run_config.get("fraction-fit", 1.0)  # weird error that fraction_fit is not in run_config
     learning_rate = context.run_config["learning-rate"]
     lr_decay = context.run_config.get("learning-rate-decay", 0.0)
     weight_decay = context.run_config.get("weight-decay", 0.0)
-    train_target_model_as_shadow_model = context.run_config["train_target_model_as_shadow_model"]
+    train_target_model_as_shadow_model = context.run_config["train-target-model-as-shadow-model"]
     device = context.run_config["device"]
     seed = context.run_config.get("seed", 42)
     model_name = context.run_config.get("model")

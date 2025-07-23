@@ -48,12 +48,12 @@ def client_fn(context: Context):
 
     local_epochs = context.run_config.get("local-epochs", 1)
     device_str = context.run_config.get("device", "cpu")
-    batch_size = context.run_config.get("batch_size", 32)
+    batch_size = context.run_config.get("batch-size", 32)
     seed = context.run_config.get("seed", 42)
     model_name = context.run_config.get("model")
-    iid = context.run_config.get("iid_data_distribution", True)
-    alpha = context.run_config.get("dirichlet_alpha", 1.0)
-    train_target_model_as_shadow_model = context.run_config.get("train_target_model_as_shadow_model", False)
+    iid = context.run_config.get("iid-data-distribution", True)
+    alpha = context.run_config.get("dirichlet-alpha", 1.0)
+    train_target_model_as_shadow_model = context.run_config.get("train-target-model-as-shadow_model", False)
 
     # Seed everything for reproducibility
     seed_everything(seed)

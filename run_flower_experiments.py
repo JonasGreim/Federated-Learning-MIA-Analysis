@@ -16,13 +16,13 @@ def run(config):
     run_config = (
         f"num-server-rounds={flower_cfg.num_server_rounds} "
         f"local-epochs={flower_cfg.local_epochs} "
-        f"weight_decay={flower_cfg.weight_decay} "
+        f"weight-decay={flower_cfg.weight_decay} "
         f"fraction-fit={flower_cfg.fraction_fit} "
         f"device=\"{flower_cfg.device}\" "
         f"model=\"{flower_cfg.model}\" "
-        f"iid_data_distribution={'true' if flower_cfg.iid_data_distribution else 'false'} "
-        f"dirichlet_alpha={flower_cfg.dirichlet_alpha} "
-        f"num_clients={flower_cfg.num_clients}"
+        f"iid-data-distribution={'true' if flower_cfg.iid_data_distribution else 'false'} "
+        f"dirichlet-alpha={flower_cfg.dirichlet_alpha} "
+        f"num-clients={flower_cfg.num_clients}"
     )
     print(f"flwr run . --run-config '{run_config}'")
 

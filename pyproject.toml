@@ -36,27 +36,27 @@ num-server-rounds = 50 # number of rounds for the server (shokri used 100 but wi
 local-epochs = 20 # clients train for 1 epoch per round
 learning-rate = 0.01 # shokri used 0.001
 learning-rate-decay = 1e-7 # shokri used 1e-7
-weight_decay = 0.0 # shokri used 0.0, 5e-4 is common for federated learning
-batch_size = 32
+weight-decay = 0.0 # shokri used 0.0, 5e-4 is common for federated learning
+batch-size = 32
 fraction-fit = 1.0  # all clients participate in each round
 device = "cuda" # <-- "cpu" or "cuda"
 # loader defined in utils.model_factory.create_model
 model = "simple_model" # <-- simple_model, simple_model_with_dropout, complex_model, complex_model_with_dropout
-train_target_model_as_shadow_model = false
+train-target-model-as-shadow-model = false
 seed = 42
-iid_data_distribution = true # if true, data is distributed iid among clients
-dirichlet_alpha = 0.5 # if iid_data_distribution is false, this is the dirichlet alpha parameter (0.1 -> strong non_iid, 0.5-> add bias to data)
-num_clients = 4 # number of clients only for visualization purposes, not used in the run
+iid-data-distribution = true # if true, data is distributed iid among clients
+dirichlet-alpha = 0.5 # if iid_data_distribution is false, this is the dirichlet alpha parameter (0.1 -> strong non_iid, 0.5-> add bias to data)
+num-clients = 4 # number of clients only for visualization purposes, not used in the run
 
 [tool.flwr.federations]
-default = "local-simulation-cpu"  # default setting for local simulation
+default = "local-simulation-gpu"  # default setting for local simulation
 
 [tool.flwr.federations.local-simulation-cpu] # cpu simulation
-options.num-supernodes = 4 # number of clients
+options.num-supernodes = 4 # number of simulated clients
 options.backend.client-resources.num-cpus = 1
 
 [tool.flwr.federations.local-simulation-gpu] # gpu simulation
-options.num-supernodes = 4 # number of clients
+options.num-supernodes = 4 # number of simulated clients
 options.backend.client-resources.num-cpus = 1
 options.backend.client-resources.num-gpus = 0.25  # 25% VRAM pro Client
 # options.backend.init_args.num_cpus = 1 # maximum number of CPUs for the simulation
