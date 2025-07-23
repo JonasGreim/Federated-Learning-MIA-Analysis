@@ -24,6 +24,9 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
     except Exception as e:
         raise RuntimeError(f"Target model: Failed to load datasets from disk: {e}") from e
 
+    if not iid and dirichlet_alpha <= 0:
+        raise ValueError("For non-IID data, dirichlet_alpha must be greater than 0.")
+
     if iid:
         split_dataset = split_dataset.shuffle(seed=seed)
         partitioner = IidPartitioner(
