@@ -4,3 +4,4 @@ defaults:
 parameters:
   train_size: 100
   test_size: 100
+  run_name: "run1"

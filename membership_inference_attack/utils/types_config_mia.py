@@ -2,27 +2,16 @@ from dataclasses import dataclass
 
 
 @dataclass
-class Paths:
-    """Configuration for file paths used in the MIA."""
-    target_checkpoint_dir: str
-    data_dir: str
-    split_dir: str
-
-
-@dataclass
 class Parameters:
     """Configuration for MIA parameters."""
     num_classes: int
-
     num_shadow_models: int
     shadow_epochs: int
     model_arch: str
-
     train_size: int
     test_size: int
-
     weight_decay: float
-
+    run_name: str
 
 @dataclass
 class ParametersStatic:
@@ -38,6 +27,5 @@ class ParametersStatic:
 
 @dataclass
 class MiaConfig:
-    paths: Paths
     parameters: Parameters
     parameters_static: ParametersStatic

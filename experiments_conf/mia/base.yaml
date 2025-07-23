@@ -7,7 +7,7 @@ parameters:
   train_size: 1000 # Size of train/test sets for shadow models (>15.000 samples would be with duplicates)
   test_size: 1000 # usually 10.000
   weight_decay: 0.0  # shokri used 0.0, 5e-4 is common for federated learning
-
+  run_name: "run0"
 
 parameters_static:
   device: "cuda"  # <-- "cpu" or "cuda"
@@ -17,8 +17,3 @@ parameters_static:
   learning_rate: 0.01
   num_workers: 2
   class_names: ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
-
-
-paths:
-  target_checkpoint_dir: "model_checkpoints_target"
-  split_dir: "splits" # directory should lay in root

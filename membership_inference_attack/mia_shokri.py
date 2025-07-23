@@ -13,6 +13,7 @@ from flower.utils.data_loading import get_transforms_custom
 from flower.utils.huggingface_to_pytorch import HFDatasetToTorch
 from flower.utils.reproducibility import seed_worker, release_model, seed_everything
 from flower.utils.model_factory import create_model
+from flower.utils.wandb_logging import initialize_wandb_run
 from membership_inference_attack.utils.types_config_mia import MiaConfig
 from collections import defaultdict
 import re
@@ -21,21 +22,20 @@ import wandb
 from omegaconf import OmegaConf
 from membership_inference_attack.utils.wandb_logging_mia import log_per_class_metrics, \
     log_overall_metrics_with_error_bars, log_class_distribution
-from path_settings import ROOT_DIR, CHECKPOINTS_DIR_TARGET
+from path_settings import CHECKPOINTS_DIR_TARGET, D1_SPLIT_PATH, D2_SPLIT_PATH, D3_SPLIT_PATH, D4_SPLIT_PATH
 from pathlib import Path
 
 
 # === Utility Functions ===
 def load_data(config: MiaConfig) -> tuple[Dataset, Dataset, Dataset, Dataset]:
-    split_dir_path = ROOT_DIR / config.paths.split_dir
     class_names = config.parameters_static.class_names
 
     # Load datasets from disk -> run split script before running this: split_cifar10_mia.py (auto. run by target model)
     try:
-        target_train_hf = load_from_disk(split_dir_path / "D1")
-        target_test_hf = load_from_disk(split_dir_path / "D2")
-        shadow_train_hf = load_from_disk(split_dir_path / "D3")
-        shadow_test_hf = load_from_disk(split_dir_path / "D4")
+        target_train_hf = load_from_disk(D1_SPLIT_PATH)
+        target_test_hf = load_from_disk(D2_SPLIT_PATH)
+        shadow_train_hf = load_from_disk(D3_SPLIT_PATH)
+        shadow_test_hf = load_from_disk(D4_SPLIT_PATH)
     except Exception as e:
         raise RuntimeError(f"MIA: Failed to load datasets from disk: {e}") from e
 
@@ -463,8 +463,8 @@ def load_config(config_path: str) -> dict:
 def run_mia(config: MiaConfig):
     print(f"\n🚀 Running experiment with config: {config}\n")
     # Initialize wandb run
-    wandb.init(project="mia-shadow-attack", config=OmegaConf.to_container(config, resolve=True), name="mia_run",
-               dir=ROOT_DIR)
+    run_name = f"run-{config.parameters.run_name}-{config.parameters.model_arch}"
+    initialize_wandb_run(project_name="mia-shokri", config=OmegaConf.to_container(config, resolve=True), run_name=run_name)
 
     seed_everything(config.parameters_static.seed)
     requested_device = config.parameters_static.device
@@ -474,6 +474,7 @@ def run_mia(config: MiaConfig):
         requested_device = "cpu"
     device = torch.device(requested_device)
 
+    # Load datasets from 'split_cifar10_mia.py' script: D1, D2, D3, D4
     shadow_train, target_train, target_test, shadow_test = load_data(config=config)
 
     shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_with_overlap(

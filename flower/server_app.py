@@ -34,7 +34,7 @@ def server_fn(context: Context):
     for k, v in context.run_config.items():
         print(f"  {k}: {v}")
 
-    initialize_wandb_run(project_name="flower_mia", run_name=f"{model_name}-{num_rounds}-{dirichlet_alpha}", config=context.run_config)
+    initialize_wandb_run(project_name="flower_target_model", run_name=f"{model_name}-{num_rounds}-{dirichlet_alpha}", config=context.run_config)
 
     # Create dataset splits if they do not exist
     split_cifar10_for_target_and_shadow(

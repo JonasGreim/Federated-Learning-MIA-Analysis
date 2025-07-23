@@ -1,5 +1,5 @@
 from flwr_datasets.visualization import plot_label_distributions
-from path_settings import METRICS_DIR, ensure_dir_exist, D3_SPLIT_PATH, D1_SPLIT_PATH
+from path_settings import METRICS_DIR, ensure_dir_exist, D3_SPLIT_PATH, D1_SPLIT_PATH, ROOT_DIR
 from pathlib import Path
 import wandb
 from datetime import datetime
@@ -78,10 +78,10 @@ def visualize_label_distribution(partitioner, output_dir: Path = METRICS_DIR):
     }, step=0)
 
 
-def initialize_wandb_run(project_name: str, run_name: str, config: dict = None):
+def initialize_wandb_run(project_name: str, run_name: str, config: dict = None, directory: Path = ROOT_DIR):
     if not wandb.run:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        wandb.init(project=project_name, name=f"{run_name}-{timestamp}", config=config)
+        wandb.init(project=project_name, name=f"{run_name}-{timestamp}", config=config, dir=directory)
 
 
 def wandb_log_metrics(metrics: dict, step: int):
