@@ -6,13 +6,17 @@ from hydra.main import main as hydra_main
 @hydra_main(config_path="experiments_conf", config_name="config", version_base=None)
 def run(config):
     # if no config is passed via command line, base config is used
-    os.makedirs(config.output_dir, exist_ok=True)
-    OmegaConf.save(config, os.path.join(config.output_dir, "full_config.yaml"))
+    # python3 run_flower_experiments.py flower=run1
 
     # Load flower configuration and run flower
-    # flwr run . --run-config 'num-server-rounds=1 local-epochs=1'
-    # it has to be injected through the command line into the .toml because hydra would not work with a real federated learning setup (with current version)
+    # f.e.: flwr run . --run-config 'num-server-rounds=1 local-epochs=1'
+    # it has to be injected through the command line into the .toml because hydra would not work with a real federated learning setup
+    # (with this current flower version)
     flower_cfg = config.flower
+
+    os.makedirs(config.output_dir, exist_ok=True)
+    OmegaConf.save(flower_cfg, os.path.join(config.output_dir, "flower_config.yaml"))
+
     run_config = (
         f"num-server-rounds={flower_cfg.num_server_rounds} "
         f"local-epochs={flower_cfg.local_epochs} "
