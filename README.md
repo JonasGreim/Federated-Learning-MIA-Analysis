@@ -140,6 +140,7 @@ python3 run_flower_experiments.py flower=run1
 
 
 real federated run:
+- run one flower run and then one mia run or run first all flowers rund and then all mia runs?
 - wandb init on server
 - data split creation (Split in script verteilen an clients oder script einfach auf jeden client laufen lassen)
 - pyproject anpassen package (non simulation) + federation anpassen ohne supernodes
