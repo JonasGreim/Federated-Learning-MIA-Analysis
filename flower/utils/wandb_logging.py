@@ -78,10 +78,10 @@ def visualize_label_distribution(partitioner, output_dir: Path = METRICS_DIR):
     }, step=0)
 
 
-def initialize_wandb_run(project_name: str, run_name: str):
+def initialize_wandb_run(project_name: str, run_name: str, config: dict = None):
     if not wandb.run:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        wandb.init(project=project_name, name=f"{run_name}-{timestamp}")
+        wandb.init(project=project_name, name=f"{run_name}-{timestamp}", config=config)
 
 
 def wandb_log_metrics(metrics: dict, step: int):
