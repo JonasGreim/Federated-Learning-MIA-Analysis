@@ -9,8 +9,6 @@ def run(config):
     os.makedirs(config.output_dir, exist_ok=True)
     OmegaConf.save(config, os.path.join(config.output_dir, "full_config.yaml"))
 
-    # print(OmegaConf.to_yaml(config.flower))
-
     # Load flower configuration and run flower
     # flwr run . --run-config 'num-server-rounds=1 local-epochs=1'
     # it has to be injected through the command line into the .toml because hydra would not work with a real federated learning setup (with current version)
@@ -26,7 +24,7 @@ def run(config):
         f"dirichlet_alpha={flower_cfg.dirichlet_alpha} "
         f"num_clients={flower_cfg.num_clients}"
     )
-    # print(f"Run config: {run_config}")
+    print(f"flwr run . --run-config '{run_config}'")
 
     os.system(f"flwr run . --run-config '{run_config}'")
 
