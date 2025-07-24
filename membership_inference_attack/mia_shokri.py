@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import yaml
 from datasets import load_from_disk, Dataset
+from sklearn.ensemble import RandomForestClassifier
 from torch.utils.data import DataLoader
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -257,14 +258,11 @@ def train_per_class_attack_models(per_shadow_per_class_data: list, config: MiaCo
 
         # In paper Shokri et al. used logistic regression, but RandomForest is better for this task
         clf = LogisticRegression(max_iter=1000, random_state=seed)
+        # clf = RandomForestClassifier(n_estimators=200, max_depth=None, random_state=seed)
         clf.fit(X_scaled, y)
-
-        # clf = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=SEED)
-        # clf.fit(X_scaled, y)
 
         attack_models[cls] = clf
         scalers[cls] = scaler
-
         print(f"✅ Trained attack model for Class {cls} (Samples: {len(y)})")
         print(f" Class before balancing:  Members: {len(member)}, Non-members: {len(nonmember)}")
 
