@@ -463,7 +463,7 @@ def load_config(config_path: str) -> dict:
 def run_mia(config: MiaConfig):
     print(f"\n🚀 Running experiment with config: {config}\n")
     # Initialize wandb run
-    run_name = f"run-{config.parameters.run_name}-{config.parameters.model_arch}"
+    run_name = f"{config.parameters.run_name}-{config.parameters.model_arch}"
     initialize_wandb_run(project_name="mia-shokri", config=OmegaConf.to_container(config, resolve=True), run_name=run_name)
 
     seed_everything(config.parameters_static.seed)
