@@ -5,7 +5,7 @@ from torchvision import models
 class ResNet18(nn.Module):
     def __init__(self):
         super(ResNet18, self).__init__()
-        self.model = models.resnet18(pretrained=False)
+        self.model = models.resnet18(weights=None)
 
         # Modify the first conv layer for small CIFAR-10 pictures: 7x7 -> 3x3, stride 2 -> 1
         self.model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)

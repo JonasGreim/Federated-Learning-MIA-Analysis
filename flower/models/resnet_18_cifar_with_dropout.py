@@ -5,7 +5,7 @@ import torch.nn as nn
 class ResNet18WithDropout(nn.Module):
     def __init__(self, dropout_rate=0.5):
         super().__init__()
-        self.model = models.resnet18(pretrained=False)
+        self.model = models.resnet18(weights=None)
 
         # Adjust the first convolution for CIFAR-10
         self.model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
