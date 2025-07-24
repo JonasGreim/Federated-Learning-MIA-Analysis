@@ -1,12 +1,16 @@
 import os
 from omegaconf import OmegaConf
 from hydra.main import main as hydra_main
+import ray
+import gc
+import subprocess
+import shlex
 
 
 @hydra_main(config_path="experiments_conf", config_name="config", version_base=None)
 def run(config):
     # if no config is passed via command line, base config is used
-    # python3 run_flower_experiments.py flower=run1
+    # python3 run_flower_experiment.py flower=run1
 
     # Load flower configuration and run flower
     # f.e.: flwr run . --run-config 'num-server-rounds=1 local-epochs=1'
@@ -34,7 +38,12 @@ def run(config):
     )
     print(f"flwr run . --run-config '{run_config}'")
 
-    os.system(f"flwr run . --run-config '{run_config}'")
+    subprocess.run(["flwr", "run", ".", "--run-config", run_config])
+
+    # clean up resources
+    if ray.is_initialized():
+        ray.shutdown()  # Make sure Ray is cleaned up if it was used
+    gc.collect()  # Force garbage collection
 
 
 if __name__ == "__main__":

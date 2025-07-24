@@ -8,7 +8,7 @@ from membership_inference_attack.utils.types_config_mia import MiaConfig
 @hydra_main(config_path="experiments_conf", config_name="config", version_base=None)
 def run_mia_experiment(config):
     # if no config is passed via command line, base config is used
-    # python3 run_mia_experiments.py mia=run1
+    # python3 run_mia_experiment.py mia=run1
     mia_config: MiaConfig = config.mia
 
     os.makedirs(config.output_dir, exist_ok=True)

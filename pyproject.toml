@@ -59,5 +59,6 @@ options.backend.client-resources.num-cpus = 1
 options.num-supernodes = 4 # number of simulated clients
 options.backend.client-resources.num-cpus = 1
 options.backend.client-resources.num-gpus = 0.25  # 25% VRAM pro Client
+# options.backend.client-resources.memory = 1 # 1 GB RAM per Client (softcap, not hard limit)
 # options.backend.init_args.num_cpus = 1 # maximum number of CPUs for the simulation
 # options.backend.init_args.num_gpus = 1 # maximum number of GPUs for the simulation
