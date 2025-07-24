@@ -22,9 +22,9 @@ def server_fn(context: Context):
     model_name = context.run_config.get("model")
     batch_size = context.run_config.get("batch-size", 32)
     # Only used for visualization and naming
-    dirichlet_alpha = context.run_config.get("dirichlet_alpha", 0.5)
-    iid = context.run_config.get("iid_data_distribution", True)
-    num_clients = context.run_config.get("num_clients", 5)
+    dirichlet_alpha = context.run_config.get("dirichlet-alpha", 0.5)
+    iid = context.run_config.get("iid-data-distribution", True)
+    num_clients = context.run_config.get("num-clients", 4)
 
     # Seed everything for reproducibility
     seed_everything(seed)
