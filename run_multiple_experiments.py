@@ -1,7 +1,9 @@
 import subprocess
 
 # Define the experiment runs
-runs = [f"flower=run{i}" for i in range(4, 9)]
+start = 0
+end = 0
+runs = [f"flower=run{i}" for i in range(start, end+1)]
 
 # Run each one sequentially
 for run in runs:

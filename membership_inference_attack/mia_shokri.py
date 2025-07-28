@@ -240,6 +240,7 @@ def train_per_class_attack_models(per_shadow_per_class_data: list, config: MiaCo
             print(f"⚠️ Skipping Class {cls}: insufficient data (Members: {len(member)}, Non-members: {len(nonmember)})")
             continue
 
+        # x-member = features, y-member = 1 (member), x-nonmember = features, y-nonmember = 0 (non-member)
         X_member, y_member = zip(*member)
         X_nonmember, y_nonmember = zip(*nonmember)
 
@@ -460,6 +461,9 @@ def load_config(config_path: str) -> dict:
 
 def run_mia(config: MiaConfig):
     print(f"\n🚀 Running experiment with config: {config}\n")
+    checkpoint_path: Path = CHECKPOINTS_DIR_TARGET / "15" / "global_model_round_10.pth"
+    print("loading: ", checkpoint_path)
+    print()
     # Initialize wandb run
     run_name = f"{config.parameters.run_name}-{config.parameters.model_arch}"
     initialize_wandb_run(project_name="mia-shokri", config=OmegaConf.to_container(config, resolve=True), run_name=run_name)
@@ -488,9 +492,9 @@ def run_mia(config: MiaConfig):
     attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
                                                            config=config)
 
-    target_model = load_latest_target_model(model_name=config.parameters.model_arch, device=device)
-    # checkpoint_path: Path = CHECKPOINTS_DIR_TARGET / "0" / "global_model_round_1.pth"
-    # target_model = load_specific_target_model(checkpoint_path=CHECKPOINTS_DIR_TARGET, model_name="simple_model", device=device)
+    # target_model = load_latest_target_model(model_name=config.parameters.model_arch, device=device)
+    # checkpoint_path: Path = CHECKPOINTS_DIR_TARGET / "10" / "global_model_round_100.pth"
+    target_model = load_specific_target_model(checkpoint_path=checkpoint_path, model_name=config.parameters.model_arch, device=device)
 
     evaluate_attack_models(attack_models=attack_models, target_model=target_model, scalers=scalers,
                            target_train=target_train,
