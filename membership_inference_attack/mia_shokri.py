@@ -84,42 +84,42 @@ def sample_shadow_datasets_iid(shadow_train_dataset: Dataset, shadow_test_datase
     return shadow_train_sets, shadow_test_sets
 
 
-# def sample_shadow_datasets_with_non_iid_train(
-#         shadow_train_dataset: Dataset,
-#         config: MiaConfig
-# ) -> list[Dataset]:
-#     num_shadow_models = config.parameters.num_shadow_models
-#     alpha = config.parameters.dirichlet_alpha
-#     seed = config.parameters_static.seed
-#     class_names = config.parameters_static.class_names
-#
-#     shadow_train_sets = []
-#
-#     # Non-IID partitioning of training dataset
-#     partitioner = DirichletPartitioner(
-#         num_partitions=num_shadow_models,
-#         partition_by="label",
-#         alpha=alpha,
-#         min_partition_size=0,
-#         seed=seed
-#     )
-#     partitioner.dataset = shadow_train_dataset
-#
-#     for i in range(num_shadow_models):
-#         # Non-IID shadow training data
-#         client_data = partitioner.load_partition(partition_id=i)
-#
-#         # Logging
-#         log_class_distribution(
-#             hf_dataset=client_data,
-#             wandb_cluster_name="shadow_train_distribution",
-#             wandb_plot_prefix=f"shadow_model_{i + 1}",
-#             class_names=class_names
-#         )
-#
-#         shadow_train_sets.append(client_data)
-#
-#     return shadow_train_sets
+def sample_shadow_datasets_with_non_iid_train(
+        shadow_train_dataset: Dataset,
+        config: MiaConfig
+) -> list[Dataset]:
+    num_shadow_models = config.parameters.num_shadow_models
+    alpha = config.parameters.dirichlet_alpha
+    seed = config.parameters_static.seed
+    class_names = config.parameters_static.class_names
+
+    shadow_train_sets = []
+
+    # Non-IID partitioning of training dataset
+    partitioner = DirichletPartitioner(
+        num_partitions=num_shadow_models,
+        partition_by="label",
+        alpha=alpha,
+        min_partition_size=0,
+        seed=seed
+    )
+    partitioner.dataset = shadow_train_dataset
+
+    for i in range(num_shadow_models):
+        # Non-IID shadow training data
+        client_data = partitioner.load_partition(partition_id=i)
+
+        # Logging
+        log_class_distribution(
+            hf_dataset=client_data,
+            wandb_cluster_name="shadow_train_distribution",
+            wandb_plot_prefix=f"shadow_model_{i + 1}",
+            class_names=class_names
+        )
+
+        shadow_train_sets.append(client_data)
+
+    return shadow_train_sets
 
 def sample_dirichlet_like_shadow_datasets_from_pool(
         data_pool: Dataset,
