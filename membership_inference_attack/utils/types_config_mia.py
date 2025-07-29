@@ -12,6 +12,8 @@ class Parameters:
     test_size: int
     weight_decay: float
     run_name: str
+    iid_data_distribution: bool
+    dirichlet_alpha: float
 
 @dataclass
 class ParametersStatic:

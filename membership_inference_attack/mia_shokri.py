@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import yaml
 from datasets import load_from_disk, Dataset
-from sklearn.ensemble import RandomForestClassifier
 from torch.utils.data import DataLoader
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -25,6 +24,7 @@ from membership_inference_attack.utils.wandb_logging_mia import log_per_class_me
     log_overall_metrics_with_error_bars, log_class_distribution
 from path_settings import CHECKPOINTS_DIR_TARGET, D1_SPLIT_PATH, D2_SPLIT_PATH, D3_SPLIT_PATH, D4_SPLIT_PATH
 from pathlib import Path
+from flwr_datasets.partitioner import DirichletPartitioner
 
 
 # === Utility Functions ===
@@ -46,8 +46,8 @@ def load_data(config: MiaConfig) -> tuple[Dataset, Dataset, Dataset, Dataset]:
     return shadow_train_hf, target_train_hf, target_test_hf, shadow_test_hf
 
 
-def sample_shadow_datasets_with_overlap(shadow_train_dataset: Dataset, shadow_test_dataset: Dataset,
-                                        config: MiaConfig) -> tuple[list[Dataset], list[Dataset]]:
+def sample_shadow_datasets_iid(shadow_train_dataset: Dataset, shadow_test_dataset: Dataset,
+                               config: MiaConfig) -> tuple[list[Dataset], list[Dataset]]:
     # Sample shadow train and test datasets from the shadow data train/test pool
     # Sample without duplicates, but with overlap between shadow model datasets
     num_shadow_models = config.parameters.num_shadow_models
@@ -82,6 +82,90 @@ def sample_shadow_datasets_with_overlap(shadow_train_dataset: Dataset, shadow_te
         shadow_test_sets.append(test_subset)
 
     return shadow_train_sets, shadow_test_sets
+
+
+# def sample_shadow_datasets_with_non_iid_train(
+#         shadow_train_dataset: Dataset,
+#         config: MiaConfig
+# ) -> list[Dataset]:
+#     num_shadow_models = config.parameters.num_shadow_models
+#     alpha = config.parameters.dirichlet_alpha
+#     seed = config.parameters_static.seed
+#     class_names = config.parameters_static.class_names
+#
+#     shadow_train_sets = []
+#
+#     # Non-IID partitioning of training dataset
+#     partitioner = DirichletPartitioner(
+#         num_partitions=num_shadow_models,
+#         partition_by="label",
+#         alpha=alpha,
+#         min_partition_size=0,
+#         seed=seed
+#     )
+#     partitioner.dataset = shadow_train_dataset
+#
+#     for i in range(num_shadow_models):
+#         # Non-IID shadow training data
+#         client_data = partitioner.load_partition(partition_id=i)
+#
+#         # Logging
+#         log_class_distribution(
+#             hf_dataset=client_data,
+#             wandb_cluster_name="shadow_train_distribution",
+#             wandb_plot_prefix=f"shadow_model_{i + 1}",
+#             class_names=class_names
+#         )
+#
+#         shadow_train_sets.append(client_data)
+#
+#     return shadow_train_sets
+
+def sample_dirichlet_like_shadow_datasets_from_pool(
+        data_pool: Dataset,
+        config: MiaConfig
+) -> list[Dataset]:
+    num_shadow_models = config.parameters.num_shadow_models
+    alpha = config.parameters.dirichlet_alpha
+    train_size = config.parameters.train_size
+    seed = config.parameters_static.seed
+    class_names = config.parameters_static.class_names
+
+    rng = np.random.RandomState(seed)
+
+    # Group indices by class
+    label2indices = defaultdict(list)
+    for idx, label in enumerate(data_pool["label"]):
+        label2indices[label].append(idx)
+
+    num_classes = len(label2indices)
+    shadow_train_sets = []
+
+    for model_id in range(num_shadow_models):
+        # Dirichlet sample: proportions of each class for this model
+        proportions = rng.dirichlet([alpha] * num_classes)
+        class_counts = (proportions * train_size).astype(int)
+
+        model_indices = []
+        for class_id, count in enumerate(class_counts):
+            indices = label2indices[class_id]
+            sampled = rng.choice(indices, size=count, replace=True)  # allow overlap
+            model_indices.extend(sampled)
+
+        rng.shuffle(model_indices)  # mix all classes
+
+        subset = data_pool.select(model_indices)
+
+        log_class_distribution(
+            hf_dataset=subset,
+            wandb_cluster_name="shadow_train_distribution",
+            wandb_plot_prefix=f"shadow_model_{model_id + 1}",
+            class_names=class_names
+        )
+
+        shadow_train_sets.append(subset)
+
+    return shadow_train_sets
 
 
 def train_model(model: nn.Module, dataloader: DataLoader, epochs: int, learning_rate: float, learning_rate_decay: float,
@@ -479,10 +563,18 @@ def run_mia(config: MiaConfig):
     # Load datasets from 'split_cifar10_mia.py' script: D1, D2, D3, D4
     shadow_train, target_train, target_test, shadow_test = load_data(config=config)
 
-    shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_with_overlap(
-        shadow_train_dataset=shadow_train,
-        shadow_test_dataset=shadow_test,
-        config=config)
+    if config.parameters.iid_data_distribution:
+        shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_iid(
+            shadow_train_dataset=shadow_train,
+            shadow_test_dataset=shadow_test,
+            config=config)
+    else:
+        shadow_train_subsets = sample_shadow_datasets_with_non_iid_train(
+            shadow_train_dataset=shadow_train, config=config)
+        shadow_test_subsets = sample_shadow_datasets_iid(
+            shadow_train_dataset=shadow_train,
+            shadow_test_dataset=shadow_test,
+            config=config)
 
     per_shadow_per_class_data = train_all_shadow_models_and_collect_features(
         shadow_train_subsets=shadow_train_subsets,
