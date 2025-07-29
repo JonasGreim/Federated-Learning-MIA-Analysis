@@ -28,7 +28,7 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
         raise ValueError("For non-IID data, dirichlet_alpha must be greater than 0.")
 
     if iid:
-        split_dataset = split_dataset.shuffle(seed=seed)
+        split_dataset = split_dataset.shuffle(seed=seed)  # shuffle dataset to ensure reproducibility
         partitioner = IidPartitioner(
             num_partitions=num_partitions,
         )
@@ -39,6 +39,7 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
             partition_by="label",
             alpha=dirichlet_alpha,
             min_partition_size=0,
+            seed=seed
         )
         print("[INFO] Using non-IID Dirichlet data partitioning.")
 
