@@ -52,6 +52,9 @@ def sample_shadow_datasets_iid(shadow_train_dataset: Dataset, shadow_test_datase
     seed = config.parameters_static.seed
     class_names = config.parameters_static.class_names
 
+    shadow_train_sets = []
+    shadow_test_sets = []
+
     # Partition shadow_train
     shadow_train_dataset = shadow_train_dataset.shuffle(seed=seed)
     train_partitioner = IidPartitioner(
@@ -64,10 +67,7 @@ def sample_shadow_datasets_iid(shadow_train_dataset: Dataset, shadow_test_datase
     test_partitioner = IidPartitioner(
         num_partitions=num_shadow_models,
     )
-    train_partitioner.dataset = shadow_train_dataset
-
-    shadow_train_sets = []
-    shadow_test_sets = []
+    test_partitioner.dataset = shadow_test_dataset
 
     for i in range(num_shadow_models):
         train_data = train_partitioner.load_partition(partition_id=i)
@@ -135,52 +135,6 @@ def sample_shadow_datasets_with_non_iid(
 
     return shadow_train_sets, shadow_test_sets
 
-
-# def sample_dirichlet_like_shadow_datasets_from_pool(
-#         data_pool: Dataset,
-#         config: MiaConfig
-# ) -> list[Dataset]:
-#     num_shadow_models = config.parameters.num_shadow_models
-#     alpha = config.parameters.dirichlet_alpha
-#     train_size = config.parameters.train_size
-#     seed = config.parameters_static.seed
-#     class_names = config.parameters_static.class_names
-#
-#     rng = np.random.RandomState(seed)
-#
-#     # Group indices by class
-#     label2indices = defaultdict(list)
-#     for idx, label in enumerate(data_pool["label"]):
-#         label2indices[label].append(idx)
-#
-#     num_classes = len(label2indices)
-#     shadow_train_sets = []
-#
-#     for model_id in range(num_shadow_models):
-#         # Dirichlet sample: proportions of each class for this model
-#         proportions = rng.dirichlet([alpha] * num_classes)
-#         class_counts = (proportions * train_size).astype(int)
-#
-#         model_indices = []
-#         for class_id, count in enumerate(class_counts):
-#             indices = label2indices[class_id]
-#             sampled = rng.choice(indices, size=count, replace=True)  # allow overlap
-#             model_indices.extend(sampled)
-#
-#         rng.shuffle(model_indices)  # mix all classes
-#
-#         subset = data_pool.select(model_indices)
-#
-#         log_class_distribution(
-#             hf_dataset=subset,
-#             wandb_cluster_name="shadow_train_distribution",
-#             wandb_plot_prefix=f"shadow_model_{model_id + 1}",
-#             class_names=class_names
-#         )
-#
-#         shadow_train_sets.append(subset)
-#
-#     return shadow_train_sets
 
 
 def train_model(model: nn.Module, dataloader: DataLoader, epochs: int, learning_rate: float, learning_rate_decay: float,
@@ -561,7 +515,7 @@ def load_config(config_path: str) -> dict:
 
 def run_mia(config: MiaConfig):
     print(f"\n🚀 Running experiment with config: {config}\n")
-    checkpoint_path: Path = CHECKPOINTS_DIR_TARGET / "12" / "global_model_round_10.pth"
+    checkpoint_path: Path = CHECKPOINTS_DIR_TARGET / "13" / "global_model_round_100.pth"
     print("loading: ", checkpoint_path)
     print()
     # Initialize wandb run
@@ -590,20 +544,20 @@ def run_mia(config: MiaConfig):
             shadow_train_dataset=shadow_train, shadow_test_dataset=shadow_test, config=config
         )
 
-    # per_shadow_per_class_data = train_all_shadow_models_and_collect_features(
-    #     shadow_train_subsets=shadow_train_subsets,
-    #     shadow_test_subsets=shadow_test_subsets,
-    #     config=config, device=device)
-    #
-    # attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
-    #                                                        config=config)
-    #
-    # target_model = load_specific_target_model(checkpoint_path=checkpoint_path, model_name=config.parameters.model_arch,
-    #                                           device=device)
-    #
-    # evaluate_attack_models(attack_models=attack_models, target_model=target_model, scalers=scalers,
-    #                        target_train=target_train,
-    #                        target_test=target_test, config=config, device=device)
+    per_shadow_per_class_data = train_all_shadow_models_and_collect_features(
+        shadow_train_subsets=shadow_train_subsets,
+        shadow_test_subsets=shadow_test_subsets,
+        config=config, device=device)
+
+    attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
+                                                           config=config)
+
+    target_model = load_specific_target_model(checkpoint_path=checkpoint_path, model_name=config.parameters.model_arch,
+                                              device=device)
+
+    evaluate_attack_models(attack_models=attack_models, target_model=target_model, scalers=scalers,
+                           target_train=target_train,
+                           target_test=target_test, config=config, device=device)
 
     # Finish the wandb run
     wandb.finish()
