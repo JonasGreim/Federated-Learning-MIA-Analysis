@@ -9,5 +9,3 @@ parameters:
   test_size: 10000
   weight_decay: 5e-4
   run_name: "run2"
-  iid_data_distribution: false
-  dirichlet_alpha: 0.5

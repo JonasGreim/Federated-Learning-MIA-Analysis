@@ -24,7 +24,6 @@ from membership_inference_attack.utils.wandb_logging_mia import log_per_class_me
     log_overall_metrics_with_error_bars, log_class_distribution
 from path_settings import CHECKPOINTS_DIR_TARGET, D1_SPLIT_PATH, D2_SPLIT_PATH, D3_SPLIT_PATH, D4_SPLIT_PATH
 from pathlib import Path
-from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner
 
 
 # === Utility Functions ===
@@ -46,8 +45,8 @@ def load_data(config: MiaConfig) -> tuple[Dataset, Dataset, Dataset, Dataset]:
     return shadow_train_hf, target_train_hf, target_test_hf, shadow_test_hf
 
 
-def sample_shadow_datasets_with_overlap(shadow_train_dataset: Dataset, shadow_test_dataset: Dataset,
-                                        config: MiaConfig) -> tuple[list[Dataset], list[Dataset]]:
+def sample_shadow_datasets_from_mia_data_pool(shadow_train_dataset: Dataset, shadow_test_dataset: Dataset,
+                                              config: MiaConfig) -> tuple[list[Dataset], list[Dataset]]:
     # Sample shadow train and test datasets from the shadow data train/test pool
     # Sample without duplicates, but with overlap between shadow model datasets
     num_shadow_models = config.parameters.num_shadow_models
@@ -80,96 +79,6 @@ def sample_shadow_datasets_with_overlap(shadow_train_dataset: Dataset, shadow_te
 
         shadow_train_sets.append(train_subset)
         shadow_test_sets.append(test_subset)
-
-    return shadow_train_sets, shadow_test_sets
-
-
-def sample_shadow_datasets_iid(shadow_train_dataset: Dataset, shadow_test_dataset: Dataset,
-                               config: MiaConfig) -> tuple[list[Dataset], list[Dataset]]:
-    num_shadow_models = config.parameters.num_shadow_models
-    seed = config.parameters_static.seed
-    class_names = config.parameters_static.class_names
-
-    shadow_train_sets = []
-    shadow_test_sets = []
-
-    # Partition shadow_train
-    shadow_train_dataset = shadow_train_dataset.shuffle(seed=seed)
-    train_partitioner = IidPartitioner(
-        num_partitions=num_shadow_models,
-    )
-    train_partitioner.dataset = shadow_train_dataset
-
-    # Partition shadow_test
-    shadow_test_dataset = shadow_test_dataset.shuffle(seed=seed)  # shuffle dataset to ensure reproducibility
-    test_partitioner = IidPartitioner(
-        num_partitions=num_shadow_models,
-    )
-    test_partitioner.dataset = shadow_test_dataset
-
-    for i in range(num_shadow_models):
-        train_data = train_partitioner.load_partition(partition_id=i)
-        shadow_train_sets.append(train_data)
-
-        test_data = test_partitioner.load_partition(partition_id=i)
-        shadow_test_sets.append(test_data)
-
-        log_class_distribution(
-            hf_dataset=train_data,
-            wandb_cluster_name="shadow_train_distribution",
-            wandb_plot_prefix=f"shadow_model_{i + 1}",
-            class_names=class_names
-        )
-
-    return shadow_train_sets, shadow_test_sets
-
-
-def sample_shadow_datasets_with_non_iid(
-        shadow_train_dataset: Dataset,
-        shadow_test_dataset: Dataset,
-        config: MiaConfig
-) -> tuple[list[Dataset], list[Dataset]]:
-    num_shadow_models = config.parameters.num_shadow_models
-    alpha = config.parameters.dirichlet_alpha
-    seed = config.parameters_static.seed
-    class_names = config.parameters_static.class_names
-
-    shadow_train_sets = []
-    shadow_test_sets = []
-
-    # Partition shadow_train
-    train_partitioner = DirichletPartitioner(
-        num_partitions=num_shadow_models,
-        partition_by="label",
-        alpha=alpha,
-        min_partition_size=0,
-        seed=seed
-    )
-    train_partitioner.dataset = shadow_train_dataset
-
-    # Partition shadow_test
-    shadow_test_dataset = shadow_test_dataset.shuffle(seed=seed)  # shuffle dataset to ensure reproducibility
-    test_partitioner = IidPartitioner(
-        num_partitions=num_shadow_models,
-    )
-
-    test_partitioner.dataset = shadow_test_dataset
-
-    for i in range(num_shadow_models):
-        # Train data for shadow model i
-        train_data = train_partitioner.load_partition(partition_id=i)
-        shadow_train_sets.append(train_data)
-
-        log_class_distribution(
-            hf_dataset=train_data,
-            wandb_cluster_name="shadow_train_distribution",
-            wandb_plot_prefix=f"shadow_model_{i + 1}_train",
-            class_names=class_names
-        )
-
-        # Test data for shadow model i
-        test_data = test_partitioner.load_partition(partition_id=i)
-        shadow_test_sets.append(test_data)
 
     return shadow_train_sets, shadow_test_sets
 
@@ -551,15 +460,22 @@ def load_config(config_path: str) -> dict:
 
 
 def run_mia(config: MiaConfig):
+    # Choose target model checkpoint to attack
+    target_model_checkpoint_folder = "9"
+    target_model_checkpoint_file = "global_model_round_100.pth"
+    checkpoint_path: Path = CHECKPOINTS_DIR_TARGET / target_model_checkpoint_folder / target_model_checkpoint_file
+
     print(f"\n🚀 Running experiment with config: {config}\n")
-    checkpoint_path: Path = CHECKPOINTS_DIR_TARGET / "10" / "global_model_round_100.pth"
-    print("loading: ", checkpoint_path)
+    print("attacked target model: ", checkpoint_path)
     print()
+
     # Initialize wandb run
-    run_name = f"{config.parameters.run_name}-{config.parameters.model_arch}"
+    run_name = f"{config.parameters.run_name}-{target_model_checkpoint_folder}/{target_model_checkpoint_file}-{config.parameters.model_arch}"
     initialize_wandb_run(project_name="mia-shokri", config=OmegaConf.to_container(config, resolve=True),
                          run_name=run_name)
+    wandb.log({"target_model_checkpoint_path": str(checkpoint_path)})
 
+    # Set random seed and device
     seed_everything(config.parameters_static.seed)
     requested_device = config.parameters_static.device
 
@@ -571,19 +487,9 @@ def run_mia(config: MiaConfig):
     # Load datasets from 'split_cifar10_mia.py' script: D1, D2, D3, D4
     shadow_train, target_train, target_test, shadow_test = load_data(config=config)
 
-    # if config.parameters.iid_data_distribution:
-    #     shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_iid(
-    #         shadow_train_dataset=shadow_train,
-    #         shadow_test_dataset=shadow_test,
-    #         config=config)
-    # else:
-    #     shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_with_non_iid(
-    #         shadow_train_dataset=shadow_train, shadow_test_dataset=shadow_test, config=config
-    #     )
-
-    shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_with_overlap(shadow_train_dataset=shadow_train,
-                                                                                    shadow_test_dataset=shadow_test,
-                                                                                    config=config)
+    shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_from_mia_data_pool(shadow_train_dataset=shadow_train,
+                                                                                          shadow_test_dataset=shadow_test,
+                                                                                          config=config)
 
     per_shadow_per_class_data = train_all_shadow_models_and_collect_features(
         shadow_train_subsets=shadow_train_subsets,
