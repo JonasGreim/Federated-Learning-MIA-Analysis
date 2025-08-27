@@ -1,4 +1,4 @@
-# my-awesome-app: A Flower / PyTorch app
+# Membership Inference Attack on Flower
 
 ## Install dependencies and project
 Use poetry as virtual env and package manager
@@ -8,6 +8,12 @@ poetry env use python3.10
 poetry env info
 poetry install
 ```
+
+After that login into wandb:
+```
+wandb login
+```
+
 
 ## Run with the Simulation Engine
 
