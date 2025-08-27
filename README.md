@@ -1,9 +1,12 @@
 # my-awesome-app: A Flower / PyTorch app
 
 ## Install dependencies and project
+Use poetry as virtual env and package manager
 
 ```bash
-pip install -e .
+poetry env use python3.10
+poetry env info
+poetry install
 ```
 
 ## Run with the Simulation Engine
@@ -135,7 +138,7 @@ python3 run_mia_experiment.py mia=run1
 
 
 ```
-python3 run_flower_experiments.py flower=run1
+python3 run_flower_experiment.py flower=run1
 ```
 
 
