@@ -1,10 +1,32 @@
-# my-awesome-app: A Flower / PyTorch app
+# Membership Inference Attack on Flower
 
 ## Install dependencies and project
+Use poetry as virtual env and package manager
 
 ```bash
-pip install -e .
+poetry env use python3.10
+poetry env info
+poetry install
 ```
+
+After that login into wandb:
+```
+wandb login
+```
+
+## Explain Configs
+### . toml
+[pyproject.toml](pyproject.toml)
+- provides package manager
+- provides flower config
+  - describe flower parameter... (explaine )
+
+### hydra
+[experiments_conf](experiments_conf)
+- provides configs for MIA and Flower experiment
+- dataclasses provides types for configs
+- For flower experiments configs get injected via CLS in the python run_scripts. If you use hydra directly for flower experiments it will only run in simulations
+
 
 ## Run with the Simulation Engine
 
@@ -17,18 +39,6 @@ flwr run .
 Refer to the [How to Run Simulations](https://flower.ai/docs/framework/how-to-run-simulations.html) guide in the documentation for advice on how to optimize your simulations.
 
 ## Run with the Deployment Engine
-
-> \[!NOTE\]
-> An update to this example will show how to run this Flower application with the Deployment Engine and TLS certificates, or with Docker.
-
-## Resources
-
-- Flower website: [flower.ai](https://flower.ai/)
-- Check the documentation: [flower.ai/docs](https://flower.ai/docs/)
-- Give Flower a ⭐️ on GitHub: [GitHub](https://github.com/adap/flower)
-- Join the Flower community!
-  - [Flower Slack](https://flower.ai/join-slack/)
-  - [Flower Discuss](https://discuss.flower.ai/)
 
 setup:
 - git clone
