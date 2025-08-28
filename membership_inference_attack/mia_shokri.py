@@ -14,7 +14,7 @@ from flower.utils.huggingface_to_pytorch import HFDatasetToTorch
 from flower.utils.reproducibility import seed_worker, release_model, seed_everything
 from flower.utils.model_factory import create_model
 from flower.utils.wandb_logging import initialize_wandb_run
-from membership_inference_attack.utils.types_config_mia import MiaConfig
+from experiments_conf_types.types_config_mia import MiaConfig
 from collections import defaultdict
 import re
 import time

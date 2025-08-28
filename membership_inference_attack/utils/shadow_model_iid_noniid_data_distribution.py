@@ -1,5 +1,5 @@
 from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner
-from membership_inference_attack.utils.types_config_mia import MiaConfig
+from experiments_conf_types.types_config_mia import MiaConfig
 from datasets import Dataset
 from membership_inference_attack.utils.wandb_logging_mia import log_class_distribution
 

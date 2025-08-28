@@ -4,19 +4,19 @@ from hydra.main import main as hydra_main
 import ray
 import gc
 import subprocess
-import shlex
+from experiments_conf_types.types_config import Config
+from experiments_conf_types.types_config_flower import FlowerConfig
 
 
 @hydra_main(config_path="experiments_conf", config_name="config", version_base=None)
-def run(config):
+def run(config: Config):
     # if no config is passed via command line, base config is used
     # python3 run_flower_experiment.py flower=run1
 
-    # Load flower configuration and run flower
-    # f.e.: flwr run . --run-config 'num-server-rounds=1 local-epochs=1'
-    # it has to be injected through the command line into the .toml because hydra would not work with a real federated learning setup
-    # (with this current flower version)
-    flower_cfg = config.flower
+    # Load flower configuration and run flower with config parameters
+    # f.e.: flwr run . --run-config 'num-server-rounds=1 local-epochs=1 ...'
+    # it has to be injected through the command line into the .toml because hydra would not work with a real federated learning setup (with this current flower version)
+    flower_cfg: FlowerConfig = config.flower
 
     os.makedirs(config.output_dir, exist_ok=True)
     OmegaConf.save(flower_cfg, os.path.join(config.output_dir, "flower_config.yaml"))
@@ -32,7 +32,7 @@ def run(config):
         f"weight-decay={flower_cfg.weight_decay} "
         f"model=\"{flower_cfg.model}\" "
         f"seed={flower_cfg.seed} "
-        f"iid-data-distribution={'true' if flower_cfg.iid_data_distribution else 'false'} "
+        f"iid-data-distribution={'true' if flower_cfg.iid_data_distribution else 'false'} "  # flower expects string
         f"dirichlet-alpha={flower_cfg.dirichlet_alpha} "
         f"num-clients={flower_cfg.num_clients}"
     )

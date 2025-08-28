@@ -135,7 +135,7 @@ python3 run_mia_experiment.py mia=run1
 
 
 ```
-python3 run_flower_experiments.py flower=run1
+python3 run_flower_experiment.py flower=run1
 ```
 
 
