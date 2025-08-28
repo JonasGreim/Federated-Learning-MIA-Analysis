@@ -473,7 +473,7 @@ def run_mia(config: MiaConfig):
     run_name = f"{config.parameters.run_name}-{target_model_checkpoint_folder}/{target_model_checkpoint_file}-{config.parameters.model_arch}"
     initialize_wandb_run(project_name="mia-shokri", config=OmegaConf.to_container(config, resolve=True),
                          run_name=run_name)
-    wandb.log({"target_model_checkpoint_path": str(checkpoint_path)})
+    wandb.log({"target_model_checkpoint_path": f"/{target_model_checkpoint_folder}/{target_model_checkpoint_file}"})
 
     # Set random seed and device
     seed_everything(config.parameters_static.seed)

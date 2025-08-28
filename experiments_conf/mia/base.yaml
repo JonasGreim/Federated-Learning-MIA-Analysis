@@ -1,6 +1,6 @@
 parameters:
   num_classes: 10
-  num_shadow_models: 100 # shorki used 100 for cifar10
+  num_shadow_models: 1 # shorki used 100 for cifar10
   # loader defined in utils.model_factory.create_model
   model_arch: "simple_model" # <-- simple_model, simple_model_with_dropout, complex_model, complex_model_with_dropout
   shadow_epochs: 100

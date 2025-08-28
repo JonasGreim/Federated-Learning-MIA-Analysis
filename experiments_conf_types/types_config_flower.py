@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 @dataclass
 class FlowerConfig:
-    """Configuration for MIA parameters."""
     num_server_rounds: int
     local_epochs: int
     learning_rate: float

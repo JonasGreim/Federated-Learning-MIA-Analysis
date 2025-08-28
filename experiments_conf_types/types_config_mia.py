@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 @dataclass
 class Parameters:
-    """Configuration for MIA parameters."""
     num_classes: int
     num_shadow_models: int
     shadow_epochs: int
@@ -16,7 +15,6 @@ class Parameters:
 
 @dataclass
 class ParametersStatic:
-    """Configuration for MIA parameters."""
     seed: int
     batch_size: int
     device: str
