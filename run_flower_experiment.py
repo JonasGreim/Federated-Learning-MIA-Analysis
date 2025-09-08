@@ -38,7 +38,9 @@ def run(config: Config):
     )
     print(f"flwr run . --run-config '{run_config}'")
 
-    subprocess.run(["flwr", "run", ".", "--run-config", run_config])
+    subprocess.run(["flwr", "run", ".", "local-simulation-gpu", "--run-config", run_config])
+    # run this for cpu only run & (change experiments_conf/flower/base to cuda->cpu)
+    # subprocess.run(["flwr", "run", ".", "local-simulation-cpu", "--run-config", run_config])
 
     # clean up resources
     if ray.is_initialized():

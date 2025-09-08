@@ -143,10 +143,11 @@ start mia: or without mia= -> base config is taken
 python3 run_mia_experiment.py mia=run1
 ```
 
-
+! default with gpu if you want to use only cpu (uncomment cpu command in run_flower_experiment.py & change ./experiments_conf/flower/base: cuda->cpu)
 ```
 python3 run_flower_experiment.py flower=run1
 ```
+
 
 
 real federated run:
