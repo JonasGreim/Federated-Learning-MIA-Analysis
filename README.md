@@ -138,12 +138,13 @@ flwr run . --run-config 'num-server-rounds=1 local-epochs=1'
 ```
 
 
-start mia: or without mia= -> base config is taken
+make sure to init with target model you want to attack (all target models are in the folder ./model_checkpoints_target)
 ```
 python3 run_mia_experiment.py mia=run1
 ```
 
 ! default with gpu if you want to use only cpu (uncomment cpu command in run_flower_experiment.py & change ./experiments_conf/flower/base: cuda->cpu)
+flower model is saved every 5th round to the folder  ./model_checkpoints_target
 ```
 python3 run_flower_experiment.py flower=run1
 ```

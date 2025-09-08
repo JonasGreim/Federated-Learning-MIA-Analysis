@@ -16,7 +16,6 @@ from flower.utils.model_factory import create_model
 from flower.utils.wandb_logging import initialize_wandb_run
 from experiments_conf_types.types_config_mia import MiaConfig
 from collections import defaultdict
-import re
 import time
 import wandb
 from omegaconf import OmegaConf
@@ -397,51 +396,6 @@ def evaluate_attack_models(attack_models: dict, target_model: nn.Module, scalers
         far=overall_far, std_far=overall_std_far
     )
 
-
-def load_latest_target_model(model_name: str, device: torch.device) -> nn.Module:
-    release_model(None, device.type)
-    model = create_model(model_name)
-
-    # Get all checkpoint paths
-    checkpoint_dir_target = CHECKPOINTS_DIR_TARGET
-
-    numeric_dirs = [
-        int(p.name) for p in checkpoint_dir_target.iterdir()
-        if p.is_dir() and p.name.isdigit()
-    ]
-    if numeric_dirs:
-        highest_folder_number = max(numeric_dirs)
-    else:
-        raise FileNotFoundError("No checkpoint folder found.")
-
-    checkpoint_dir = checkpoint_dir_target / str(highest_folder_number)
-    checkpoint_paths = list(checkpoint_dir.glob("global_model_round_*.pth"))
-
-    if not checkpoint_paths:
-        raise FileNotFoundError("No checkpoint files found.")
-
-    # Extract round numbers and map to paths
-    checkpoints_with_rounds = []
-    for path in checkpoint_paths:
-        match = re.search(r'global_model_round_(\d+)\.pth', path.name)
-        if match:
-            round_number = int(match.group(1))
-            checkpoints_with_rounds.append((round_number, path))
-
-    if not checkpoints_with_rounds:
-        raise ValueError("No valid checkpoint files with round numbers found.")
-
-    # Get the path with the highest round number
-    latest_round, latest_checkpoint_path = max(checkpoints_with_rounds, key=lambda x: x[0])
-
-    model.load_state_dict(torch.load(latest_checkpoint_path, map_location=device))
-    model.to(device)
-    model.eval()
-    print(f"Loaded target model from: {latest_checkpoint_path} (round {latest_round})")
-
-    return model
-
-
 def load_specific_target_model(model_name: str, checkpoint_path: Path, device: torch.device) -> nn.Module:
     release_model(None, device.type)
     model = create_model(model_name)
@@ -460,14 +414,15 @@ def load_config(config_path: str) -> dict:
 
 
 def run_mia(config: MiaConfig):
-    # Choose target model checkpoint to attack
-    target_model_checkpoint_folder = "9"
-    target_model_checkpoint_file = "global_model_round_100.pth"
+    # Verify target model checkpoint exists
+    target_model_checkpoint_folder = config.parameters.target_model_folder
+    target_model_checkpoint_file = config.parameters.target_model_file
     checkpoint_path: Path = CHECKPOINTS_DIR_TARGET / target_model_checkpoint_folder / target_model_checkpoint_file
+    if not checkpoint_path.exists():
+        raise FileNotFoundError(f"Target model checkpoint not found: {checkpoint_path}, please check the path in the config.")
 
     print(f"\n🚀 Running experiment with config: {config}\n")
     print("attacked target model: ", checkpoint_path)
-    print()
 
     # Initialize wandb run
     run_name = f"{config.parameters.run_name}-{target_model_checkpoint_folder}/{target_model_checkpoint_file}-{config.parameters.model_arch}"

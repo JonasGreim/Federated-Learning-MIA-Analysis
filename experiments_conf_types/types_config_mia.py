@@ -11,6 +11,8 @@ class Parameters:
     test_size: int
     weight_decay: float
     run_name: str
+    target_model_folder: str
+    target_model_file: str
 
 
 @dataclass
