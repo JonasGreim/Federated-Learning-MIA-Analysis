@@ -24,9 +24,20 @@ wandb login
 ### hydra
 [experiments_conf](experiments_conf)
 - provides configs for MIA and Flower experiment
-- dataclasses provides types for configs
+- dataclasses provides types for configs (if you want to change a parameter you have to change it in the dataclass too in /[experiments_conf_types](experiments_conf_types))
 - For flower experiments configs get injected via CLS in the python run_scripts. If you use hydra directly for flower experiments it will only run in simulations
 
+## Project Structure
+### model_checkpoints_target
+- Every Flower run saves the target model every 5 rounds in a seperate subfolder in this folder
+- MIA uses this folder to load the target model
+
+### splits
+- is created by [split_cifar10_mia.py](flower/utils/split_cifar10_mia.py), is automatically called in the flower server app and mia run script
+- the cifar-10 Hugging Face dataset is splitted into 4 parts (D1=flower_train, D2=flower_test, D3=shadow_train, D4=shadow_test)
+- currently: D1=20.000, D2=10.000, D3=15.000, D4=15.000
+- D2 comes from the original CIFAR-10 test set, so it is not split further
+- D1, D3, D4 come from the original CIFAR-10 train set
 
 ## Run with the Simulation Engine
 

@@ -13,6 +13,7 @@ from flower.utils.data_loading import get_transforms_custom
 from flower.utils.huggingface_to_pytorch import HFDatasetToTorch
 from flower.utils.reproducibility import seed_worker, release_model, seed_everything
 from flower.utils.model_factory import create_model
+from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
 from flower.utils.wandb_logging import initialize_wandb_run
 from experiments_conf_types.types_config_mia import MiaConfig
 from collections import defaultdict
@@ -29,6 +30,14 @@ from pathlib import Path
 def load_data(config: MiaConfig) -> tuple[Dataset, Dataset, Dataset, Dataset]:
     class_names = config.parameters_static.class_names
 
+    # check if data splits exists if not run split_cifar10_mia.py
+    if not (Path(D1_SPLIT_PATH).exists() and Path(D2_SPLIT_PATH).exists() and Path(D3_SPLIT_PATH).exists() and Path(D4_SPLIT_PATH).exists()):
+        split_cifar10_for_target_and_shadow(
+            target_train_ratio=0.4,
+            shadow_train_ratio=0.3,
+            shadow_test_ratio=0.3
+        )
+
     # Load huggingface datasets from disk -> run split script before running this: split_cifar10_mia.py (auto. run by target model)
     try:
         target_train_hf = load_from_disk(D1_SPLIT_PATH)
@@ -36,12 +45,12 @@ def load_data(config: MiaConfig) -> tuple[Dataset, Dataset, Dataset, Dataset]:
         shadow_train_hf = load_from_disk(D3_SPLIT_PATH)
         shadow_test_hf = load_from_disk(D4_SPLIT_PATH)
     except Exception as e:
-        raise RuntimeError(f"MIA: Failed to load datasets from disk: {e}") from e
+        raise RuntimeError(f"MIA: Failed to load datasets from disk: {e}, please run split_cifar10_mia.py") from e
 
     log_class_distribution(hf_dataset=target_train_hf, wandb_cluster_name="shadow_train_distribution",
                            wandb_plot_prefix="shadow_pool_data", class_names=class_names)
 
-    return shadow_train_hf, target_train_hf, target_test_hf, shadow_test_hf
+    return shadow_train_hf, shadow_test_hf, target_train_hf, target_test_hf
 
 
 def sample_shadow_datasets_from_mia_data_pool(shadow_train_dataset: Dataset, shadow_test_dataset: Dataset,
@@ -440,7 +449,7 @@ def run_mia(config: MiaConfig):
     device = torch.device(requested_device)
 
     # Load datasets from 'split_cifar10_mia.py' script: D1, D2, D3, D4
-    shadow_train, target_train, target_test, shadow_test = load_data(config=config)
+    shadow_train, shadow_test, target_train, target_test = load_data(config=config)
 
     shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_from_mia_data_pool(shadow_train_dataset=shadow_train,
                                                                                           shadow_test_dataset=shadow_test,
