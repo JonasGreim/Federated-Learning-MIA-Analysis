@@ -426,18 +426,18 @@ def run_mia(config: MiaConfig):
     # Verify target model checkpoint exists
     target_model_checkpoint_folder = config.parameters.target_model_folder
     target_model_checkpoint_file = config.parameters.target_model_file
-    checkpoint_path: Path = CHECKPOINTS_DIR_TARGET / target_model_checkpoint_folder / target_model_checkpoint_file
-    if not checkpoint_path.exists():
-        raise FileNotFoundError(f"Target model checkpoint not found: {checkpoint_path}, please check the path in the config.")
+    target_model_checkpoint_path: Path = CHECKPOINTS_DIR_TARGET / target_model_checkpoint_folder / target_model_checkpoint_file
+    if not target_model_checkpoint_path.exists():
+        raise FileNotFoundError(f"Target model checkpoint not found: {target_model_checkpoint_path}, please check the path in the config.")
 
     print(f"\n🚀 Running experiment with config: {config}\n")
-    print("attacked target model: ", checkpoint_path)
+    print("attacked target model: ", target_model_checkpoint_path)
 
     # Initialize wandb run
     run_name = f"{config.parameters.run_name}-{target_model_checkpoint_folder}/{target_model_checkpoint_file}-{config.parameters.model_arch}"
     initialize_wandb_run(project_name="mia-shokri", config=OmegaConf.to_container(config, resolve=True),
                          run_name=run_name)
-    wandb.log({"target_model_checkpoint_path": f"/{target_model_checkpoint_folder}/{target_model_checkpoint_file}"})
+    wandb.config.target_model_checkpoint_path = f"/{target_model_checkpoint_folder}/{target_model_checkpoint_file}"
 
     # Set random seed and device
     seed_everything(config.parameters_static.seed)
@@ -463,7 +463,7 @@ def run_mia(config: MiaConfig):
     attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
                                                            config=config)
 
-    target_model = load_specific_target_model(checkpoint_path=checkpoint_path, model_name=config.parameters.model_arch,
+    target_model = load_specific_target_model(checkpoint_path=target_model_checkpoint_path, model_name=config.parameters.model_arch,
                                               device=device)
 
     evaluate_attack_models(attack_models=attack_models, target_model=target_model, scalers=scalers,
