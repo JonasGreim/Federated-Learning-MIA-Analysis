@@ -1,9 +1,7 @@
-from pathlib import Path
 from datasets import Dataset
 from collections import Counter
 import matplotlib.pyplot as plt
 import wandb
-from path_settings import WANDB_DIR
 import matplotlib
 
 matplotlib.use("Agg")
@@ -51,30 +49,6 @@ def log_class_distribution(
     plt.close()
 
 
-# Not working -> wandb sub process cancels main wandb run & couldn't include in main run because of a global counter conflict
-def log_training_to_wandb(history: list[dict], training_time: float, model_idx: int, root_dir: Path = WANDB_DIR):
-    run = wandb.init(
-        project="mia-shadow-attack",
-        name=f"shadow_model_{model_idx}_training",
-        group="shadow_models",
-        job_type="training",
-        dir=root_dir,
-        reinit=True
-    )
-
-    for entry in history:
-        run.log({
-            f"shadow_model/{model_idx}/train_loss": entry["train_loss"],
-            f"shadow_model/{model_idx}/train_accuracy": entry["train_accuracy"]
-        }, step=entry["epoch"])
-
-    run.log({
-        f"shadow_model/{model_idx}/total_training_time (s)": training_time
-    })
-
-    run.finish()
-
-
 def log_per_class_metrics(per_class_metrics: dict, class_names: list = None):
     metrics = ['accuracy', 'precision', 'recall', 'f1_score', 'auc', 'far']
 
@@ -105,12 +79,18 @@ def log_overall_metrics_with_error_bars(
         auc, std_auc,
         far, std_far
 ):
-    metrics = ['Accuracy', 'Precision', 'Recall', 'F1', 'AUC', 'FAR']
+    metrics_names = ['Accuracy', 'Precision', 'Recall', 'F1', 'AUC', 'FAR']
     means = [accuracy, precision, recall, f1, auc, far]
     stds = [std_accuracy, std_precision, std_recall, std_f1, std_auc, std_far]
 
+    for name, value in zip(metrics_names, means):
+        wandb.run.summary[f"metrics/{name}"] = value
+
+    for name, value in zip(metrics_names, stds):
+        wandb.run.summary[f"std/std_{name}"] = value
+
     plt.figure(figsize=(8, 5))
-    bars = plt.bar(metrics, means, yerr=stds, capsize=6, color='skyblue', edgecolor='black')
+    bars = plt.bar(metrics_names, means, yerr=stds, capsize=6, color='skyblue', edgecolor='black')
     plt.ylabel("Score")
     plt.title("Overall Attack Metrics with Std Deviation")
     plt.ylim(0, 1.0)
