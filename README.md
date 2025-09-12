@@ -34,10 +34,16 @@ wandb login
 
 ### splits
 - is created by [split_cifar10_mia.py](flower/utils/split_cifar10_mia.py), is automatically called in the flower server app and mia run script
-- the cifar-10 Hugging Face dataset is splitted into 4 parts (D1=flower_train, D2=flower_test, D3=shadow_train, D4=shadow_test)
+- the cifar-10 Hugging Face dataset is split into 4 parts (D1=flower_train, D2=flower_test, D3=shadow_train, D4=shadow_test)
 - currently: D1=20.000, D2=10.000, D3=15.000, D4=15.000
 - D2 comes from the original CIFAR-10 test set, so it is not split further
 - D1, D3, D4 come from the original CIFAR-10 train set
+- You can change the sizes in the script if you want to but make sure to change it also in mia_shorki.py and server_app.py
+
+### add different target models
+- add different target models in [models](flower/models)
+- add model to model factory [model_factory.py](flower/utils/model_factory.py)
+- now you can use the model in the configs
 
 ## Run with the Simulation Engine
 
