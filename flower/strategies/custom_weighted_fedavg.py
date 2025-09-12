@@ -154,8 +154,8 @@ class FedCustom(Strategy):
                 for _, fit_res in results
             ]
         )
-        metrics_aggregated = {"client_weighted_train_loss": loss_aggregated,
-                              "client_weighted_train_accuracy": accuracy_aggregated}
+        metrics_aggregated = {"Aggregierter Trainings-Loss": loss_aggregated,
+                              "Aggregierte Trainings-Accuracy": accuracy_aggregated}
         wandb_log_metrics(metrics=metrics_aggregated, step=server_round)
 
         aggregated_ndarrays = aggregate(weights_results)
@@ -205,8 +205,8 @@ class FedCustom(Strategy):
             ]
         )
 
-        metrics_aggregated = {"client_weighted_evaluate_loss": loss_aggregated,
-                              "client_weighted_evaluate_accuracy": accuracy_aggregated}
+        metrics_aggregated = {"Aggregierter Validierungs-Loss": loss_aggregated,
+                              "Aggregierte Validierungs-Accuracy": accuracy_aggregated}
 
         wandb_log_metrics(metrics=metrics_aggregated, step=server_round)
 
@@ -237,7 +237,7 @@ class FedCustom(Strategy):
         loss, accuracy = test(net, testloader, self.device)
 
         # log results to json and wandb
-        result = {"cen_loss": loss, "cen_accuracy": accuracy}
+        result = {"Zentraler Server-Test-Loss": loss, "Zentrale Server-Test-Accuracy": accuracy}
         self.result_to_json_global_model_test[server_round] = result
 
         # save metrics as json

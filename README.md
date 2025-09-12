@@ -45,6 +45,10 @@ wandb login
 - add model to model factory [model_factory.py](flower/utils/model_factory.py)
 - now you can use the model in the configs
 
+## Dataset
+- Code uses the cifar-10 dataset from Hugging Face
+- Dataset is converted to PyTorch tensors
+
 ## Run with the Simulation Engine
 
 In the `my-awesome-app` directory, use `flwr run` to run a local simulation:
