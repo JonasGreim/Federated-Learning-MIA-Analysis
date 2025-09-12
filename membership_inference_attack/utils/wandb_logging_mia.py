@@ -34,23 +34,27 @@ def log_class_distribution(
     table_data = [[class_names[i], counts[i]] for i in range(len(class_names))]
     table = wandb.Table(data=table_data, columns=["class", "count"])
     wandb.log({f"{wandb_cluster_name}/{wandb_plot_prefix}/class_distribution": wandb.plot.bar(
-        table, "class", "count", title=f"{wandb_plot_prefix.capitalize()} Class Distribution"
+        table, "class", "count", title=f"Klassenhäufigkeit des {wandb_plot_prefix}"
     )})
 
     # Log histogram-style bar chart
     plt.figure(figsize=(8, 6))
-    plt.bar(class_names, counts, alpha=0.7, color='skyblue', edgecolor='black')
-    plt.xlabel("Class")
-    plt.ylabel("Number of Samples")
-    plt.title(f"Histogram of {wandb_cluster_name.capitalize()} Class Distribution")
+    plt.bar(class_names, counts, color='#1f77b4', edgecolor='black', alpha=1.0)
+    ax = plt.gca()
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    plt.xlabel("Klasse")
+    plt.ylabel("Anzahl der Stichproben")
+    plt.title(f"Klassenhäufigkeit des {wandb_plot_prefix}")
     plt.xticks(rotation=45)
+    plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
     plt.tight_layout()
     wandb.log({f"{wandb_cluster_name}/{wandb_plot_prefix}_class_histogram": wandb.Image(plt)})
     plt.close()
 
 
 def log_per_class_metrics(per_class_metrics: dict, class_names: list = None):
-    metrics = ['accuracy', 'precision', 'recall', 'f1_score', 'auc', 'far']
+    metrics = ['Accuracy', 'Precision', 'Recall', 'F1-Score', 'AUC', 'FAR']
 
     class_keys = sorted(per_class_metrics.keys())
     if class_names is None:
@@ -60,12 +64,16 @@ def log_per_class_metrics(per_class_metrics: dict, class_names: list = None):
         values = [per_class_metrics[cls].get(metric, 0.0) for cls in class_keys]
 
         plt.figure(figsize=(10, 6))
-        plt.bar(class_names, values, edgecolor='black')
-        plt.xlabel("Class")
-        plt.ylabel(metric.capitalize())
-        plt.title(f"Per-Class {metric.replace('_', ' ').capitalize()} of Attack Model")
+        plt.bar(class_names, values, color='#1f77b4', edgecolor='black', alpha=1.0)
+        ax = plt.gca()
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        plt.xlabel("Klasse")
+        plt.ylabel(metric)
+        plt.xticks(rotation=45)
+        plt.title(f"Pro-Klassen {metric} des Angriffsmodells")
         plt.ylim(0, 1.0)
-        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
 
         wandb.log({f"attack_eval/per_class_{metric}_vertical": wandb.Image(plt)})
         plt.close()
@@ -79,7 +87,7 @@ def log_overall_metrics_with_error_bars(
         auc, std_auc,
         far, std_far
 ):
-    metrics_names = ['Accuracy', 'Precision', 'Recall', 'F1', 'AUC', 'FAR']
+    metrics_names = ['Accuracy', 'Precision', 'Recall', 'F1-Score', 'AUC', 'FAR']
     means = [accuracy, precision, recall, f1, auc, far]
     stds = [std_accuracy, std_precision, std_recall, std_f1, std_auc, std_far]
 
@@ -89,17 +97,28 @@ def log_overall_metrics_with_error_bars(
     for name, value in zip(metrics_names, stds):
         wandb.run.summary[f"std/std_{name}"] = value
 
+    # Create the plot
     plt.figure(figsize=(8, 5))
-    bars = plt.bar(metrics_names, means, yerr=stds, capsize=6, color='skyblue', edgecolor='black')
-    plt.ylabel("Score")
-    plt.title("Overall Attack Metrics with Std Deviation")
+    bars = plt.bar(metrics_names, means, yerr=stds, capsize=6, color='#1f77b4', edgecolor='black', alpha=1.0)
+    ax = plt.gca()
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    plt.ylabel("Metrikwert")
+    plt.xlabel("Angriffsmetrik")
+    plt.title("Gesamtmetriken des Angriffs mit Standardabweichung")
     plt.ylim(0, 1.0)
-    plt.grid(axis='y', linestyle='--', alpha=0.6)
+    plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
 
-    # Add numeric labels on top of bars
+    # Add numeric labels slightly above the error bars
     for bar, mean, std in zip(bars, means, stds):
-        plt.text(bar.get_x() + bar.get_width() / 2.0, bar.get_height() + 0.02,
+        # Calculate the top of the error bar (mean + std)
+        y_pos = mean + std
+        # Add a small buffer to the y-position for the text
+        text_y_pos = y_pos + 0.03
+
+        plt.text(bar.get_x() + bar.get_width() / 2.0, text_y_pos,
                  f"{mean:.2f}±{std:.2f}", ha='center', va='bottom', fontsize=9)
 
+    # Log the plot to wandb and close it
     wandb.log({"attack_eval/overall_metrics_with_error_bars": wandb.Image(plt)})
     plt.close()

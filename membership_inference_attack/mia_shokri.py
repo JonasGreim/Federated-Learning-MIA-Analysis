@@ -48,7 +48,7 @@ def load_data(config: MiaConfig) -> tuple[Dataset, Dataset, Dataset, Dataset]:
         raise RuntimeError(f"MIA: Failed to load datasets from disk: {e}, please run split_cifar10_mia.py") from e
 
     log_class_distribution(hf_dataset=target_train_hf, wandb_cluster_name="shadow_train_distribution",
-                           wandb_plot_prefix="shadow_pool_data", class_names=class_names)
+                           wandb_plot_prefix="Datenpools", class_names=class_names)
 
     return shadow_train_hf, shadow_test_hf, target_train_hf, target_test_hf
 
@@ -80,8 +80,8 @@ def sample_shadow_datasets_from_mia_data_pool(shadow_train_dataset: Dataset, sha
 
         log_class_distribution(
             hf_dataset=train_subset,
-            wandb_cluster_name="shadow_train_distribution",
-            wandb_plot_prefix=f"shadow_model_{i + 1}",
+            wandb_cluster_name="Shadow_model_train_distribution",
+            wandb_plot_prefix=f"Shadow Model {i + 1}",
             class_names=class_names
         )
 
@@ -348,12 +348,12 @@ def evaluate_attack_models(attack_models: dict, target_model: nn.Module, scalers
         far = fp / (fp + tn) if (fp + tn) > 0 else 0.0
 
         # Store per-class metrics
-        per_class_metrics[cls]['accuracy'] = acc
-        per_class_metrics[cls]['precision'] = prec
-        per_class_metrics[cls]['recall'] = rec
-        per_class_metrics[cls]['f1_score'] = f1
-        per_class_metrics[cls]['auc'] = auc
-        per_class_metrics[cls]['far'] = far
+        per_class_metrics[cls]['Accuracy'] = acc
+        per_class_metrics[cls]['Precision'] = prec
+        per_class_metrics[cls]['Recall'] = rec
+        per_class_metrics[cls]['F1-Score'] = f1
+        per_class_metrics[cls]['AUC'] = auc
+        per_class_metrics[cls]['FAR'] = far
 
         # Store for global averages
         all_accs.append(acc)
@@ -371,7 +371,7 @@ def evaluate_attack_models(attack_models: dict, target_model: nn.Module, scalers
     print(f"\n=== Per-Class Attack Metrics ===")
     for cls in sorted(per_class_metrics.keys()):
         metrics = per_class_metrics[cls]
-        print(f"Class {cls}: Acc={metrics['accuracy']:.2f}, AUC={metrics['auc']:.2f}, F1={metrics['f1_score']:.2f}")
+        print(f"Class {cls}: Acc={metrics['Accuracy']:.2f}, AUC={metrics['AUC']:.2f}, F1={metrics['F1-Score']:.2f}")
 
     # === Overall Summary ===
     overall_accuracy = np.mean(all_accs) if all_accs else 0
@@ -434,7 +434,7 @@ def run_mia(config: MiaConfig):
     print("attacked target model: ", target_model_checkpoint_path)
 
     # Initialize wandb run
-    run_name = f"{config.parameters.run_name}-{target_model_checkpoint_folder}/{target_model_checkpoint_file}-{config.parameters.model_arch}"
+    run_name = f"{config.parameters.run_name}-model_ckp:{target_model_checkpoint_folder}/{target_model_checkpoint_file}-{config.parameters.model_arch}"
     initialize_wandb_run(project_name="mia-shokri", config=OmegaConf.to_container(config, resolve=True),
                          run_name=run_name)
     wandb.config.target_model_checkpoint_path = f"/{target_model_checkpoint_folder}/{target_model_checkpoint_file}"
