@@ -402,7 +402,6 @@ def evaluate_attack_models(attack_models: dict, target_model: nn.Module, scalers
         recall=overall_recall, std_recall=overall_std_recall,
         f1=overall_f1, std_f1=overall_std_f1,
         auc=overall_auc, std_auc=overall_std_auc,
-        far=overall_far, std_far=overall_std_far
     )
 
 def load_specific_target_model(model_name: str, checkpoint_path: Path, device: torch.device) -> nn.Module:

@@ -85,11 +85,10 @@ def log_overall_metrics_with_error_bars(
         recall, std_recall,
         f1, std_f1,
         auc, std_auc,
-        far, std_far
 ):
-    metrics_names = ['Accuracy', 'Precision', 'Recall', 'F1-Score', 'AUC', 'FAR']
-    means = [accuracy, precision, recall, f1, auc, far]
-    stds = [std_accuracy, std_precision, std_recall, std_f1, std_auc, std_far]
+    metrics_names = ['Accuracy', 'Precision', 'Recall', 'F1-Score', 'AUC']
+    means = [accuracy, precision, recall, f1, auc]
+    stds = [std_accuracy, std_precision, std_recall, std_f1, std_auc]
 
     for name, value in zip(metrics_names, means):
         wandb.run.summary[f"metrics/{name}"] = value
