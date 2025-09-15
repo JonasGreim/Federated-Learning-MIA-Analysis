@@ -48,6 +48,18 @@ wandb login
 ## Dataset
 - Code uses the cifar-10 dataset from Hugging Face
 - Dataset is converted to PyTorch tensors
+- You can change the dataset: 
+  - make sure to change the model
+  - mia config pass the classnames (should also work with classnames: None)
+  - delete dataset_splits files (should also work without deleting but just to be sure)
+
+# MIA 
+- python3 run_mia_experiment.py
+- run the exeriments_conf/mia/base conf with the example target model (10 server rounds, 10 epochs)
+- or run a specific config like this:
+```
+python3 run_mia_experiment.py --config-name=mia_run1
+```
 
 ## Run with the Simulation Engine
 

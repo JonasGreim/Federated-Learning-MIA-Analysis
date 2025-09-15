@@ -3,12 +3,12 @@ parameters:
   num_shadow_models: 1 # shorki used 100 for cifar10
   # loader defined in utils.model_factory.create_model
   model_arch: "simple_model" # <-- simple_model, simple_model_with_dropout, complex_model, complex_model_with_dropout
-  shadow_epochs: 100
+  shadow_epochs: 50
   train_size: 15000 # Size of train/test sets for shadow models (>15.000 samples would be with duplicates)
   test_size: 15000 # 15000 is the max for cifar10 here without duplicates
   weight_decay: 0.0  # shokri used 0.0, 5e-4 is common for federated learning
-  run_name: "run0"
-  target_model_folder: "0" # subfolder where the target model is saved (./model_checkpoints_target/<target_model_folder>)
+  run_name: "example"
+  target_model_folder: "example" # subfolder where the target model is saved (./model_checkpoints_target/<target_model_folder>)
   target_model_file: "global_model_round_10.pth" # filename of the target model
 
 parameters_static:

@@ -10,7 +10,7 @@ METRICS_DIR = ROOT_DIR / "metrics_of_run"
 CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
 OUTPUTS_DIR = ROOT_DIR / "outputs"
 WANDB_DIR = ROOT_DIR / "wandb"
-SPLITS_DIR = ROOT_DIR / "splits"
+SPLITS_DIR = ROOT_DIR / "dataset_splits"
 EXPERIMENTS_CONF_DIR = ROOT_DIR / "experiments_conf"
 
 # Config or metadata paths
