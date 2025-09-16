@@ -1,6 +1,6 @@
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
-from flower.utils.model_utils import get_weights, create_model_save_folder
+from flower.utils.model_utils import get_weights
 from flower.utils.reproducibility import seed_everything
 from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
 from flower.strategies.custom_weighted_fedavg import FedCustom
@@ -43,9 +43,6 @@ def server_fn(context: Context):
         shadow_test_ratio=0.3
     )
 
-    # Creates each run a unique folder in the save_dir for saving model checkpoints
-    model_saving_folder = create_model_save_folder(save_dir=CHECKPOINTS_DIR_TARGET)
-
     # Run data partitioning for visualization
     run_data_partitioning_for_visualization(iid=iid,
                                             dirichlet_alpha=dirichlet_alpha,
@@ -72,7 +69,6 @@ def server_fn(context: Context):
         model_name=model_name,
         batch_size=batch_size,
         max_server_rounds=num_rounds,
-        model_saving_folder=model_saving_folder
     )
     config = ServerConfig(num_rounds=num_rounds)
 

@@ -45,6 +45,10 @@ wandb login
 - add model to model factory [model_factory.py](flower/utils/model_factory.py)
 - now you can use the model in the configs
 
+### custom strategy
+- [custom_weighted_fedavg.py](flower/strategies/custom_weighted_fedavg.py)
+- overrides the standard FedAvg strategy / server default strategy
+
 ## Dataset
 - Code uses the cifar-10 dataset from Hugging Face
 - Dataset is converted to PyTorch tensors
@@ -53,7 +57,7 @@ wandb login
   - mia config pass the classnames (should also work with classnames: None)
   - delete dataset_splits files (should also work without deleting but just to be sure)
 
-# MIA 
+## MIA 
 - python3 run_mia_experiment.py
 - run the exeriments_conf/mia/base conf with the example target model (10 server rounds, 10 epochs)
 - or run a specific config like this:
