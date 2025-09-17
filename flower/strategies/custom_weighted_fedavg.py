@@ -156,9 +156,10 @@ class FedCustom(Strategy):
                 for _, fit_res in results
             ]
         )
-        metrics_aggregated = {"Aggregierter Trainings-Loss": loss_aggregated,
-                              "Aggregierte Trainings-Accuracy": accuracy_aggregated}
+        metrics_aggregated = {"Trainings-Loss (aggregiert)": loss_aggregated,
+                              "Trainings-Accuracy (aggregiert)": accuracy_aggregated}
         self.cache_metric.update(metrics_aggregated)
+        wandb_log_metrics(metrics=metrics_aggregated, step=server_round)
 
         aggregated_ndarrays = aggregate(weights_results)
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
@@ -206,15 +207,16 @@ class FedCustom(Strategy):
                 for _, evaluate_res in results
             ]
         )
-        overfitting_gap_loss = self.cache_metric.get("Aggregierter Trainings-Loss", 0.0) - loss_aggregated
+        overfitting_gap_loss = loss_aggregated - self.cache_metric.get("Aggregierter Trainings-Loss", 0.0)
         overfitting_gap_accuracy = self.cache_metric.get("Aggregierte Trainings-Accuracy", 0.0) - accuracy_aggregated
 
-        metrics_aggregated = {"Aggregierter Validierungs-Loss": loss_aggregated,
-                              "Aggregierte Validierungs-Accuracy": accuracy_aggregated,
-                              "Overfitting Gap Loss": overfitting_gap_loss,
-                              "Overfitting Gap Accuracy": overfitting_gap_accuracy
+        metrics_aggregated = {"Validierungs-Loss (aggregiert)": loss_aggregated,
+                              "Validierungs-Accuracy (aggregiert)": accuracy_aggregated,
+                              "Generalisierungsfehler (Loss)": overfitting_gap_loss,
+                              "Generalisierungsfehler (Accuracy)": overfitting_gap_accuracy
                               }
         self.cache_metric.update(metrics_aggregated)
+        wandb_log_metrics(metrics=metrics_aggregated, step=server_round)
 
         return loss_aggregated, metrics_aggregated
 
@@ -242,7 +244,7 @@ class FedCustom(Strategy):
         net.to(self.device)
         loss, accuracy = test(net, testloader, self.device)
 
-        server_metrics = {"Zentraler Server-Test-Loss": loss, "Zentrale Server-Test-Accuracy": accuracy}
+        server_metrics = {"Test-Loss (Zentrales Modell)": loss, "Test-Accuracy (Zentrales Modell)": accuracy}
         all_metrics = {**server_metrics, **self.cache_metric}
         self.all_round_metrics[server_round] = all_metrics
 
@@ -251,7 +253,7 @@ class FedCustom(Strategy):
             json.dump(self.all_round_metrics, json_file, indent=4)
 
         # log to W&B
-        wandb_log_metrics(metrics=all_metrics, step=server_round)
+        wandb_log_metrics(metrics=server_metrics, step=server_round)
 
         self.cache_metric = {}
         release_model(net, self.device.type)
