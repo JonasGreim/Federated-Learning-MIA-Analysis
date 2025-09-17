@@ -156,8 +156,8 @@ class FedCustom(Strategy):
                 for _, fit_res in results
             ]
         )
-        metrics_aggregated = {"Trainings-Loss (aggregiert)": loss_aggregated,
-                              "Trainings-Accuracy (aggregiert)": accuracy_aggregated}
+        metrics_aggregated = {"Trainings-Loss (Clients aggregiert)": loss_aggregated,
+                              "Trainings-Accuracy (Clients aggregiert)": accuracy_aggregated}
         self.cache_metric.update(metrics_aggregated)
         wandb_log_metrics(metrics=metrics_aggregated, step=server_round)
 
@@ -194,31 +194,50 @@ class FedCustom(Strategy):
         if not results:
             return None, {}
 
-        loss_aggregated = weighted_loss_avg(
+        validation_loss_aggregated = weighted_loss_avg(
             [
                 (evaluate_res.num_examples, evaluate_res.loss)
                 for _, evaluate_res in results
             ]
         )
 
-        accuracy_aggregated = weighted_loss_avg(  # same functionality as loss
+        validation_accuracy_aggregated = weighted_loss_avg(  # same functionality as loss
             [
                 (evaluate_res.num_examples, evaluate_res.metrics.get("evaluate_accuracy", 0.0))
                 for _, evaluate_res in results
             ]
         )
-        overfitting_gap_loss = loss_aggregated - self.cache_metric.get("Aggregierter Trainings-Loss", 0.0)
-        overfitting_gap_accuracy = self.cache_metric.get("Aggregierte Trainings-Accuracy", 0.0) - accuracy_aggregated
 
-        metrics_aggregated = {"Validierungs-Loss (aggregiert)": loss_aggregated,
-                              "Validierungs-Accuracy (aggregiert)": accuracy_aggregated,
-                              "Generalisierungsfehler (Loss)": overfitting_gap_loss,
-                              "Generalisierungsfehler (Accuracy)": overfitting_gap_accuracy
+        metrics_aggregated = {"Validierungs-Loss (Clients aggregiert)": validation_loss_aggregated,
+                              "Validierungs-Accuracy (Clients aggregiert)": validation_accuracy_aggregated,
                               }
         self.cache_metric.update(metrics_aggregated)
         wandb_log_metrics(metrics=metrics_aggregated, step=server_round)
 
-        return loss_aggregated, metrics_aggregated
+        return validation_loss_aggregated, metrics_aggregated
+
+    def _compute_overfitting_gaps(self, server_loss, server_accuracy):
+        """Compute overfitting gaps based on cached metrics."""
+        train_loss_aggregated = self.cache_metric.get("Trainings-Loss (Clients aggregiert)")
+        train_accuracy_aggregated = self.cache_metric.get("Trainings-Accuracy (Clients aggregiert)")
+        validation_loss_aggregated = self.cache_metric.get("Validierungs-Loss (Clients aggregiert)")
+        validation_accuracy_aggregated = self.cache_metric.get("Validierungs-Accuracy (Clients aggregiert)")
+
+        # calculate overfitting gap if possible (first server round there is no validation)
+        client_overfitting_gap_loss = (
+                validation_loss_aggregated - train_loss_aggregated) if validation_loss_aggregated is not None and train_loss_aggregated is not None else None
+        client_overfitting_gap_accuracy = (
+                train_accuracy_aggregated - validation_accuracy_aggregated) if train_accuracy_aggregated is not None and validation_accuracy_aggregated is not None else None
+        server_overfitting_gap_loss = (
+                    server_loss - train_loss_aggregated) if train_loss_aggregated is not None else None
+        server_overfitting_gap_accuracy = (
+                    train_accuracy_aggregated - server_accuracy) if train_accuracy_aggregated is not None else None
+
+        return {"Overfitting-Gap (Clients aggregiert, Loss)": client_overfitting_gap_loss,
+                "Overfitting-Gap (Clients aggregiert, Accuracy)": client_overfitting_gap_accuracy,
+                "Overfitting-Gap (Server, Loss)": server_overfitting_gap_loss,
+                "Overfitting-Gap (Server, Accuracy)": server_overfitting_gap_accuracy
+                }
 
     def evaluate(
             self, server_round: int, parameters: Parameters
@@ -242,22 +261,23 @@ class FedCustom(Strategy):
         net = create_model(self.model_name)
         set_weights(net, parameters_to_ndarrays(parameters))  # parameters = tensors -> ndarray parameters
         net.to(self.device)
-        loss, accuracy = test(net, testloader, self.device)
+        server_loss, server_accuracy = test(net, testloader, self.device)
 
-        server_metrics = {"Test-Loss (Zentrales Modell)": loss, "Test-Accuracy (Zentrales Modell)": accuracy}
-        all_metrics = {**server_metrics, **self.cache_metric}
-        self.all_round_metrics[server_round] = all_metrics
+        metrics_overfitting_gaps = self._compute_overfitting_gaps(server_loss=server_loss, server_accuracy=server_accuracy)
+
+        server_metrics = {"Test-Loss (Server)": server_loss, "Test-Accuracy (Server)": server_accuracy, **metrics_overfitting_gaps}
 
         # save metrics as json
+        all_metrics = {**server_metrics, **self.cache_metric}
+        self.all_round_metrics[server_round] = all_metrics
         with open(self.metric_save_folder / "results.json", "w") as json_file:
             json.dump(self.all_round_metrics, json_file, indent=4)
 
         # log to W&B
         wandb_log_metrics(metrics=server_metrics, step=server_round)
 
-        self.cache_metric = {}
         release_model(net, self.device.type)
-        return loss, server_metrics
+        return server_loss, server_metrics
 
     def num_fit_clients(self, num_available_clients: int) -> Tuple[int, int]:
         """Return sample size and required number of clients."""
