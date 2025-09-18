@@ -5,7 +5,7 @@ __pycache__/
 
 .idea
 wandb
-metrics_of_run
+metrics
 outputs
 multirun
 dataset_splits/*

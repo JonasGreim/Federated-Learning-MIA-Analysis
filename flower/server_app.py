@@ -1,11 +1,11 @@
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
-from flower.utils.model_utils import get_weights
+from flower.utils.model_utils import get_weights, create_save_folder
 from flower.utils.reproducibility import seed_everything
 from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
 from flower.strategies.custom_weighted_fedavg import FedCustom
 from flower.utils.wandb_logging import run_data_partitioning_for_visualization, initialize_wandb_run
-from path_settings import CHECKPOINTS_DIR_TARGET
+from path_settings import CHECKPOINTS_DIR_TARGET, METRICS_DIR_FLOWER
 from flower.utils.model_factory import create_model
 
 
@@ -25,6 +25,8 @@ def server_fn(context: Context):
     dirichlet_alpha = context.run_config.get("dirichlet-alpha", 0.5)
     iid = context.run_config.get("iid-data-distribution", True)
     num_clients = context.run_config.get("num-clients", 4)
+    metric_save_folder = create_save_folder(save_dir=METRICS_DIR_FLOWER)
+    print(f"Created metrics folder: {metric_save_folder}")
 
     # Seed everything for reproducibility
     seed_everything(seed)
@@ -48,6 +50,7 @@ def server_fn(context: Context):
                                             dirichlet_alpha=dirichlet_alpha,
                                             num_partitions=num_clients,
                                             train_target_model_as_shadow_model=train_target_model_as_shadow_model,
+                                            metric_save_folder=metric_save_folder,
                                             seed=seed)
 
     # Initialize model parameters
@@ -69,6 +72,7 @@ def server_fn(context: Context):
         model_name=model_name,
         batch_size=batch_size,
         max_server_rounds=num_rounds,
+        metric_save_folder=metric_save_folder,
     )
     config = ServerConfig(num_rounds=num_rounds)
 

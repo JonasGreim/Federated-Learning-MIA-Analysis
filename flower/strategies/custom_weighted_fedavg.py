@@ -31,6 +31,7 @@ from path_settings import (
     D4_SPLIT_PATH,
     ensure_dir_exist, METRICS_DIR_FLOWER,
 )
+from pathlib import Path
 
 
 class FedCustom(Strategy):
@@ -51,6 +52,7 @@ class FedCustom(Strategy):
             model_name: str = "simple_model",
             batch_size: int = 32,
             max_server_rounds: int = 10,
+            metric_save_folder: Path = METRICS_DIR_FLOWER,
     ) -> None:
         # can be overwritten here + abstract methods invoke
         super().__init__()
@@ -76,8 +78,7 @@ class FedCustom(Strategy):
         print(f"Created model checkpoint folder: {self.model_saving_folder}")
         self.all_round_metrics = {}
         self.cache_metric = {}
-        self.metric_save_folder = create_save_folder(save_dir=METRICS_DIR_FLOWER)
-        print(f"Created metrics folder: {self.metric_save_folder}")
+        self.metric_save_folder = metric_save_folder
 
     def __repr__(self) -> str:
         return "FedCustom"
@@ -269,7 +270,7 @@ class FedCustom(Strategy):
         # save metrics as json
         all_metrics = {**server_metrics, **self.cache_metric}
         self.all_round_metrics[server_round] = all_metrics
-        with open(self.metric_save_folder / "flower" / "results.json", "w") as json_file:
+        with open(self.metric_save_folder / "results.json", "w") as json_file:
             json.dump(self.all_round_metrics, json_file, indent=4)
 
         # log to W&B

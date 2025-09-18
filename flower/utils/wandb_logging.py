@@ -12,7 +12,7 @@ matplotlib.use("Agg")
 
 
 def run_data_partitioning_for_visualization(iid: bool, dirichlet_alpha: float, num_partitions: int,
-                                            train_target_model_as_shadow_model: bool,
+                                            train_target_model_as_shadow_model: bool, metric_save_folder: Path,
                                             seed: int) -> None:
     if train_target_model_as_shadow_model:
         split = D3_SPLIT_PATH
@@ -42,7 +42,7 @@ def run_data_partitioning_for_visualization(iid: bool, dirichlet_alpha: float, n
 
     partitioner.dataset = split_dataset
 
-    visualize_label_distribution(partitioner, METRICS_DIR)
+    visualize_label_distribution(partitioner, metric_save_folder)
 
 
 def visualize_label_distribution(partitioner, output_dir: Path = METRICS_DIR):
