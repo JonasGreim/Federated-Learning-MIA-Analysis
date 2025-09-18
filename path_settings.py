@@ -6,7 +6,9 @@ ROOT_DIR = Path(__file__).resolve().parent
 # Subdirectories
 MY_APP_DIR = ROOT_DIR / "flower"
 IMAGES_DIR = ROOT_DIR / "images"
-METRICS_DIR = ROOT_DIR / "metrics_of_run"
+METRICS_DIR = ROOT_DIR / "metrics"
+METRICS_DIR_FLOWER = METRICS_DIR / "flower"
+METRICS_DIR_MIA = METRICS_DIR / "mia"
 CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
 OUTPUTS_DIR = ROOT_DIR / "outputs"
 WANDB_DIR = ROOT_DIR / "wandb"
