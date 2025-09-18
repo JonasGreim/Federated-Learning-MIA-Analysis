@@ -11,6 +11,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.utils import resample
 from flower.utils.data_loading import get_transforms_custom
 from flower.utils.huggingface_to_pytorch import HFDatasetToTorch
+from flower.utils.model_utils import create_save_folder
 from flower.utils.reproducibility import seed_worker, release_model, seed_everything
 from flower.utils.model_factory import create_model
 from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
@@ -22,16 +23,18 @@ import wandb
 from omegaconf import OmegaConf
 from membership_inference_attack.utils.wandb_logging_mia import log_per_class_metrics, \
     log_overall_metrics_with_error_bars, log_class_distribution
-from path_settings import CHECKPOINTS_DIR_TARGET, D1_SPLIT_PATH, D2_SPLIT_PATH, D3_SPLIT_PATH, D4_SPLIT_PATH
+from path_settings import CHECKPOINTS_DIR_TARGET, D1_SPLIT_PATH, D2_SPLIT_PATH, D3_SPLIT_PATH, D4_SPLIT_PATH, \
+    METRICS_DIR_MIA
 from pathlib import Path
 
 
 # === Utility Functions ===
-def load_data(config: MiaConfig) -> tuple[Dataset, Dataset, Dataset, Dataset]:
+def load_data(config: MiaConfig, metric_save_folder: Path) -> tuple[Dataset, Dataset, Dataset, Dataset]:
     class_names = config.parameters_static.class_names
 
     # check if data splits exists if not run split_cifar10_mia.py
-    if not (Path(D1_SPLIT_PATH).exists() and Path(D2_SPLIT_PATH).exists() and Path(D3_SPLIT_PATH).exists() and Path(D4_SPLIT_PATH).exists()):
+    if not (Path(D1_SPLIT_PATH).exists() and Path(D2_SPLIT_PATH).exists() and Path(D3_SPLIT_PATH).exists() and Path(
+            D4_SPLIT_PATH).exists()):
         split_cifar10_for_target_and_shadow(
             target_train_ratio=0.4,
             shadow_train_ratio=0.3,
@@ -48,13 +51,13 @@ def load_data(config: MiaConfig) -> tuple[Dataset, Dataset, Dataset, Dataset]:
         raise RuntimeError(f"MIA: Failed to load datasets from disk: {e}, please run split_cifar10_mia.py") from e
 
     log_class_distribution(hf_dataset=target_train_hf, wandb_cluster_name="shadow_train_distribution",
-                           wandb_plot_prefix="Datenpools", class_names=class_names)
+                           wandb_plot_prefix="Datenpools", class_names=class_names, metric_save_folder=metric_save_folder)
 
     return shadow_train_hf, shadow_test_hf, target_train_hf, target_test_hf
 
 
 def sample_shadow_datasets_from_mia_data_pool(shadow_train_dataset: Dataset, shadow_test_dataset: Dataset,
-                                              config: MiaConfig) -> tuple[list[Dataset], list[Dataset]]:
+                                              config: MiaConfig, metric_save_folder: Path) -> tuple[list[Dataset], list[Dataset]]:
     # Sample shadow train and test datasets from the shadow data train/test pool
     # Sample without duplicates, but with overlap between shadow model datasets
     num_shadow_models = config.parameters.num_shadow_models
@@ -82,7 +85,8 @@ def sample_shadow_datasets_from_mia_data_pool(shadow_train_dataset: Dataset, sha
             hf_dataset=train_subset,
             wandb_cluster_name="Shadow_model_train_distribution",
             wandb_plot_prefix=f"Shadow Model {i + 1}",
-            class_names=class_names
+            class_names=class_names,
+            metric_save_folder=metric_save_folder
         )
 
         shadow_train_sets.append(train_subset)
@@ -283,7 +287,7 @@ def train_per_class_attack_models(per_shadow_per_class_data: list, config: MiaCo
 
 def evaluate_attack_models(attack_models: dict, target_model: nn.Module, scalers: dict, target_train: Dataset,
                            target_test: Dataset,
-                           config: MiaConfig, device: torch.device) -> None:
+                           config: MiaConfig, device: torch.device, metric_save_folder: Path) -> None:
     batch_size = config.parameters_static.batch_size
     num_classes = config.parameters.num_classes
     class_names = config.parameters_static.class_names
@@ -365,7 +369,8 @@ def evaluate_attack_models(attack_models: dict, target_model: nn.Module, scalers
 
         print(f"Class {cls}: Acc={acc:.2f}, Prec={prec:.2f}, Rec={rec:.2f}, F1={f1:.2f}, AUC={auc:.2f}, FAR={far:.2f}")
 
-    log_per_class_metrics(per_class_metrics=per_class_metrics, class_names=class_names)
+    log_per_class_metrics(per_class_metrics=per_class_metrics, class_names=class_names,
+                          metric_save_folder=metric_save_folder)
 
     # === Per-Class Summary ===
     print(f"\n=== Per-Class Attack Metrics ===")
@@ -401,8 +406,9 @@ def evaluate_attack_models(attack_models: dict, target_model: nn.Module, scalers
         precision=overall_precision, std_precision=overall_std_precision,
         recall=overall_recall, std_recall=overall_std_recall,
         f1=overall_f1, std_f1=overall_std_f1,
-        auc=overall_auc, std_auc=overall_std_auc,
+        auc=overall_auc, std_auc=overall_std_auc, metric_save_folder=metric_save_folder
     )
+
 
 def load_specific_target_model(model_name: str, checkpoint_path: Path, device: torch.device) -> nn.Module:
     release_model(None, device.type)
@@ -427,7 +433,8 @@ def run_mia(config: MiaConfig):
     target_model_checkpoint_file = config.parameters.target_model_file
     target_model_checkpoint_path: Path = CHECKPOINTS_DIR_TARGET / target_model_checkpoint_folder / target_model_checkpoint_file
     if not target_model_checkpoint_path.exists():
-        raise FileNotFoundError(f"Target model checkpoint not found: {target_model_checkpoint_path}, please check the path in the config.")
+        raise FileNotFoundError(
+            f"Target model checkpoint not found: {target_model_checkpoint_path}, please check the path in the config.")
 
     print(f"\n🚀 Running experiment with config: {config}\n")
     print("attacked target model: ", target_model_checkpoint_path)
@@ -437,6 +444,10 @@ def run_mia(config: MiaConfig):
     initialize_wandb_run(project_name="mia-shokri", config=OmegaConf.to_container(config, resolve=True),
                          run_name=run_name)
     wandb.config.target_model_checkpoint_path = f"/{target_model_checkpoint_folder}/{target_model_checkpoint_file}"
+
+    # Initialize metric save folder
+    metric_save_folder = create_save_folder(save_dir=METRICS_DIR_MIA)
+    print(f"Created metrics folder: {metric_save_folder}")
 
     # Set random seed and device
     seed_everything(config.parameters_static.seed)
@@ -448,11 +459,12 @@ def run_mia(config: MiaConfig):
     device = torch.device(requested_device)
 
     # Load datasets from 'split_cifar10_mia.py' script: D1, D2, D3, D4
-    shadow_train, shadow_test, target_train, target_test = load_data(config=config)
+    shadow_train, shadow_test, target_train, target_test = load_data(config=config, metric_save_folder=metric_save_folder)
 
-    shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_from_mia_data_pool(shadow_train_dataset=shadow_train,
-                                                                                          shadow_test_dataset=shadow_test,
-                                                                                          config=config)
+    shadow_train_subsets, shadow_test_subsets = sample_shadow_datasets_from_mia_data_pool(
+        shadow_train_dataset=shadow_train,
+        shadow_test_dataset=shadow_test,
+        config=config, metric_save_folder=metric_save_folder)
 
     per_shadow_per_class_data = train_all_shadow_models_and_collect_features(
         shadow_train_subsets=shadow_train_subsets,
@@ -462,12 +474,13 @@ def run_mia(config: MiaConfig):
     attack_models, scalers = train_per_class_attack_models(per_shadow_per_class_data=per_shadow_per_class_data,
                                                            config=config)
 
-    target_model = load_specific_target_model(checkpoint_path=target_model_checkpoint_path, model_name=config.parameters.model_arch,
+    target_model = load_specific_target_model(checkpoint_path=target_model_checkpoint_path,
+                                              model_name=config.parameters.model_arch,
                                               device=device)
 
     evaluate_attack_models(attack_models=attack_models, target_model=target_model, scalers=scalers,
                            target_train=target_train,
-                           target_test=target_test, config=config, device=device)
+                           target_test=target_test, config=config, device=device, metric_save_folder=metric_save_folder)
 
     # Finish the wandb run
     wandb.finish()

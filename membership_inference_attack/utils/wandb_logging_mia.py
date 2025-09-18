@@ -3,6 +3,9 @@ from collections import Counter
 import matplotlib.pyplot as plt
 import wandb
 import matplotlib
+from pathlib import Path
+from path_settings import METRICS_DIR_MIA
+import json
 
 matplotlib.use("Agg")
 
@@ -11,7 +14,8 @@ def log_class_distribution(
         hf_dataset: Dataset,
         class_names: list = None,
         wandb_cluster_name: str = "dataset_distribution",
-        wandb_plot_prefix: str = "split"
+        wandb_plot_prefix: str = "split",
+        metric_save_folder: Path = METRICS_DIR_MIA,
 ) -> None:
     try:
         labels = hf_dataset["label"]
@@ -49,16 +53,24 @@ def log_class_distribution(
     plt.xticks(rotation=45)
     plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
     plt.tight_layout()
+    metric_save_file = metric_save_folder / f"histogram_class_distribution_train_{wandb_plot_prefix}.png"
+    plt.savefig(metric_save_file, dpi=300)
     wandb.log({f"{wandb_cluster_name}/{wandb_plot_prefix}_class_histogram": wandb.Image(plt)})
     plt.close()
 
 
-def log_per_class_metrics(per_class_metrics: dict, class_names: list = None):
+def log_per_class_metrics(per_class_metrics: dict, class_names: list = None,
+                          metric_save_folder: Path = METRICS_DIR_MIA):
     metrics = ['Accuracy', 'Precision', 'Recall', 'F1-Score', 'AUC', 'FAR']
 
     class_keys = sorted(per_class_metrics.keys())
     if class_names is None:
         class_names = [str(cls) for cls in class_keys]  # fallback if not passed
+
+    # Save per-class metrics to JSON
+    json_data_path = metric_save_folder / "per_class_metric.json"
+    with open(json_data_path, "w") as f:
+        json.dump(per_class_metrics, f, indent=4)
 
     for metric in metrics:
         values = [per_class_metrics[cls].get(metric, 0.0) for cls in class_keys]
@@ -75,6 +87,7 @@ def log_per_class_metrics(per_class_metrics: dict, class_names: list = None):
         plt.ylim(0, 1.0)
         plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
 
+        plt.savefig(metric_save_folder / f"per_class_{metric}_metrics.png", dpi=300)
         wandb.log({f"attack_eval/per_class_{metric}_vertical": wandb.Image(plt)})
         plt.close()
 
@@ -85,6 +98,7 @@ def log_overall_metrics_with_error_bars(
         recall, std_recall,
         f1, std_f1,
         auc, std_auc,
+        metric_save_folder: Path = METRICS_DIR_MIA
 ):
     metrics_names = ['Accuracy', 'Precision', 'Recall', 'F1-Score', 'AUC']
     means = [accuracy, precision, recall, f1, auc]
@@ -95,6 +109,14 @@ def log_overall_metrics_with_error_bars(
 
     for name, value in zip(metrics_names, stds):
         wandb.run.summary[f"std/std_{name}"] = value
+
+    # Save overall metrics to JSON
+    metrics_payload = {
+        name: {"mean": float(m), "std": float(s)}
+        for name, m, s in zip(metrics_names, means, stds)
+    }
+    with open(metric_save_folder / "overall_metrics.json", "w") as f:
+        json.dump(metrics_payload, f, indent=4)
 
     # Create the plot
     plt.figure(figsize=(8, 5))
@@ -118,6 +140,7 @@ def log_overall_metrics_with_error_bars(
         plt.text(bar.get_x() + bar.get_width() / 2.0, text_y_pos,
                  f"{mean:.2f}±{std:.2f}", ha='center', va='bottom', fontsize=9)
 
+    plt.savefig(metric_save_folder / "overall_metrics_with_error_bars.png", dpi=300)
     # Log the plot to wandb and close it
     wandb.log({"attack_eval/overall_metrics_with_error_bars": wandb.Image(plt)})
     plt.close()
