@@ -19,7 +19,7 @@ wandb login
 [pyproject.toml](pyproject.toml)
 - provides package manager
 - provides flower config
-  - describe flower parameter... (explaine )
+  - describe flower parameter... (explain)
 
 ### hydra
 [experiments_conf](experiments_conf)
@@ -58,6 +58,10 @@ wandb login
   - mia config pass the classnames (should also work with classnames: None)
   - delete dataset_splits folder
 
+## Run with cpu or gpu
+- change in [base.yaml](experiments_conf/flower/base.yaml) and [base.yaml](experiments_conf/mia/base.yaml) device to cuda or cpu
+- You have to change the parameter in flower/base.yaml, because you have to set the client-resources for flower
+
 ## MIA 
 - You can run the MIA directly without a federated learning run: 
 ```
@@ -71,6 +75,15 @@ python3 run_mia_experiment.py
 python3 run_mia_experiment.py mia=run1
 ```
 
+## FLOWER
+
+! default device=gpu if you want to use only cpu (change [base.yaml](experiments_conf/flower/base.yaml) device->cpu)
+flower model is saved every 5th round to the folder [model_checkpoints_target](model_checkpoints_target)
+```
+python3 run_flower_experiment.py flower=run1
+```
+
+
 ## Run with the Simulation Engine
 
 In the `my-awesome-app` directory, use `flwr run` to run a local simulation:
@@ -78,6 +91,8 @@ In the `my-awesome-app` directory, use `flwr run` to run a local simulation:
 ```bash
 flwr run .
 ```
+
+
 
 Refer to the [How to Run Simulations](https://flower.ai/docs/framework/how-to-run-simulations.html) guide in the documentation for advice on how to optimize your simulations.
 
@@ -186,7 +201,7 @@ make sure to init with target model you want to attack (all target models are in
 python3 run_mia_experiment.py mia=run1
 ```
 
-! default with gpu if you want to use only cpu (uncomment cpu command in run_flower_experiment.py & change ./experiments_conf/flower/base: cuda->cpu)
+! default with gpu if you want to use only cpu (change [base.yaml](experiments_conf/flower/base.yaml) device=cpu)
 flower model is saved every 5th round to the folder  ./model_checkpoints_target
 ```
 python3 run_flower_experiment.py flower=run1
