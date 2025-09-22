@@ -9,11 +9,16 @@ from pathlib import Path
 # D1= target train set, D2=target test set, D3=shadow train set, D4=shadow test set
 # D2 comes from the original CIFAR-10 test set, so it is not split further
 # currently: D1=20.000, D2=10.000, D3=15.000, D4=15.000
+
+TARGET_TRAIN_RATIO = 0.4
+SHADOW_TRAIN_RATIO = 0.3
+SHADOW_TEST_RATIO = 0.3
+
 def split_cifar10_for_target_and_shadow(
-        target_train_ratio: float,
-        shadow_train_ratio: float,
-        shadow_test_ratio: float,
-        split_save_dir: Path = SPLITS_DIR
+        target_train_ratio: float = TARGET_TRAIN_RATIO,
+        shadow_train_ratio: float = SHADOW_TRAIN_RATIO,
+        shadow_test_ratio: float = SHADOW_TEST_RATIO,
+        split_save_dir: Path = SPLITS_DIR,
 ) -> None:
     # The remaining ratio must be ≤ 1.0 since D2 comes from test set
     total_ratio = target_train_ratio + shadow_train_ratio + shadow_test_ratio

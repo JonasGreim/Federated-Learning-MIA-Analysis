@@ -8,7 +8,7 @@ wandb
 metrics
 outputs
 multirun
-dataset_splits/*
+dataset_splits
 
 # ignore model checkpoints except example folder and its contents
 model_checkpoints_target/*

@@ -32,13 +32,14 @@ wandb login
 - Every Flower run saves the target model every 5 rounds in a seperate subfolder in this folder
 - MIA uses this folder to load the target model
 
-### splits
+### dataset_splits
 - is created by [split_cifar10_mia.py](flower/utils/split_cifar10_mia.py), is automatically called in the flower server app and mia run script
 - the cifar-10 Hugging Face dataset is split into 4 parts (D1=flower_train, D2=flower_test, D3=shadow_train, D4=shadow_test)
 - currently: D1=20.000, D2=10.000, D3=15.000, D4=15.000
 - D2 comes from the original CIFAR-10 test set, so it is not split further
 - D1, D3, D4 come from the original CIFAR-10 train set
-- You can change the sizes in the script if you want to but make sure to change it also in mia_shorki.py and server_app.py
+- You can change the sizes via the constants in the script, but make sure to remove the dataset_split folder if you change the sizes
+- for non-simulated federated runs: Every Client downloads the complete dataset, splits it locally and uses his distribution
 
 ### add different target models
 - add different target models in [models](flower/models)
@@ -53,16 +54,21 @@ wandb login
 - Code uses the cifar-10 dataset from Hugging Face
 - Dataset is converted to PyTorch tensors
 - You can change the dataset: 
-  - make sure to change the model
+  - make sure to change the model & model factory
   - mia config pass the classnames (should also work with classnames: None)
-  - delete dataset_splits files (should also work without deleting but just to be sure)
+  - delete dataset_splits folder
 
 ## MIA 
-- python3 run_mia_experiment.py
-- run the exeriments_conf/mia/base conf with the example target model (10 server rounds, 10 epochs)
+- You can run the MIA directly without a federated learning run: 
+```
+python3 run_mia_experiment.py
+```
+- it uses the [base.yaml](experiments_conf/mia/base.yaml) config with the [example FL target model checkpoint](model_checkpoints_target/example) (10 server rounds, 10 epochs, IID data)
+
+
 - or run a specific config like this:
 ```
-python3 run_mia_experiment.py --config-name=mia_run1
+python3 run_mia_experiment.py mia=run1
 ```
 
 ## Run with the Simulation Engine

@@ -6,7 +6,8 @@ from flower.utils.huggingface_to_pytorch import HFDatasetToTorch
 from pathlib import Path
 from flower.utils.reproducibility import seed_worker
 import torch
-
+from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
+from path_settings import D1_SPLIT_PATH, D2_SPLIT_PATH, D3_SPLIT_PATH, D4_SPLIT_PATH
 
 def get_transforms_custom() -> transforms.Compose:
     return transforms.Compose([
@@ -19,6 +20,8 @@ def get_transforms_custom() -> transforms.Compose:
 
 def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_partitions: int, split: Path,
                      batch_size: int, seed: int) -> tuple[DataLoader, DataLoader]:
+    ensure_split_data_exists()
+
     try:
         split_dataset = load_from_disk(split)
     except Exception as e:
@@ -61,3 +64,7 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
 
     print(f"[Client {partition_id}] Loaded {len(trainset)} train samples, {len(testset)} test samples.")
     return trainloader, testloader
+
+def ensure_split_data_exists():
+    if not all(Path(path).exists() for path in [D1_SPLIT_PATH, D2_SPLIT_PATH, D3_SPLIT_PATH, D4_SPLIT_PATH]):
+        split_cifar10_for_target_and_shadow()

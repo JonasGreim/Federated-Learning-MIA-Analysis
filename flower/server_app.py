@@ -1,11 +1,11 @@
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
+from flower.utils.data_loading import ensure_split_data_exists
 from flower.utils.model_utils import get_weights, create_save_folder
 from flower.utils.reproducibility import seed_everything
-from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
 from flower.strategies.custom_weighted_fedavg import FedCustom
 from flower.utils.wandb_logging import run_data_partitioning_for_visualization, initialize_wandb_run
-from path_settings import CHECKPOINTS_DIR_TARGET, METRICS_DIR_FLOWER
+from path_settings import METRICS_DIR_FLOWER
 from flower.utils.model_factory import create_model
 
 
@@ -39,11 +39,7 @@ def server_fn(context: Context):
     initialize_wandb_run(project_name="flower_target_model", run_name=f"{model_name}-{num_rounds}-{dirichlet_alpha}", config=context.run_config)
 
     # Create dataset splits if they do not exist
-    split_cifar10_for_target_and_shadow(
-        target_train_ratio=0.4,
-        shadow_train_ratio=0.3,
-        shadow_test_ratio=0.3
-    )
+    ensure_split_data_exists()
 
     # Run data partitioning for visualization
     run_data_partitioning_for_visualization(iid=iid,

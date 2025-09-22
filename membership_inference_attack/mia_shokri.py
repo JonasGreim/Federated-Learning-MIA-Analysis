@@ -9,12 +9,11 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
 from sklearn.utils import resample
-from flower.utils.data_loading import get_transforms_custom
+from flower.utils.data_loading import get_transforms_custom, ensure_split_data_exists
 from flower.utils.huggingface_to_pytorch import HFDatasetToTorch
 from flower.utils.model_utils import create_save_folder
 from flower.utils.reproducibility import seed_worker, release_model, seed_everything
 from flower.utils.model_factory import create_model
-from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
 from flower.utils.wandb_logging import initialize_wandb_run
 from experiments_conf_types.types_config_mia import MiaConfig
 from collections import defaultdict
@@ -33,13 +32,7 @@ def load_data(config: MiaConfig, metric_save_folder: Path) -> tuple[Dataset, Dat
     class_names = config.parameters_static.class_names
 
     # check if data splits exists if not run split_cifar10_mia.py
-    if not (Path(D1_SPLIT_PATH).exists() and Path(D2_SPLIT_PATH).exists() and Path(D3_SPLIT_PATH).exists() and Path(
-            D4_SPLIT_PATH).exists()):
-        split_cifar10_for_target_and_shadow(
-            target_train_ratio=0.4,
-            shadow_train_ratio=0.3,
-            shadow_test_ratio=0.3
-        )
+    ensure_split_data_exists()
 
     # Load huggingface datasets from disk -> run split script before running this: split_cifar10_mia.py (auto. run by target model)
     try:
