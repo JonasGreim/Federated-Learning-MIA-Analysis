@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import yaml
 from datasets import load_from_disk, Dataset
 from torch.utils.data import DataLoader
 import numpy as np
@@ -413,11 +412,6 @@ def load_specific_target_model(model_name: str, checkpoint_path: Path, device: t
     print(f"Loaded target model from: {checkpoint_path})")
 
     return model
-
-
-def load_config(config_path: str) -> dict:
-    with open(config_path, 'r') as f:
-        return yaml.safe_load(f)
 
 
 def run_mia(config: MiaConfig):
