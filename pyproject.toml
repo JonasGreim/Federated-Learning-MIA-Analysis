@@ -14,9 +14,9 @@ dependencies = [
     "torchvision==0.17.1",
     "numpy<2.0.0",
     "wandb (>=0.19.5,<0.20.0)",
-    "toml (>=0.10.2,<0.11.0)",
     "scikit-learn (>=1.6.1,<2.0.0)",
     "hydra-core (>=1.3.2,<2.0.0)",
+    "matplotlib (>=3.10.6,<4.0.0)",
 ]
 
 requires-python = ">=3.10,<3.11"
@@ -39,7 +39,7 @@ learning-rate-decay = 1e-7 # shokri used 1e-7
 weight-decay = 0.0 # shokri used 0.0, 5e-4 is common for federated learning
 batch-size = 32
 fraction-fit = 1.0  # all clients participate in each round
-device = "cuda" # <-- "cpu" or "cuda"
+device = "cpu" # <-- "cpu" or "cuda"
 # loader defined in utils.model_factory.create_model
 model = "simple_model" # <-- simple_model, simple_model_with_dropout, complex_model, complex_model_with_dropout
 train-target-model-as-shadow-model = false
