@@ -645,14 +645,14 @@ files = [
 
 [[package]]
 name = "flwr"
-version = "1.20.0"
+version = "1.22.0"
 description = "Flower: A Friendly Federated AI Framework"
 optional = false
 python-versions = "<4.0.0,>=3.9.2"
 groups = ["main"]
 files = [
-    {file = "flwr-1.20.0-py3-none-any.whl", hash = "sha256:657aa04bad3653dfbad6ee1d42a47301cd01044878820f22b420b32a9467b1aa"},
-    {file = "flwr-1.20.0.tar.gz", hash = "sha256:331a00857a4d00eb788ac2f2c995477b677f70c4f11d2218a3d495049d223a89"},
+    {file = "flwr-1.22.0-py3-none-any.whl", hash = "sha256:c87e0d6befdc51647833c30719bbe19de4ab5e58ab34586c85cb40815b105160"},
+    {file = "flwr-1.22.0.tar.gz", hash = "sha256:5d57ca9ed48370870124acec9fc54c182cda83e7067eca82776fd1255b436af3"},
 ]
 
 [package.dependencies]
@@ -3847,4 +3847,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.11"
-content-hash = "c6f177a5c145d76d5fb96248cf82d5b061de1a333d40f2b9d893445ab1a811e8"
+content-hash = "0eb56b59556f55fa0f8bba08c889e9433f7cdc0f9743b9c214ca873021031f1d"
