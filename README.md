@@ -4,7 +4,7 @@
 Use poetry as virtual env and package manager
 
 ```bash
-poetry env use python3.10
+poetry env use python3.12
 poetry env info
 poetry install
 ```
