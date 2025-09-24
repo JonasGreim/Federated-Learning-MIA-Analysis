@@ -8,6 +8,8 @@ from flower.utils.reproducibility import seed_worker
 import torch
 from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
 from path_settings import D1_SPLIT_PATH, D2_SPLIT_PATH, D3_SPLIT_PATH, D4_SPLIT_PATH
+import multiprocessing as mp
+
 
 def get_transforms_custom() -> transforms.Compose:
     return transforms.Compose([
@@ -57,13 +59,15 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
 
     g = torch.Generator()
     g.manual_seed(seed)
+    ctx = mp.get_context("spawn")  # avoids the default fork() -> warning/deadlock risk
 
     trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker, generator=g,
-                             num_workers=2)
-    testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2)
+                             num_workers=2, multiprocessing_context=ctx, )
+    testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2, multiprocessing_context=ctx, )
 
     print(f"[Client {partition_id}] Loaded {len(trainset)} train samples, {len(testset)} test samples.")
     return trainloader, testloader
+
 
 def ensure_split_data_exists():
     if not all(Path(path).exists() for path in [D1_SPLIT_PATH, D2_SPLIT_PATH, D3_SPLIT_PATH, D4_SPLIT_PATH]):
