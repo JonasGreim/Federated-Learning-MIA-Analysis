@@ -2,10 +2,11 @@ from flwr_datasets.visualization import plot_label_distributions
 from path_settings import METRICS_DIR, ensure_dir_exist, D3_SPLIT_PATH, D1_SPLIT_PATH, ROOT_DIR
 from pathlib import Path
 import wandb
-from datetime import datetime
+from datetime import datetime, UTC
 from datasets import load_from_disk
 from flwr_datasets.partitioner import DirichletPartitioner, IidPartitioner
 import matplotlib
+import warnings
 
 # all wandb logging is executed from the server side (server collects all metrics from clients)
 matplotlib.use("Agg")
@@ -102,7 +103,8 @@ def visualize_label_distribution(partitioner, output_dir: Path = METRICS_DIR):
 
 def initialize_wandb_run(project_name: str, run_name: str, config: dict = None, directory: Path = ROOT_DIR):
     if not wandb.run:
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        disable_unnecessary_warnings()
+        timestamp = datetime.now(UTC).strftime("%Y-%m-%d_%H-%M-%S")
         wandb.init(project=project_name, name=f"{run_name}-{timestamp}", config=config, dir=directory)
 
 
@@ -116,3 +118,18 @@ def wandb_upload_artifact_model(artifact_name: str, artifact_path: Path):
     artifact.add_file(str(artifact_path))
     wandb.log_artifact(artifact)
     print(f"Artifact {artifact_name} uploaded to wandb successfully.")
+
+
+def disable_unnecessary_warnings():
+    warnings.filterwarnings(
+        "ignore",
+        category=DeprecationWarning,
+        module=r"^wandb\.analytics\.sentry$",
+        message=r".*Scope\.user.*deprecated.*Scope\.set_user\(\).*",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        category=DeprecationWarning,
+        module=r"^google\.protobuf\.internal\.well_known_types$",
+        message=r".*datetime\.datetime\.utcnow\(\).*",
+    )
