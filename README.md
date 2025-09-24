@@ -76,6 +76,8 @@ python3 run_mia_experiment.py mia=run1
 ```
 
 ## FLOWER
+note: firstly build with version 1.14.0 and then updated to 1.22.0
+- no errors or warnings with 1.22.0 but maybe the code looks different to the tutorials
 
 ! default device=gpu if you want to use only cpu (change [base.yaml](experiments_conf/flower/base.yaml) device->cpu)
 flower model is saved every 5th round to the folder [model_checkpoints_target](model_checkpoints_target)
