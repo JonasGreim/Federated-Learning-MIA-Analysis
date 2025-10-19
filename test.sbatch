@@ -12,7 +12,15 @@
 
 # --- Environment Setup ---
 set -euo pipefail
-module load python/3.12
+module purge
+module load Anaconda3/2024.02-1
+if [ ! -d "$HOME/conda/envs/flwr" ]; then
+    conda create -p ~/conda/envs/flwr python=3.12 -y
+fi
+conda activate ~/conda/envs/flwr
+
+which python
+python -V
 
 echo "SLURM_JOB_ID: $SLURM_JOB_ID"
 echo "Running on nodes:"
