@@ -12,11 +12,13 @@
 
 # --- Environment Setup ---
 set -euo pipefail
+mkdir -p logs
+
 module purge
 module load Anaconda3/2024.02-1
-if [ ! -d "$HOME/conda/envs/flwr" ]; then
-    conda create -p ~/conda/envs/flwr python=3.12 -y
-fi
+module load CUDA/11.6.0
+
+eval "$(conda shell.bash hook)"
 conda activate ~/conda/envs/flwr
 
 which python
@@ -36,5 +38,5 @@ SERVER_NODE=${NODES[0]}
 echo "Server Node: $SERVER_NODE"
 echo "Client Nodes: ${NODES[@]:1}"
 
-wait
+conda deactivate
 echo "✅ All Flower processes finished successfully."
