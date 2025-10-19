@@ -16,13 +16,13 @@ mkdir -p logs
 
 module purge
 module load Anaconda3/2024.02-1
-module load CUDA/11.6.0
 
 eval "$(conda shell.bash hook)"
 conda activate ~/conda/envs/flwr
 
 which python
 python -V
+nvidia-smi  # shows Driver Version and “CUDA Version”
 
 echo "SLURM_JOB_ID: $SLURM_JOB_ID"
 echo "Running on nodes:"
