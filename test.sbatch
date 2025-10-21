@@ -38,6 +38,7 @@ SERVER_NODE=${NODES[0]}
 echo "Server Node: $SERVER_NODE"
 echo "Client Nodes: ${NODES[@]:1}"
 
+wandb whoami # check wandb login status
 
 python - <<'PY'
 import ray, torch, os
