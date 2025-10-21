@@ -106,7 +106,11 @@ PY
 # Make sure pyproject.toml has [tool.flwr.federations.hpc-deploy] address="${SERVER_NODE}:${PORT_EXEC}" insecure=true
 srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
   cd '$PROJECT_DIR'
-  export FLWR_FEDERATION__HPC_DEPLOY__ADDRESS=${SERVER_NODE}:${PORT_EXEC}
+  RUNTIME_ADDRESS='${SERVER_NODE}:${PORT_EXEC}'
+  sed -i \
+    '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{s/^address *= *.*/address = \"'"$RUNTIME_ADDRESS"'\"/}' \
+    pyproject.toml
+  echo 'Using federation address:' \$RUNTIME_ADDRESS
   flwr run . hpc-deploy --stream
 " | tee "logs/flwr_run_${SLURM_JOB_ID}.log"
 
