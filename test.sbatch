@@ -38,7 +38,11 @@ SERVER_NODE=${NODES[0]}
 echo "Server Node: $SERVER_NODE"
 echo "Client Nodes: ${NODES[@]:1}"
 
-wandb whoami # check wandb login status
+python - <<'PY'
+import wandb
+print("wandb version:", wandb.__version__)
+print("login ok:", wandb.login(relogin=False))  # uses saved key; returns True if configured
+PY
 
 python - <<'PY'
 import ray, torch, os
