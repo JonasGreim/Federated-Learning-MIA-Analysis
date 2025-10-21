@@ -102,15 +102,26 @@ for _ in range(180):
 print("ERROR: SuperLink Exec API NOT reachable"); sys.exit(1)
 PY
 
+
 # 4) Trigger the run from the server node (non-interactive)
-# Make sure pyproject.toml has [tool.flwr.federations.hpc-deploy] address="${SERVER_NODE}:${PORT_EXEC}" insecure=true
+SERVER_ADDRESS="${SERVER_NODE}:${PORT_EXEC}" # Define the final address here
+
 srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
   cd '$PROJECT_DIR'
-  RUNTIME_ADDRESS='${SERVER_NODE}:${PORT_EXEC}'
-  sed -i \
-    '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{s/^address *= *.*/address = \"'"$RUNTIME_ADDRESS"'\"/}' \
-    pyproject.toml
-  echo 'Using federation address:' \$RUNTIME_ADDRESS
+
+  # The SERVER_ADDRESS variable is expanded by the OUTER shell due to the surrounding DOUBLE QUOTES.
+  echo 'Updating pyproject.toml with address: ${SERVER_ADDRESS}'
+
+  # Inject the variable's value directly into the sed command.
+  # Note the use of a different sed delimiter (\#) to avoid conflicts with the slashes in the path/variable.
+  sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
+    s/^address *= *.*/address = \"${SERVER_ADDRESS}\"/
+  }' pyproject.toml
+
+  # Check the TOML file was updated
+  grep 'address' pyproject.toml
+
+  # Now run Flower
   flwr run . hpc-deploy --stream
 " | tee "logs/flwr_run_${SLURM_JOB_ID}.log"
 
