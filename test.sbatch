@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=00:01:00
+#SBATCH --time=00:03:00
 #SBATCH --gres=gpu:1
 
 # --- Environment Setup ---
@@ -37,6 +37,18 @@ SERVER_NODE=${NODES[0]}
 
 echo "Server Node: $SERVER_NODE"
 echo "Client Nodes: ${NODES[@]:1}"
+
+
+python - <<'PY'
+import ray, torch, os
+ray.init(num_cpus=4, num_gpus=1)
+@ray.remote(num_gpus=1)
+def gpu_task():
+    import torch
+    return torch.cuda.is_available(), torch.cuda.get_device_name(0)
+print(ray.get(gpu_task.remote()))
+PY
+
 
 conda deactivate
 echo "✅ All Flower processes finished successfully."
