@@ -66,7 +66,7 @@ echo "Project dir: $PROJECT_DIR"
 
 
 # 1) Start SuperLink on server node (background)
-srun --nodes=1 --nodelist="$SERVER_NODE" --exclusive bash -lc "
+srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
   cd '$PROJECT_DIR'
   mkdir -p logs
   flower-superlink \
@@ -87,7 +87,7 @@ srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 --nodeli
     --superlink ${SERVER_NODE}:${PORT_FLEET} \
     --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\"
 " &
-# Note: We omit --clientappio-api-address because it's one SuperNode per machine.
+# Note: omit --clientappio-api-address because it's one SuperNode per machine.
 
 # 3) Wait until SuperLink Exec API is reachable
 python - <<PY
@@ -104,7 +104,7 @@ PY
 
 # 4) Trigger the run from the server node (non-interactive)
 # Make sure pyproject.toml has [tool.flwr.federations.hpc-deploy] address="${SERVER_NODE}:${PORT_EXEC}" insecure=true
-srun --nodes=1 --nodelist="$SERVER_NODE" --exclusive bash -lc "
+srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
   cd '$PROJECT_DIR'
   export FLWR_FEDERATION__HPC_DEPLOY__ADDRESS=${SERVER_NODE}:${PORT_EXEC}
   flwr run . hpc-deploy --stream
