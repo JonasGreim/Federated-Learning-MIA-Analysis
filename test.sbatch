@@ -54,11 +54,15 @@ scontrol show hostnames $SLURM_JOB_NODELIST
 # Liste aller zugewiesenen Nodes
 NODES=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 SERVER_NODE=${NODES[0]}
+CLIENTS=("${NODES[@]:1}")
+NUM_CLIENTS=${#CLIENTS[@]}
+CLIENT_HOSTS=$(IFS=, ; echo "${CLIENTS[*]}")
 PORT_FLEET=9092   # SuperNodes -> SuperLink (Fleet API)
 PORT_EXEC=9093    # flwr run -> SuperLink (Exec API)
 
-echo "SuperLink: ${SERVER_NODE} (fleet:${PORT_FLEET}, exec:${PORT_EXEC})"
-echo "SuperNodes: ${NODES[@]:1}"
+echo "Server node: $SERVER_NODE  Fleet:${PORT_FLEET}  Exec:${PORT_EXEC}"
+echo "Client nodes: ${CLIENTS[*]}"
+echo "Project dir: $PROJECT_DIR"
 
 
 # 1) Start SuperLink on server node (background)
@@ -71,36 +75,31 @@ srun --nodes=1 --nodelist="$SERVER_NODE" --exclusive bash -lc "
     --exec-api-address 0.0.0.0:${PORT_EXEC} \
     > logs/superlink_${SLURM_JOB_ID}.log 2>&1
 " &
-SL_PID=$!
 sleep 3  # give it time to bind
 
-# 2) Start SuperNodes (one per remaining node)
-NUM_CLIENTS=$(( ${#NODES[@]} - 1 ))
-for i in $(seq 1 $(( ${#NODES[@]} - 1 ))); do
-  NODE=${NODES[$i]}
-  PARTITION_ID=$((i-1))
-  srun --nodes=1 --nodelist="$NODE" --exclusive bash -lc "
-    cd '$PROJECT_DIR'
-    mkdir -p logs
-    flower-supernode \
-      --insecure \
-      --superlink ${SERVER_NODE}:${PORT_FLEET} \
-      --node-config \"partition-id=${PARTITION_ID} num-partitions=${NUM_CLIENTS}\"
-  " > "logs/supernode_${i}_${SLURM_JOB_ID}.log" 2>&1 &
-done
+# 2) Start ALL SuperNodes in ONE srun (one task per client node)
+#    Each task gets a unique PARTITION_ID via SLURM_PROCID (0..NUM_CLIENTS-1)
+srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 --nodelist="$CLIENT_HOSTS" --exclusive bash -lc "
+  cd '$PROJECT_DIR' && mkdir -p logs
+  PARTITION_ID=\$SLURM_PROCID
+  flower-supernode \
+    --insecure \
+    --superlink ${SERVER_NODE}:${PORT_FLEET} \
+    --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\"
+" &
+# Note: We omit --clientappio-api-address because it's one SuperNode per machine.
 
-# 3) Wait until SuperLink Exec API is ready (no netcat needed)
+# 3) Wait until SuperLink Exec API is reachable
 python - <<PY
 import socket, time, sys
-host="${SERVER_NODE}"
-port=${PORT_EXEC}
-for _ in range(120):
+host="${SERVER_NODE}"; port=${PORT_EXEC}
+for _ in range(180):
     try:
         with socket.create_connection((host, port), timeout=2):
-            print("SuperLink Exec API reachable"); sys.exit(0)
+            print("SuperLink Exec API reachable at %s:%s" % (host, port)); sys.exit(0)
     except OSError:
         time.sleep(1)
-print("SuperLink Exec API NOT reachable"); sys.exit(1)
+print("ERROR: SuperLink Exec API NOT reachable"); sys.exit(1)
 PY
 
 # 4) Trigger the run from the server node (non-interactive)
