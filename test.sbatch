@@ -108,22 +108,25 @@ SERVER_ADDRESS="${SERVER_NODE}:${PORT_EXEC}" # Define the final address here
 
 srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
   cd '$PROJECT_DIR'
-
-  # The SERVER_ADDRESS variable is expanded by the OUTER shell due to the surrounding DOUBLE QUOTES.
   echo 'Updating pyproject.toml with address: ${SERVER_ADDRESS}'
 
-  # Inject the variable's value directly into the sed command.
-  # Note the use of a different sed delimiter (\#) to avoid conflicts with the slashes in the path/variable.
+  # Inject server address to flower .toml with sed (server address defined only at runtime)
   sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
     s/^address *= *.*/address = \"${SERVER_ADDRESS}\"/
   }' pyproject.toml
 
-  # Check the TOML file was updated
+  # Check TOML file was updated
   grep 'address' pyproject.toml
 
-  # Now run Flower
+  # Run Flower
   flwr run . hpc-deploy --stream
+
+  # revert back to placeholder address for future runs
+  sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
+    s/^address *= *.*/address = \"SERVER_NODE:9093\"/
+  }' pyproject.toml
 " | tee "logs/flwr_run_${SLURM_JOB_ID}.log"
 
 wait
+
 echo "✅ All Flower processes finished successfully."
