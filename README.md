@@ -7,6 +7,8 @@ Use poetry as virtual env and package manager
 poetry env use python3.12
 poetry env info
 poetry install
+
+wandb login
 ```
 
 After that login into wandb:
