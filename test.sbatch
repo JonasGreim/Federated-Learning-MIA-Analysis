@@ -11,7 +11,7 @@
 #SBATCH --gres=gpu:1
 
 # --- Environment Setup ---
-# --nodes=3 -> set client number also in the experiment_config.flower.base.yaml
+# --nodes=3 -> set client number(nodes-1) also in the experiment_config.flower.base.yaml
 
 set -euo pipefail
 module purge
@@ -106,7 +106,7 @@ PY
 
 
 # 4) Trigger the run from the server node (non-interactive)
-SERVER_ADDRESS="${SERVER_NODE}:${PORT_EXEC}" # Define the final address here
+SERVER_ADDRESS="${SERVER_NODE}:${PORT_EXEC}"
 
 srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
   cd '$PROJECT_DIR'
