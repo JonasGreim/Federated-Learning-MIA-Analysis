@@ -2,6 +2,7 @@ defaults:
   - _self_
   - flower: base
   - mia: base
+  - hpc_server_address: "paula:base"
 
 exp_name: "default"
 output_dir: "outputs/${exp_name}"

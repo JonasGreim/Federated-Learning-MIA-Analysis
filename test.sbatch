@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=00:30:00
+#SBATCH --time=00:05:00
 #SBATCH --gres=gpu:1
 
 # --- Environment Setup ---
@@ -108,23 +108,11 @@ SERVER_ADDRESS="${SERVER_NODE}:${PORT_EXEC}" # Define the final address here
 
 srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
   cd '$PROJECT_DIR'
-  echo 'Updating pyproject.toml with address: ${SERVER_ADDRESS}'
-
-  # Inject server address to flower .toml with sed (server address defined only at runtime)
-  sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
-    s/^address *= *.*/address = \"${SERVER_ADDRESS}\"/
-  }' pyproject.toml
-
-  # Check TOML file was updated
-  grep 'address' pyproject.toml
 
   # Run Flower
-  flwr run . hpc-deploy --stream
+  # Inject server address to flower .toml (server address defined only at runtime)
+  python -u run_flower_hpc.py flower=run1 hpc_server_address='${SERVER_ADDRESS}'
 
-  # revert back to placeholder address for future runs
-  sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
-    s/^address *= *.*/address = \"SERVER_NODE:9093\"/
-  }' pyproject.toml
 " | tee "logs/flwr_run_${SLURM_JOB_ID}.log"
 
 wait
