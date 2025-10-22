@@ -41,7 +41,7 @@ def run(config: Config):
     env.setdefault("TERM", "dumb")
 
     argv = [
-        sys.executable, "-u", "-m", "flwr", "run", ".", "hpc-deploy",
+        "flwr", "run", ".", "hpc-deploy",
         "--run-config", run_config,
         "--stream",
     ]
