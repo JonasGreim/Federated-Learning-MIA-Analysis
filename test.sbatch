@@ -11,6 +11,8 @@
 #SBATCH --gres=gpu:1
 
 # --- Environment Setup ---
+# --nodes=3 -> set client number also in the experiment_config.flower.base.yaml
+
 set -euo pipefail
 module purge
 mkdir -p logs
