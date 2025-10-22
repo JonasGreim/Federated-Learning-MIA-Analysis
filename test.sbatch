@@ -84,7 +84,7 @@ srun --nodes="$NUM_CLIENTS" \
      --ntasks="$NUM_CLIENTS" \
      --ntasks-per-node=1 \
      --nodelist="$CLIENT_HOSTS" \
-     --exclusive --overlap -u --kill-on-bad-exit=1 bash -lc '
+     --overlap -u --kill-on-bad-exit=1 bash -lc '
   set -euo pipefail
   cd "'"$PROJECT_DIR"'" && mkdir -p logs
   # SLURM_PROCID is 0 for the first client node, 1 for the second, etc.
