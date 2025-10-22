@@ -9,4 +9,3 @@ class Config:
     mia: MiaConfig
     exp_name: str
     output_dir: str
-    hpc_server_address: str

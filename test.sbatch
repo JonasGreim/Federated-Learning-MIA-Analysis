@@ -109,10 +109,18 @@ SERVER_ADDRESS="${SERVER_NODE}:${PORT_EXEC}" # Define the final address here
 srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
   cd '$PROJECT_DIR'
 
-  # Run Flower
   # Inject server address to flower .toml (server address defined only at runtime)
-  python -u run_flower_hpc.py flower=run1 hpc_server_address='${SERVER_ADDRESS}'
+  sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
+    s/^address *= *.*/address = \"${SERVER_ADDRESS}\"/
+  }' pyproject.toml
 
+  # Run Flower
+  python -u run_flower_hpc.py flower=run1
+
+  # revert back to placeholder address for future runs
+  sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
+    s/^address *= *.*/address = \"SERVER_NODE:9093\"/
+  }' pyproject.toml
 " | tee "logs/flwr_run_${SLURM_JOB_ID}.log"
 
 wait

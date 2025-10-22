@@ -35,17 +35,9 @@ def run(config: Config):
         f"dirichlet-alpha={flower_cfg.dirichlet_alpha} "
         f"num-clients={flower_cfg.num_clients}"
     )
-    print(f"flwr run . --run-config '{run_config}'")
+    print(f"flwr run . hpc-deploy --run-config '{run_config}'")
 
-    cmd = (
-        f"flwr run . hpc-deploy "
-        f"--federation-config 'address={server_address}' "
-        f"--stream "
-        f"--run-config '{run_config}'"
-    )
-    print(cmd)
-
-    subprocess.run(cmd, shell=True, check=True)
+    subprocess.run(["flwr", "run", ".", "hpc-deploy", "--run-config", run_config])
 
 
 if __name__ == "__main__":

@@ -5,4 +5,3 @@ defaults:
 
 exp_name: "default"
 output_dir: "outputs/${exp_name}"
-hpc_server_address: "paula:base"
