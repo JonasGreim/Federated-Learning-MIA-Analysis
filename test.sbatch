@@ -69,7 +69,7 @@ echo "Project dir: $PROJECT_DIR"
 
 
 # 1) Start SuperLink on server node (background)
-srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
+srun --nodes=1 --nodelist="$SERVER_NODE" -u --kill-on-bad-exit=1 bash -lc "
   cd '$PROJECT_DIR'
   mkdir -p logs
   flower-superlink \
@@ -78,16 +78,16 @@ srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
     --exec-api-address 0.0.0.0:${PORT_EXEC} \
     > logs/superlink_${SLURM_JOB_ID}.log 2>&1
 " &
-sleep 5  # give it time to bind
 
-# 2) Start one ClientApp + one SuperNode per client node
+# 2) Start one ClientApp + one SuperNode per client node (Non-blocking background run)
 srun --nodes="$NUM_CLIENTS" \
      --ntasks="$NUM_CLIENTS" \
      --ntasks-per-node=1 \
      --nodelist="$CLIENT_HOSTS" \
-     --exclusive -u bash -lc '
+     --exclusive --overlap -u --kill-on-bad-exit=1 bash -lc '
   set -euo pipefail
   cd "'"$PROJECT_DIR"'" && mkdir -p logs
+  # SLURM_PROCID is 0 for the first client node, 1 for the second, etc.
   PARTITION_ID=$SLURM_PROCID
   CLIENT_PORT='"$CLIENTAPP_PORT"'
 
@@ -95,30 +95,35 @@ srun --nodes="$NUM_CLIENTS" \
   pkill -f "flwr(-| )clientapp" >/dev/null 2>&1 || true
   pkill -f "^flower-supernode( |$)" >/dev/null 2>&1 || true
 
+  # 2a) Start ClientApp
   echo "[$HOSTNAME] starting flwr-clientapp on ${CLIENT_PORT}"
   flwr-clientapp \
     --insecure \
     --clientappio-api-address 0.0.0.0:${CLIENT_PORT} \
     --app-dir "'"$PROJECT_DIR"'" \
     > logs/clientapp_${HOSTNAME}_'"$SLURM_JOB_ID"'.log 2>&1 &
+  CLIENTAPP_PID=$!
 
-  # Readiness probe (bash-native)
+  # 2b) Readiness probe (bash-native)
   echo "[$HOSTNAME] probing ClientApp on 127.0.0.1:${CLIENT_PORT}..."
   MAX_RETRIES=20; i=0; ready=0
   while [ $i -lt $MAX_RETRIES ]; do
     if ( : < /dev/tcp/127.0.0.1/${CLIENT_PORT} ) 2>/dev/null; then ready=1; break; fi
     sleep 0.5; i=$((i+1))
   done
-  [ $ready -eq 1 ] || { echo "ERROR: ClientApp NOT reachable"; exit 1; }
+  [ $ready -eq 1 ] || { echo "ERROR: ClientApp NOT reachable on $HOSTNAME"; exit 1; }
 
+  # 2c) Start SuperNode
   echo "[$HOSTNAME] starting flower-supernode (partition=${PARTITION_ID}/'"$NUM_CLIENTS"')"
   flower-supernode \
     --insecure \
     --superlink '"$SERVER_NODE"':'"$PORT_FLEET"' \
     --node-config "partition-id=${PARTITION_ID} num-partitions='"$NUM_CLIENTS"'" \
     > logs/supernode_${HOSTNAME}_'"$SLURM_JOB_ID"'.log 2>&1 &
+  SUPERNODE_PID=$!
 
-  wait
+  # Keep the shell alive until the main Flower run finishes (Crucial Fix)
+  wait $CLIENTAPP_PID $SUPERNODE_PID
 ' &
 
 
@@ -139,7 +144,7 @@ PY
 # 4) Trigger the run from the server node (non-interactive)
 SERVER_ADDRESS="${SERVER_NODE}:${PORT_EXEC}"
 
-srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
+srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap -u --kill-on-bad-exit=1 bash -lc "
   cd '$PROJECT_DIR'
 
   # Inject server address to flower .toml (server address defined only at runtime)
