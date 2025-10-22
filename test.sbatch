@@ -87,9 +87,11 @@ srun --nodes="$NUM_CLIENTS" \
      --overlap -u --kill-on-bad-exit=1 bash -lc '
   set -euo pipefail
   cd "'"$PROJECT_DIR"'" && mkdir -p logs
-  # SLURM_PROCID is 0 for the first client node, 1 for the second, etc.
   PARTITION_ID=$SLURM_PROCID
   CLIENT_PORT='"$CLIENTAPP_PORT"'
+
+  echo "[$HOSTNAME] PATH=$PATH"
+  which flwr-clientapp || { echo "flwr-clientapp not found in PATH"; exit 1; }
 
   # Clean slate (best effort)
   pkill -f "flwr(-| )clientapp" >/dev/null 2>&1 || true
@@ -103,15 +105,19 @@ srun --nodes="$NUM_CLIENTS" \
     --app-dir "'"$PROJECT_DIR"'" \
     > logs/clientapp_${HOSTNAME}_'"$SLURM_JOB_ID"'.log 2>&1 &
   CLIENTAPP_PID=$!
+  echo "[$HOSTNAME] flwr-clientapp PID=${CLIENTAPP_PID}"
 
-  # 2b) Readiness probe (bash-native)
+  # 2b) Readiness probe
   echo "[$HOSTNAME] probing ClientApp on 127.0.0.1:${CLIENT_PORT}..."
-  MAX_RETRIES=20; i=0; ready=0
-  while [ $i -lt $MAX_RETRIES ]; do
-    if ( : < /dev/tcp/127.0.0.1/${CLIENT_PORT} ) 2>/dev/null; then ready=1; break; fi
+  MAX_RETRIES=20; i=0
+  while ! ( : < /dev/tcp/127.0.0.1/${CLIENT_PORT} ) 2>/dev/null; do
+    if [ $i -ge $MAX_RETRIES ]; then
+      echo "ERROR: ClientApp NOT reachable on $HOSTNAME after ${MAX_RETRIES} tries"
+      exit 1
+    fi
     sleep 0.5; i=$((i+1))
   done
-  [ $ready -eq 1 ] || { echo "ERROR: ClientApp NOT reachable on $HOSTNAME"; exit 1; }
+  echo "[$HOSTNAME] ClientApp is ready"
 
   # 2c) Start SuperNode
   echo "[$HOSTNAME] starting flower-supernode (partition=${PARTITION_ID}/'"$NUM_CLIENTS"')"
@@ -121,10 +127,12 @@ srun --nodes="$NUM_CLIENTS" \
     --node-config "partition-id=${PARTITION_ID} num-partitions='"$NUM_CLIENTS"'" \
     > logs/supernode_${HOSTNAME}_'"$SLURM_JOB_ID"'.log 2>&1 &
   SUPERNODE_PID=$!
+  echo "[$HOSTNAME] flower-supernode PID=${SUPERNODE_PID}"
 
-  # Keep the shell alive until the main Flower run finishes (Crucial Fix)
+  # Keep this task alive while both are running
   wait $CLIENTAPP_PID $SUPERNODE_PID
 ' &
+
 
 
 # 3) Wait until SuperLink Exec API is reachable
