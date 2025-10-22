@@ -7,6 +7,6 @@ from experiments_conf_types.types_config_mia import MiaConfig
 class Config:
     flower: FlowerConfig
     mia: MiaConfig
-    hpc_server_address: str
     exp_name: str
     output_dir: str
+    hpc_server_address: str
