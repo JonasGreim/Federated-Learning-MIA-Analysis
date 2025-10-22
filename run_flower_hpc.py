@@ -1,7 +1,7 @@
-import os
-from omegaconf import OmegaConf
+import os, sys, shlex
+from hydra.utils import get_original_cwd
 from hydra.main import main as hydra_main
-import subprocess
+from omegaconf import OmegaConf
 from experiments_conf_types.types_config import Config
 from experiments_conf_types.types_config_flower import FlowerConfig
 
@@ -34,9 +34,23 @@ def run(config: Config):
         f"dirichlet-alpha={flower_cfg.dirichlet_alpha} "
         f"num-clients={flower_cfg.num_clients}"
     )
-    print(f"flwr run . hpc-deploy --run-config '{run_config}'")
 
-    subprocess.run(["flwr", "run", ".", "hpc-deploy", "--stream", "--run-config", run_config], check=True, shell=True)
+    os.chdir(get_original_cwd())
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+    env.setdefault("TERM", "dumb")
+
+    argv = [
+        sys.executable, "-u", "-m", "flwr", "run", ".", "hpc-deploy",
+        "--run-config", run_config,
+        "--stream",
+    ]
+    print("Executing:", " ".join(shlex.quote(x) for x in argv), flush=True)
+    # Replace current process → SLURM captures flwr stdout/stderr directly
+    os.execvpe(argv[0], argv, env)
+
+    # print(f"flwr run . hpc-deploy --stream --run-config '{run_config}'")
+    # subprocess.run(["flwr", "run", ".", "hpc-deploy", "--stream", "--run-config", run_config], shell=True)
 
 
 if __name__ == "__main__":
