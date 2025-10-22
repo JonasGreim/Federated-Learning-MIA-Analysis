@@ -57,13 +57,34 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
     trainset = HFDatasetToTorch(data_split["train"], transform=transform)
     testset = HFDatasetToTorch(data_split["test"], transform=transform)
 
-    g = torch.Generator()
-    g.manual_seed(seed)
-    ctx = mp.get_context("spawn")  # avoids the default fork() -> warning/deadlock risk
+    use_cuda = torch.cuda.is_available()
+    num_workers = 6
+    pin = use_cuda
+    persistent = num_workers > 0  # keep workers alive across epochs
+    prefetch = 4  # each worker prefetches 4 batches
 
-    trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker, generator=g,
-                             num_workers=2, multiprocessing_context=ctx, )
-    testloader = DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2, multiprocessing_context=ctx, )
+    g = torch.Generator().manual_seed(seed)
+
+    trainloader = DataLoader(
+        trainset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=pin,
+        persistent_workers=persistent,
+        prefetch_factor=prefetch,
+        worker_init_fn=seed_worker,
+        generator=g,
+    )
+    testloader = DataLoader(
+        testset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=pin,
+        persistent_workers=persistent,
+        prefetch_factor=prefetch,
+    )
 
     print(f"[Client {partition_id}] Loaded {len(trainset)} train samples, {len(testset)} test samples.")
     return trainloader, testloader

@@ -2,7 +2,7 @@ num_server_rounds: 100 # 100, 20, 10
 local_epochs: 1 # 1, 5, 10
 learning_rate: 0.01  # test if works
 learning_rate_decay: 1e-7
-batch_size: 32
+batch_size: 128
 fraction_fit: 1.0 # maybe testing
 device: "cuda"
 weight_decay: 0.0 # 0,0 or 5e-4
