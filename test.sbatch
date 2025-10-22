@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=00:10:00
+#SBATCH --time=00:15:00
 #SBATCH --gres=gpu:1
 
 # --- Environment Setup ---
@@ -61,6 +61,7 @@ NUM_CLIENTS=${#CLIENTS[@]}
 CLIENT_HOSTS=$(IFS=, ; echo "${CLIENTS[*]}")
 PORT_FLEET=9092   # SuperNodes -> SuperLink (Fleet API)
 PORT_EXEC=9093    # flwr run -> SuperLink (Exec API)
+CLIENTAPP_PORT=9094
 
 echo "Server node: $SERVER_NODE  Fleet:${PORT_FLEET}  Exec:${PORT_EXEC}"
 echo "Client nodes: ${CLIENTS[*]}"
@@ -77,19 +78,49 @@ srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
     --exec-api-address 0.0.0.0:${PORT_EXEC} \
     > logs/superlink_${SLURM_JOB_ID}.log 2>&1
 " &
-sleep 3  # give it time to bind
+sleep 5  # give it time to bind
 
-# 2) Start ALL SuperNodes in ONE srun (one task per client node)
-#    Each task gets a unique PARTITION_ID via SLURM_PROCID (0..NUM_CLIENTS-1)
-srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 --nodelist="$CLIENT_HOSTS" --exclusive bash -lc "
-  cd '$PROJECT_DIR' && mkdir -p logs
-  PARTITION_ID=\$SLURM_PROCID
+# 2) Start one ClientApp + one SuperNode per client node
+srun --nodes="$NUM_CLIENTS" \
+     --ntasks="$NUM_CLIENTS" \
+     --ntasks-per-node=1 \
+     --nodelist="$CLIENT_HOSTS" \
+     --exclusive -u bash -lc '
+  set -euo pipefail
+  cd "'"$PROJECT_DIR"'" && mkdir -p logs
+  PARTITION_ID=$SLURM_PROCID
+  CLIENT_PORT='"$CLIENTAPP_PORT"'
+
+  # Clean slate (best effort)
+  pkill -f "flwr(-| )clientapp" >/dev/null 2>&1 || true
+  pkill -f "^flower-supernode( |$)" >/dev/null 2>&1 || true
+
+  echo "[$HOSTNAME] starting flwr-clientapp on ${CLIENT_PORT}"
+  flwr-clientapp \
+    --insecure \
+    --clientappio-api-address 0.0.0.0:${CLIENT_PORT} \
+    --app-dir "'"$PROJECT_DIR"'" \
+    > logs/clientapp_${HOSTNAME}_'"$SLURM_JOB_ID"'.log 2>&1 &
+
+  # Readiness probe (bash-native)
+  echo "[$HOSTNAME] probing ClientApp on 127.0.0.1:${CLIENT_PORT}..."
+  MAX_RETRIES=20; i=0; ready=0
+  while [ $i -lt $MAX_RETRIES ]; do
+    if ( : < /dev/tcp/127.0.0.1/${CLIENT_PORT} ) 2>/dev/null; then ready=1; break; fi
+    sleep 0.5; i=$((i+1))
+  done
+  [ $ready -eq 1 ] || { echo "ERROR: ClientApp NOT reachable"; exit 1; }
+
+  echo "[$HOSTNAME] starting flower-supernode (partition=${PARTITION_ID}/'"$NUM_CLIENTS"')"
   flower-supernode \
     --insecure \
-    --superlink ${SERVER_NODE}:${PORT_FLEET} \
-    --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\"
-" &
-# Note: omit --clientappio-api-address because it's one SuperNode per machine.
+    --superlink '"$SERVER_NODE"':'"$PORT_FLEET"' \
+    --node-config "partition-id=${PARTITION_ID} num-partitions='"$NUM_CLIENTS"'" \
+    > logs/supernode_${HOSTNAME}_'"$SLURM_JOB_ID"'.log 2>&1 &
+
+  wait
+' &
+
 
 # 3) Wait until SuperLink Exec API is reachable
 python - <<PY
@@ -117,7 +148,7 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
   }' pyproject.toml
 
   # Run Flower
-  python -u run_flower_hpc.py flower=run1
+  python -u run_flower_hpc.py flower=run0 2>&1
 
   # revert back to placeholder address for future runs
   sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{

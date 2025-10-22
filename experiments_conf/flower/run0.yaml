@@ -1,7 +1,7 @@
 defaults:
   - base
 
-num_server_rounds: 5
+num_server_rounds: 10
 local_epochs: 1
 weight_decay: 0.0
 model: "simple_model"
