@@ -37,7 +37,15 @@ def run(config: Config):
     )
     print(f"flwr run . --run-config '{run_config}'")
 
-    subprocess.run(["flwr", "run", ".", "hpc-deploy", "--federation-config", f"address={server_address}", "--stream", "--run-config", run_config])
+    cmd = (
+        f"flwr run . hpc-deploy "
+        f"--federation-config 'address={server_address}' "
+        f"--stream "
+        f"--run-config '{run_config}'"
+    )
+    print(cmd)
+
+    subprocess.run(cmd, shell=True, check=True)
 
 
 if __name__ == "__main__":
