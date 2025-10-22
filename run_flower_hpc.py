@@ -49,8 +49,6 @@ def run(config: Config):
     # Replace current process → SLURM captures flwr stdout/stderr directly
     os.execvpe(argv[0], argv, env)
 
-    # print(f"flwr run . hpc-deploy --stream --run-config '{run_config}'")
-    # subprocess.run(["flwr", "run", ".", "hpc-deploy", "--stream", "--run-config", run_config], shell=True)
 
 
 if __name__ == "__main__":

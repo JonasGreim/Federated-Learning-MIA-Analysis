@@ -75,3 +75,7 @@ options.backend.client-resources.num-gpus = 0.25  # 25% VRAM pro Client
 [tool.flwr.federations.hpc-deploy]
 address = "SERVER_NODE:9093"
 insecure = true
+
+[tool.flwr.application.client.settings]
+max-tasks = 0        # infinite lifetime
+log-stdout = true

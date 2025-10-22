@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=00:10:00
+#SBATCH --time=00:15:00
 #SBATCH --gres=gpu:1
 
 # --- Environment Setup ---
@@ -117,7 +117,7 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
   }' pyproject.toml
 
   # Run Flower
-  python -u run_flower_hpc.py flower=run1
+  python -u run_flower_hpc.py flower=run0 2>&1
 
   # revert back to placeholder address for future runs
   sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
