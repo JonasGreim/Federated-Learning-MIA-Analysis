@@ -45,24 +45,30 @@ if torch.cuda.is_available():
         print(f"Device {i}: {torch.cuda.get_device_name(i)}")
 PY
 
+# Threading/IO env (important on HPC)
+export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
+export MKL_NUM_THREADS=${SLURM_CPUS_PER_TASK}
+export NUMEXPR_MAX_THREADS=${SLURM_CPUS_PER_TASK}
+export PYTHONUNBUFFERED=1
+export TOKENIZERS_PARALLELISM=false
 
 # --- Distribute Flower ---
 # Node 0 = Server, Nodes 1-9 = Clients
-PROJECT_DIR="$HOME/masterarbeit/Flower2"
 echo "SLURM_JOB_ID: $SLURM_JOB_ID"
 echo "Running on nodes:"
 scontrol show hostnames $SLURM_JOB_NODELIST
 
 # Liste aller zugewiesenen Nodes
+PROJECT_DIR="$HOME/masterarbeit/Flower2"
 NODES=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 SERVER_NODE=${NODES[0]}
 CLIENTS=("${NODES[@]:1}")
 NUM_CLIENTS=${#CLIENTS[@]}
 CLIENT_HOSTS=$(IFS=, ; echo "${CLIENTS[*]}")
 PORT_FLEET=9092   # SuperNodes -> SuperLink (Fleet API)
-PORT_EXEC=9093    # flwr run -> SuperLink (Exec API)
+PORT_CTRL=9093    # flwr run -> SuperLink (CTRL API)
 
-echo "Server node: $SERVER_NODE  Fleet:${PORT_FLEET}  Exec:${PORT_EXEC}"
+echo "Server node: $SERVER_NODE  Fleet:${PORT_FLEET}  CTRL:${PORT_CTRL}"
 echo "Client nodes: ${CLIENTS[*]}"
 echo "Project dir: $PROJECT_DIR"
 
@@ -74,7 +80,8 @@ srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
   flower-superlink \
     --insecure \
     --fleet-api-address 0.0.0.0:${PORT_FLEET} \
-    --exec-api-address 0.0.0.0:${PORT_EXEC} \
+    --control-api-address 0.0.0.0:${PORT_CTRL} \
+    --fleet-api-num-workers 2 \
     > logs/superlink_${SLURM_JOB_ID}.log 2>&1
 " &
 sleep 3  # give it time to bind
@@ -87,14 +94,14 @@ srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 --nodeli
   flower-supernode \
     --insecure \
     --superlink ${SERVER_NODE}:${PORT_FLEET} \
-    --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\"
+    --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS} \
+    --log-level=info
 " &
-# Note: omit --clientappio-api-address because it's one SuperNode per machine.
 
 # 3) Wait until SuperLink Exec API is reachable
 python - <<PY
 import socket, time, sys
-host="${SERVER_NODE}"; port=${PORT_EXEC}
+host="${SERVER_NODE}"; port=${PORT_CTRL}
 for _ in range(180):
     try:
         with socket.create_connection((host, port), timeout=2):
@@ -106,7 +113,7 @@ PY
 
 
 # 4) Trigger the run from the server node (non-interactive)
-SERVER_ADDRESS="${SERVER_NODE}:${PORT_EXEC}"
+SERVER_ADDRESS="${SERVER_NODE}:${PORT_CTRL}"
 
 srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
   cd '$PROJECT_DIR'
