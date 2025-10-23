@@ -8,7 +8,6 @@ from flower.utils.reproducibility import seed_worker
 import torch
 from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
 from path_settings import D1_SPLIT_PATH, D2_SPLIT_PATH, D3_SPLIT_PATH, D4_SPLIT_PATH
-import multiprocessing as mp
 
 
 def get_transforms_custom() -> transforms.Compose:
@@ -57,12 +56,8 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
     trainset = HFDatasetToTorch(data_split["train"], transform=transform)
     testset = HFDatasetToTorch(data_split["test"], transform=transform)
 
-    use_cuda = torch.cuda.is_available()
+    pin = torch.cuda.is_available()
     num_workers = 6
-    pin = use_cuda
-    persistent = num_workers > 0  # keep workers alive across epochs
-    prefetch = 4  # each worker prefetches 4 batches
-
     g = torch.Generator().manual_seed(seed)
 
     trainloader = DataLoader(
@@ -71,8 +66,6 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
         shuffle=True,
         num_workers=num_workers,
         pin_memory=pin,
-        persistent_workers=persistent,
-        prefetch_factor=prefetch,
         worker_init_fn=seed_worker,
         generator=g,
     )
@@ -82,8 +75,6 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
         shuffle=False,
         num_workers=num_workers,
         pin_memory=pin,
-        persistent_workers=persistent,
-        prefetch_factor=prefetch,
     )
 
     print(f"[Client {partition_id}] Loaded {len(trainset)} train samples, {len(testset)} test samples.")

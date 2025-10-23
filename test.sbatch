@@ -72,6 +72,16 @@ echo "Server node: $SERVER_NODE  Fleet:${PORT_FLEET}  CTRL:${PORT_CTRL}"
 echo "Client nodes: ${CLIENTS[*]}"
 echo "Project dir: $PROJECT_DIR"
 
+# --- Prepare Data Splits (once per experiment) ---
+python - <<'PY'
+from pathlib import Path
+# import your existing function
+from your_module import split_cifar10_for_target_and_shadow
+out = Path("/shared/cifar_splits")
+out.mkdir(parents=True, exist_ok=True)
+split_cifar10_for_target_and_shadow(split_save_dir=out)
+print("✅ Wrote splits to", out)
+PY
 
 # 1) Start SuperLink on server node (background)
 srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "

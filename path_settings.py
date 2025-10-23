@@ -12,7 +12,13 @@ METRICS_DIR_MIA = METRICS_DIR / "mia"
 CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
 OUTPUTS_DIR = ROOT_DIR / "outputs"
 WANDB_DIR = ROOT_DIR / "wandb"
-SPLITS_DIR = ROOT_DIR / "dataset_splits"
+
+# local simulation dataset splits directory
+#SPLITS_DIR = ROOT_DIR / "dataset_splits"
+
+# Shared dataset location on the HPC (absolute path)
+SPLITS_DIR = Path("/shared/cifar_splits")
+
 EXPERIMENTS_CONF_DIR = ROOT_DIR / "experiments_conf"
 
 # Config or metadata paths
