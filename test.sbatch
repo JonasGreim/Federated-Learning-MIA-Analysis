@@ -36,21 +36,14 @@ PY
 
 # nvidia-smi  # shows Driver Version and “CUDA Version”
 # check gpu
-python - <<'PY'
-import torch
-print("CUDA available:", torch.cuda.is_available())
-if torch.cuda.is_available():
-    print("GPU count:", torch.cuda.device_count())
-    for i in range(torch.cuda.device_count()):
-        print(f"Device {i}: {torch.cuda.get_device_name(i)}")
-PY
-
-# Threading/IO env (important on HPC)
-export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-export MKL_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-export NUMEXPR_MAX_THREADS=${SLURM_CPUS_PER_TASK}
-export PYTHONUNBUFFERED=1
-export TOKENIZERS_PARALLELISM=false
+#python - <<'PY'
+#import torch
+#print("CUDA available:", torch.cuda.is_available())
+#if torch.cuda.is_available():
+#    print("GPU count:", torch.cuda.device_count())
+#    for i in range(torch.cuda.device_count()):
+#        print(f"Device {i}: {torch.cuda.get_device_name(i)}")
+#PY
 
 # --- Distribute Flower ---
 # Node 0 = Server, Nodes 1-9 = Clients
@@ -73,18 +66,20 @@ echo "Client nodes: ${CLIENTS[*]}"
 echo "Project dir: $PROJECT_DIR"
 
 # --- Prepare Data Splits (once per experiment) ---
-SHARED_SPLITS_PATH="$PROJECT_DIR/dataset_splits"
+SHARED_SPLITS_PATH="/work/hi85udaj-flower/dataset_splits"
 mkdir -p "$SHARED_SPLITS_PATH"
 
-python - <<PY
+# Generate splits only if missing (saves time on re-runs)
+if [ ! -d "$SHARED_SPLITS_PATH/D1" ]; then
+  python - <<PY
 from pathlib import Path
 from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
-
 target = Path("$SHARED_SPLITS_PATH")
 print("Writing CIFAR-10 splits to:", target)
 split_cifar10_for_target_and_shadow(split_save_dir=target)
 print("✅ Wrote splits to:", target)
 PY
+fi
 
 
 # 1) Start SuperLink on server node (background)
@@ -106,14 +101,7 @@ sleep 3  # give it time to bind
 srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 --nodelist="$CLIENT_HOSTS" --exclusive bash -lc "
   cd '$PROJECT_DIR' && mkdir -p logs
   PARTITION_ID=\$SLURM_PROCID
-  LOCAL_SPLITS_PATH=\"/dev/shm/cifar_splits\"
 
-  # 2a) STAGE DATA LOCALLY (Runs on each client node's /dev/shm)
-  echo "[Node \$SLURMD_NODENAME] Staging data from $SHARED_SPLITS_PATH to \$LOCAL_SPLITS_PATH..."
-  mkdir -p \"\$LOCAL_SPLITS_PATH\"
-  rsync -a --delete \"$SHARED_SPLITS_PATH\"/ \"\$LOCAL_SPLITS_PATH\"/
-
-  # 2c) START SUPERNODE
   flower-supernode \
     --insecure \
     --superlink ${SERVER_NODE}:${PORT_FLEET} \

@@ -16,7 +16,7 @@ WANDB_DIR = ROOT_DIR / "wandb"
 
 # local simulation dataset splits directory
 # SPLITS_DIR = ROOT_DIR / "dataset_splits"
-SPLITS_DIR = Path("/dev/shm/cifar_splits")
+SPLITS_DIR = Path("/work/hi85udaj-flower/dataset_splits")
 
 
 EXPERIMENTS_CONF_DIR = ROOT_DIR / "experiments_conf"
