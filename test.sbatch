@@ -110,7 +110,7 @@ srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 \
   export SPLITS_DIR=\"\$LOCAL_SPLITS_PATH\"
   echo \"[Node \$SLURMD_NODENAME] Using SPLITS_DIR=\$SPLITS_DIR\"
 
-  flwr flower-supernode \
+  flower-supernode \
     --insecure \
     --superlink ${SERVER_NODE}:${PORT_FLEET} \
     --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\" \
