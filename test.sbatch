@@ -96,14 +96,14 @@ echo "SuperLink started on ${SERVER_NODE}"
 sleep 3  # give it time to bind
 
 # 2) Start ALL SuperNodes in ONE srun (one task per client node)
+#    Each task gets a unique PARTITION_ID via SLURM_PROCID (0..NUM_CLIENTS-1)
 srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 --nodelist="$CLIENT_HOSTS" --exclusive bash -lc "
   cd '$PROJECT_DIR' && mkdir -p logs
   PARTITION_ID=\$SLURM_PROCID
   flower-supernode \
     --insecure \
     --superlink ${SERVER_NODE}:${PORT_FLEET} \
-    --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\" \
-    --log-level=info
+    --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\"
 " &
 echo "SuperNodes started on client nodes: ${CLIENTS[*]}"
 
