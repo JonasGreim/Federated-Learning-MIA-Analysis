@@ -78,7 +78,7 @@ from pathlib import Path
 # import your existing function
 from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
 split_cifar10_for_target_and_shadow()
-print("✅ Wrote splits to", out)
+print("✅ Wrote splits to disk.")
 PY
 
 # 1) Start SuperLink on server node (background)
@@ -92,6 +92,7 @@ srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
     --fleet-api-num-workers 2 \
     > logs/superlink_${SLURM_JOB_ID}.log 2>&1
 " &
+echo "SuperLink started on ${SERVER_NODE}"
 sleep 3  # give it time to bind
 
 # 2) Start ALL SuperNodes in ONE srun (one task per client node)
@@ -105,6 +106,7 @@ srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 --nodeli
     --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS} \
     --log-level=info
 " &
+echo "SuperNodes started on client nodes: ${CLIENTS[*]}"
 
 # 3) Wait until SuperLink Exec API is reachable
 python - <<PY
@@ -123,6 +125,7 @@ PY
 # 4) Trigger the run from the server node (non-interactive)
 SERVER_ADDRESS="${SERVER_NODE}:${PORT_CTRL}"
 
+echo start Flower on server node "$SERVER_NODE"
 srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
   cd '$PROJECT_DIR'
 
