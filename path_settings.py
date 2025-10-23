@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 # Root directory of the project
 ROOT_DIR = Path(__file__).resolve().parent
@@ -14,7 +15,10 @@ OUTPUTS_DIR = ROOT_DIR / "outputs"
 WANDB_DIR = ROOT_DIR / "wandb"
 
 # local simulation dataset splits directory
-SPLITS_DIR = ROOT_DIR / "dataset_splits"
+# SPLITS_DIR = ROOT_DIR / "dataset_splits"
+ENV_SPLITS_PATH = os.environ.get("SPLITS_DIR")
+SPLITS_DIR = Path(ENV_SPLITS_PATH)
+
 
 EXPERIMENTS_CONF_DIR = ROOT_DIR / "experiments_conf"
 

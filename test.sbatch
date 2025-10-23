@@ -82,16 +82,6 @@ print("✅ Wrote splits to disk.")
 PY
 
 SHARED_SPLITS_PATH="$PROJECT_DIR/dataset_splits"
-# Define the local target path on /dev/shm (using $$ for uniqueness if SLURM_JOB_ID isn't reliable here)
-LOCAL_SPLITS_PATH="/dev/shm/cifar_splits_$$"
-
-if [ ! -d "/dev/shm/dataset_splits" ]; then
-        echo "Copying dataset to /dev/shm/..."
-        cd '$PROJECT_DIR'
-        cp -r ./dataset_splits/ /dev/shm/
-else
-        echo "Dataset already exists in /dev/shm/, skipping copy."
-fi
 
 # 1) Start SuperLink on server node (background)
 srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
@@ -112,6 +102,7 @@ sleep 3  # give it time to bind
 srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 --nodelist="$CLIENT_HOSTS" --exclusive bash -lc "
   cd '$PROJECT_DIR' && mkdir -p logs
   PARTITION_ID=\$SLURM_PROCID
+  LOCAL_SPLITS_PATH=\"/dev/shm/cifar_splits_$$\"
 
   # 2a) STAGE DATA LOCALLY (Runs on each client node's /dev/shm)
   echo \"[Node \$SLURMD_NODENAME] Staging data from $SHARED_SPLITS_PATH to $LOCAL_SPLITS_PATH...\"
