@@ -98,16 +98,25 @@ sleep 3  # give it time to bind
 
 # 2) Start ALL SuperNodes in ONE srun (one task per client node)
 #    Each task gets a unique PARTITION_ID via SLURM_PROCID (0..NUM_CLIENTS-1)
-srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 --nodelist="$CLIENT_HOSTS" --exclusive bash -lc "
+srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 \
+     --nodelist="$CLIENT_HOSTS" --exclusive --kill-on-bad-exit=1 bash -lc "
   cd '$PROJECT_DIR' && mkdir -p logs
   PARTITION_ID=\$SLURM_PROCID
+  LOCAL_SPLITS_PATH=\"/dev/shm/cifar_splits\"
 
-  flower-supernode \
+  mkdir -p \"\$LOCAL_SPLITS_PATH\"
+  rsync -a --delete \"$SHARED_SPLITS_PATH/\" \"\$LOCAL_SPLITS_PATH/\"
+
+  export SPLITS_DIR=\"\$LOCAL_SPLITS_PATH\"
+  echo \"[Node \$SLURMD_NODENAME] Using SPLITS_DIR=\$SPLITS_DIR\"
+
+  conda run -n flwr flower-supernode \
     --insecure \
     --superlink ${SERVER_NODE}:${PORT_FLEET} \
     --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\" \
-    > logs/supernode_\${NODE_NAME}_\${PARTITION_ID}.log 2>&1
+    > logs/supernode_${SLURM_JOB_ID}_\${SLURMD_NODENAME}.log 2>&1
 " &
+
 echo "SuperNodes started on client nodes: ${CLIENTS[*]}"
 
 # 3) Wait until SuperLink Exec API is reachable
@@ -137,7 +146,7 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
   }' pyproject.toml
 
   # Run Flower
-  python -u run_flower_hpc.py flower=run0 2>&1
+  conda run -n flwr python -u run_flower_hpc.py flower=run0 2>&1
 
   # revert back to placeholder address for future runs
   sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
