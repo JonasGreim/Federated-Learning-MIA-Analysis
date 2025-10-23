@@ -53,7 +53,7 @@ def client_fn(context: Context):
     model_name = context.run_config.get("model")
     iid = context.run_config.get("iid-data-distribution", True)
     alpha = context.run_config.get("dirichlet-alpha", 1.0)
-    train_target_model_as_shadow_model = context.run_config.get("train-target-model-as-shadow_model", False)
+    train_target_model_as_shadow_model = context.run_config.get("train-target-model-as-shadow-model", False)
 
     # Seed everything for reproducibility
     seed_everything(seed)
