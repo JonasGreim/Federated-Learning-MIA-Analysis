@@ -14,10 +14,7 @@ OUTPUTS_DIR = ROOT_DIR / "outputs"
 WANDB_DIR = ROOT_DIR / "wandb"
 
 # local simulation dataset splits directory
-#SPLITS_DIR = ROOT_DIR / "dataset_splits"
-
-# Shared dataset location on the HPC (absolute path)
-SPLITS_DIR = Path("/shared/cifar_splits")
+SPLITS_DIR = ROOT_DIR / "dataset_splits"
 
 EXPERIMENTS_CONF_DIR = ROOT_DIR / "experiments_conf"
 
