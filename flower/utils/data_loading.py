@@ -66,6 +66,8 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
         shuffle=True,
         num_workers=num_workers,
         pin_memory=pin,
+        persistent_workers=True,
+        prefetch_factor=4,
         worker_init_fn=seed_worker,
         generator=g,
     )
@@ -75,6 +77,8 @@ def load_data_custom(iid: bool, dirichlet_alpha: float, partition_id: int, num_p
         shuffle=False,
         num_workers=num_workers,
         pin_memory=pin,
+        persistent_workers=True,
+        prefetch_factor=4,
     )
 
     print(f"[Client {partition_id}] Loaded {len(trainset)} train samples, {len(testset)} test samples.")
