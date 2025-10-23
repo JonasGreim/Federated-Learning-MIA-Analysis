@@ -16,8 +16,7 @@ WANDB_DIR = ROOT_DIR / "wandb"
 
 # local simulation dataset splits directory
 # SPLITS_DIR = ROOT_DIR / "dataset_splits"
-ENV_SPLITS_PATH = os.environ.get("SPLITS_DIR")
-SPLITS_DIR = Path(ENV_SPLITS_PATH)
+SPLITS_DIR = Path("/dev/shm/cifar_splits")
 
 
 EXPERIMENTS_CONF_DIR = ROOT_DIR / "experiments_conf"

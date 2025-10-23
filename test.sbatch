@@ -77,12 +77,12 @@ python - <<'PY'
 from pathlib import Path
 # import your existing function
 from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
+# writes to project/dataset_splits/
 split_cifar10_for_target_and_shadow()
 print("✅ Wrote splits to disk.")
 PY
 
 SHARED_SPLITS_PATH="$PROJECT_DIR/dataset_splits"
-
 # 1) Start SuperLink on server node (background)
 srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
   cd '$PROJECT_DIR'
@@ -102,16 +102,12 @@ sleep 3  # give it time to bind
 srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 --nodelist="$CLIENT_HOSTS" --exclusive bash -lc "
   cd '$PROJECT_DIR' && mkdir -p logs
   PARTITION_ID=\$SLURM_PROCID
-  LOCAL_SPLITS_PATH=\"/dev/shm/cifar_splits_$$\"
+  LOCAL_SPLITS_PATH=\"/dev/shm/cifar_splits\"
 
   # 2a) STAGE DATA LOCALLY (Runs on each client node's /dev/shm)
   echo \"[Node \$SLURMD_NODENAME] Staging data from $SHARED_SPLITS_PATH to $LOCAL_SPLITS_PATH...\"
   mkdir -p \"\$LOCAL_SPLITS_PATH\"
   rsync -a \"$SHARED_SPLITS_PATH/\" \"\$LOCAL_SPLITS_PATH\"
-
-  # 2b) EXPORT ENVIRONMENT VARIABLE to override the path in Python
-  export SPLITS_DIR=\"\$LOCAL_SPLITS_PATH\"
-  echo \"[Node \$SLURMD_NODENAME] Exported SPLITS_DIR to: \$SPLITS_DIR\"
 
   # 2c) START SUPERNODE
   flower-supernode \
