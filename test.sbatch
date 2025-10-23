@@ -73,16 +73,20 @@ echo "Client nodes: ${CLIENTS[*]}"
 echo "Project dir: $PROJECT_DIR"
 
 # --- Prepare Data Splits (once per experiment) ---
-python - <<'PY'
+SHARED_SPLITS_PATH="$PROJECT_DIR/dataset_splits"
+mkdir -p "$SHARED_SPLITS_PATH"
+
+python - <<PY
 from pathlib import Path
-# import your existing function
 from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
-# writes to project/dataset_splits/
-split_cifar10_for_target_and_shadow()
-print("✅ Wrote splits to disk.")
+
+target = Path("$SHARED_SPLITS_PATH")
+print("Writing CIFAR-10 splits to:", target)
+split_cifar10_for_target_and_shadow(split_save_dir=target)
+print("✅ Wrote splits to:", target)
 PY
 
-SHARED_SPLITS_PATH="$PROJECT_DIR/dataset_splits"
+
 # 1) Start SuperLink on server node (background)
 srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
   cd '$PROJECT_DIR'
@@ -107,7 +111,7 @@ srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 --nodeli
   # 2a) STAGE DATA LOCALLY (Runs on each client node's /dev/shm)
   echo "[Node \$SLURMD_NODENAME] Staging data from $SHARED_SPLITS_PATH to \$LOCAL_SPLITS_PATH..."
   mkdir -p \"\$LOCAL_SPLITS_PATH\"
-  rsync -a --delete "$SHARED_SPLITS_PATH/" "\$LOCAL_SPLITS_PATH/"
+  rsync -a --delete \"$SHARED_SPLITS_PATH\"/ \"\$LOCAL_SPLITS_PATH\"/
 
   # 2c) START SUPERNODE
   flower-supernode \
