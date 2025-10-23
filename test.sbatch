@@ -117,7 +117,8 @@ srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 --nodeli
   flower-supernode \
     --insecure \
     --superlink ${SERVER_NODE}:${PORT_FLEET} \
-    --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\"
+    --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\" \
+    > logs/supernode_\${NODE_NAME}_\${PARTITION_ID}.log 2>&1
 " &
 echo "SuperNodes started on client nodes: ${CLIENTS[*]}"
 
