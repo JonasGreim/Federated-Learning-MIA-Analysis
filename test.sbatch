@@ -76,7 +76,7 @@ echo "Project dir: $PROJECT_DIR"
 python - <<'PY'
 from pathlib import Path
 # import your existing function
-from your_module import split_cifar10_for_target_and_shadow
+from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
 out = Path("/shared/cifar_splits")
 out.mkdir(parents=True, exist_ok=True)
 split_cifar10_for_target_and_shadow(split_save_dir=out)
