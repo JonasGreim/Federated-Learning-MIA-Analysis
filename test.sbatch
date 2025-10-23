@@ -147,6 +147,7 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
 
   # Run Flower
   conda run -n flwr python -u run_flower_hpc.py flower=run0 2>&1
+  python -u run_flower_hpc.py flower=run0 2>&1
 
   # revert back to placeholder address for future runs
   sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
