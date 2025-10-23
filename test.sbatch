@@ -105,9 +105,9 @@ srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 --nodeli
   LOCAL_SPLITS_PATH=\"/dev/shm/cifar_splits\"
 
   # 2a) STAGE DATA LOCALLY (Runs on each client node's /dev/shm)
-  echo \"[Node \$SLURMD_NODENAME] Staging data from $SHARED_SPLITS_PATH to $LOCAL_SPLITS_PATH...\"
+  echo "[Node \$SLURMD_NODENAME] Staging data from $SHARED_SPLITS_PATH to \$LOCAL_SPLITS_PATH..."
   mkdir -p \"\$LOCAL_SPLITS_PATH\"
-  rsync -a \"$SHARED_SPLITS_PATH/\" \"\$LOCAL_SPLITS_PATH\"
+  rsync -a --delete "$SHARED_SPLITS_PATH/" "\$LOCAL_SPLITS_PATH/"
 
   # 2c) START SUPERNODE
   flower-supernode \
