@@ -76,6 +76,7 @@ options.backend.client-resources.num-gpus = 0.25  # 25% VRAM pro Client
 address = "SERVER_NODE:9093"
 insecure = true
 
+# HPC Deployment Settings
 [tool.flwr.application.client.settings]
-max-tasks = 0        # infinite lifetime
-log-stdout = true
+max-tasks = 0        # clientapp process is allowed an infinite lifetime -> spawns nethertheless a fresh client process per task
+log-stdout = true    # Enables output from clients

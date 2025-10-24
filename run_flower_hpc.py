@@ -37,7 +37,7 @@ def run(config: Config):
 
     os.chdir(get_original_cwd())
     env = os.environ.copy()
-    env["PYTHONUNBUFFERED"] = "1"
+    env["PYTHONUNBUFFERED"] = "1" # disables output buffering
     env.setdefault("TERM", "dumb")
 
     argv = [
