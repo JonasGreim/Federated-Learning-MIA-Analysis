@@ -32,6 +32,7 @@ from path_settings import (
     ensure_dir_exist, METRICS_DIR_FLOWER,
 )
 from pathlib import Path
+import time
 
 
 class FedCustom(Strategy):
@@ -138,7 +139,7 @@ class FedCustom(Strategy):
             failures: List[Union[Tuple[ClientProxy, FitRes], BaseException]],
     ) -> Tuple[Optional[Parameters], Dict[str, Scalar]]:
         """Aggregate fit results using weighted average."""
-
+        t0 = time.perf_counter()
         weights_results = [
             (parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples)
             for _, fit_res in results
@@ -178,7 +179,7 @@ class FedCustom(Strategy):
             # Upload the final model to W&B as an artifact
             if self.max_server_rounds == server_round:
                 wandb_upload_artifact_model(artifact_name=f"{self.model_name}-{server_round}", artifact_path=model_path)
-
+        print(f"[Round {server_round}] aggregate_fit: {time.perf_counter() - t0:.3f}s", flush=True)
         return parameters_aggregated, metrics_aggregated
 
     def aggregate_evaluate(

@@ -7,7 +7,7 @@ from flower.utils.reproducibility import seed_everything
 from flower.utils.training import test, train
 from path_settings import D3_SPLIT_PATH, D1_SPLIT_PATH
 from flower.utils.model_factory import create_model
-
+import time
 
 class FlowerClient(NumPyClient):
     def __init__(self, net, trainloader, valloader, local_epochs, device):
@@ -19,6 +19,7 @@ class FlowerClient(NumPyClient):
         self.net.to(self.device)
 
     def fit(self, parameters, config):
+        t0 = time.perf_counter()
         set_weights(self.net, parameters)
         train_loss, train_accuracy = train(
             self.net,
@@ -29,7 +30,7 @@ class FlowerClient(NumPyClient):
             config['weight_decay'],
             self.device,
         )
-
+        print(f"fit: {time.perf_counter() - t0:.3f}s", flush=True)
         return (
             get_weights(self.net),
             len(self.trainloader.dataset),
