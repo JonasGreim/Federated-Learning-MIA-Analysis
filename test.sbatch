@@ -3,7 +3,7 @@
 #SBATCH --output=logs/flower_%j_%N.out
 #SBATCH --error=logs/flower_%j_%N.err
 #SBATCH --partition=paula
-#SBATCH --nodes=11
+#SBATCH --nodes=3
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
@@ -80,7 +80,7 @@ srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
     --insecure \
     --fleet-api-address 0.0.0.0:${PORT_FLEET} \
     --control-api-address 0.0.0.0:${PORT_CTRL} \
-    --fleet-api-num-workers 2 \
+    --fleet-api-num-workers 8 \
     > logs/superlink_${SLURM_JOB_ID}.log 2>&1
 " &
 echo "SuperLink started on ${SERVER_NODE}"
