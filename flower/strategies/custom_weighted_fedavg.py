@@ -253,7 +253,7 @@ class FedCustom(Strategy):
             self, server_round: int, parameters: Parameters
     ) -> Optional[Tuple[float, Dict[str, Scalar]]]:
         """Evaluate global model parameters using an evaluation function."""
-
+        t0 = time.perf_counter()
         testloader = self._get_testloader()
 
         net = create_model(self.model_name)
@@ -275,6 +275,7 @@ class FedCustom(Strategy):
         wandb_log_metrics(metrics=server_metrics, step=server_round)
 
         release_model(net, self.device.type)
+        print(f"eval_total={time.perf_counter() - t0:.3f}s", flush=True)
         return server_loss, server_metrics
 
     def num_fit_clients(self, num_available_clients: int) -> Tuple[int, int]:

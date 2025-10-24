@@ -71,9 +71,11 @@ def client_fn(context: Context):
     else:
         split = D1_SPLIT_PATH
 
+    t0 = time.perf_counter()
     trainloader, valloader = load_data_custom(iid=iid, dirichlet_alpha=alpha, partition_id=partition_id,
                                               num_partitions=num_partitions, split=split,
                                               batch_size=batch_size, seed=seed)
+    print(f"loader_build={time.perf_counter() - t0:.3f}s", flush=True)
 
     # Return Client instance
     return FlowerClient(net, trainloader, valloader, local_epochs, device).to_client()
