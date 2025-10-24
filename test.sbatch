@@ -33,17 +33,7 @@ print("wandb version:", wandb.__version__)
 print("login ok:", wandb.login(relogin=False))  # uses saved key; returns True if configured
 PY
 
-
 # nvidia-smi  # shows Driver Version and “CUDA Version”
-# check gpu
-#python - <<'PY'
-#import torch
-#print("CUDA available:", torch.cuda.is_available())
-#if torch.cuda.is_available():
-#    print("GPU count:", torch.cuda.device_count())
-#    for i in range(torch.cuda.device_count()):
-#        print(f"Device {i}: {torch.cuda.get_device_name(i)}")
-#PY
 
 # --- Distribute Flower ---
 # Node 0 = Server, Nodes 1-9 = Clients
@@ -69,7 +59,7 @@ echo "Project dir: $PROJECT_DIR"
 SHARED_SPLITS_PATH="/work/hi85udaj-flower/dataset_splits"
 mkdir -p "$SHARED_SPLITS_PATH"
 
-# Generate splits only if missing (saves time on re-runs)
+# Generate splits only if missing to fast hpc working dir
 if [ ! -d "$SHARED_SPLITS_PATH/D1" ]; then
   python - <<PY
 from pathlib import Path
