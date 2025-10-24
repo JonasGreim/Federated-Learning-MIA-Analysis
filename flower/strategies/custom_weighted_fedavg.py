@@ -79,6 +79,7 @@ class FedCustom(Strategy):
         self.all_round_metrics = {}
         self.cache_metric = {}
         self.metric_save_folder = metric_save_folder
+        self._testloader = None
 
     def __repr__(self) -> str:
         return "FedCustom"
@@ -164,23 +165,20 @@ class FedCustom(Strategy):
         aggregated_ndarrays = aggregate(weights_results)
         parameters_aggregated = ndarrays_to_parameters(aggregated_ndarrays)
 
-        #  save global model each round
-        model = create_model(self.model_name)
-        set_weights(model, aggregated_ndarrays)
 
-        # save global model from shadow and target model in the standard PyTorch way
-        ensure_dir_exist(self.model_saving_folder)
-        model_path = self.model_saving_folder / f"global_model_round_{server_round}.pth"
 
         # save model every 5 rounds or at the last round
         if server_round % 5 == 0 or server_round == self.max_server_rounds:
+            model = create_model(self.model_name)
+            set_weights(model, aggregated_ndarrays)
+            ensure_dir_exist(self.model_saving_folder)
+            model_path = self.model_saving_folder / f"global_model_round_{server_round}.pth"
             torch.save(model.state_dict(), model_path)
+            release_model(model, self.device.type)
+            # Upload the final model to W&B as an artifact
+            if self.max_server_rounds == server_round:
+                wandb_upload_artifact_model(artifact_name=f"{self.model_name}-{server_round}", artifact_path=model_path)
 
-        # Upload the final model to W&B as an artifact
-        if self.max_server_rounds == server_round:
-            wandb_upload_artifact_model(artifact_name=f"{self.model_name}-{server_round}", artifact_path=model_path)
-
-        release_model(model, self.device.type)
         return parameters_aggregated, metrics_aggregated
 
     def aggregate_evaluate(
@@ -239,24 +237,23 @@ class FedCustom(Strategy):
                 "Overfitting-Gap (Server, Accuracy)": server_overfitting_gap_accuracy
                 }
 
+    def _get_testloader(self):
+        if self._testloader is not None:
+            return self._testloader
+        split = D4_SPLIT_PATH if self.train_target_model_as_shadow_model else D2_SPLIT_PATH
+        ds = load_from_disk(split)
+        testset = HFDatasetToTorch(ds, transform=get_transforms_custom())
+        pin = torch.cuda.is_available()
+        self._testloader = DataLoader(testset, batch_size=self.batch_size,
+                                      shuffle=False, num_workers=4, pin_memory=pin)
+        return self._testloader
+
     def evaluate(
             self, server_round: int, parameters: Parameters
     ) -> Optional[Tuple[float, Dict[str, Scalar]]]:
         """Evaluate global model parameters using an evaluation function."""
 
-        if self.train_target_model_as_shadow_model:
-            split = D4_SPLIT_PATH
-        else:
-            split = D2_SPLIT_PATH
-
-        try:
-            test_split_dataset = load_from_disk(split)
-        except Exception as e:
-            raise RuntimeError(f"Target model: Failed to load test dataset from disk: {e}") from e
-
-        testset = HFDatasetToTorch(test_split_dataset, transform=get_transforms_custom())
-
-        testloader = DataLoader(testset, batch_size=self.batch_size)
+        testloader = self._get_testloader()
 
         net = create_model(self.model_name)
         set_weights(net, parameters_to_ndarrays(parameters))  # parameters = tensors -> ndarray parameters
