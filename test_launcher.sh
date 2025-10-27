@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -euo pipefail
 
 jid_flower=$(sbatch --parsable test.sbatch)
