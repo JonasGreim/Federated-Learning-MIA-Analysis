@@ -41,7 +41,7 @@ echo "SLURM_JOB_ID: $SLURM_JOB_ID"
 echo "Running on nodes:"
 scontrol show hostnames $SLURM_JOB_NODELIST
 
-# Liste aller zugewiesenen Nodes
+# --- Define Variables ---
 PROJECT_DIR="$HOME/masterarbeit/Flower2"
 NODES=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 SERVER_NODE=${NODES[0]}
@@ -144,6 +144,13 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
   }' pyproject.toml
 " | tee "logs/flwr_run_${SLURM_JOB_ID}.log"
 
-wait
 
 echo "✅ All Flower processes finished successfully."
+
+# Cleanup if the script exits or is cancelled
+trap '{
+  # Kill the SuperLink on the server node
+  srun --nodes=1 --nodelist="$SERVER_NODE" pkill -f "^flower-superlink"  || true
+  # Kill all SuperNodes on client nodes
+  srun --nodes="$NUM_CLIENTS" --nodelist="$CLIENT_HOSTS" pkill -f "^flower-supernode" || true
+}' EXIT INT TERM
