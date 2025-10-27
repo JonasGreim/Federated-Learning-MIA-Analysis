@@ -16,6 +16,10 @@
 set -euo pipefail
 module purge
 mkdir -p logs
+LOG_DIR="logs/${SLURM_JOB_ID}"
+mkdir -p "$LOG_DIR"
+echo "Logs will be saved in: $LOG_DIR"
+
 
 # activate conda environment
 module load Anaconda3/2024.02-1
@@ -81,7 +85,7 @@ srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
     --fleet-api-address 0.0.0.0:${PORT_FLEET} \
     --control-api-address 0.0.0.0:${PORT_CTRL} \
     --fleet-api-num-workers 8 \
-    > logs/superlink_${SLURM_JOB_ID}.log 2>&1
+    > ${LOG_DIR}/superlink.log 2>&1
 " &
 echo "SuperLink started on ${SERVER_NODE}"
 sleep 3  # give it time to bind
@@ -104,7 +108,7 @@ srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 \
     --insecure \
     --superlink ${SERVER_NODE}:${PORT_FLEET} \
     --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\" \
-    > logs/supernode_${SLURM_JOB_ID}_\${SLURMD_NODENAME}.log 2>&1
+    > ${LOG_DIR}/supernode_\${SLURMD_NODENAME}.log 2>&1
 " &
 
 echo "SuperNodes started on client nodes: ${CLIENTS[*]}"
@@ -139,7 +143,7 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
   # Sequentially run multiple Flower experiments
   for run_id in \$(seq 0 2); do
     echo \"🚀 Starting Flower run\${run_id}\"
-    python -u run_flower_hpc.py \"flower=run\${run_id}\" 2>&1 | tee \"logs/flwr_run_${SLURM_JOB_ID}_run\${run_id}.log\"
+    python -u run_flower_hpc.py \"flower=run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/flwr_run\${run_id}.log\"
     echo \"✅ Finished Flower run\${run_id}\"
     echo
     # optional small pause for W&B sync or disk I/O
@@ -162,11 +166,11 @@ sleep 3
 
 
 echo "🧠 Starting MIA experiments"
-srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" bash -lc "
+srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --gres=gpu:1 --nodelist="$SERVER_NODE" bash -lc "
   cd '$PROJECT_DIR'
   for run_id in \$(seq 0 2); do
     echo \"🚀 Starting MIA run\${run_id}\"
-    python -u run_mia_experiment.py \"mia=run\${run_id}\" 2>&1 | tee \"logs/mia_${SLURM_JOB_ID}_run\${run_id}.log\"
+    python -u run_mia_experiment.py \"mia=run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/mia_run\${run_id}.log\"
     echo \"✅ Finished MIA run\${run_id}\"
     echo
   done
