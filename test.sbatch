@@ -178,5 +178,5 @@ srun --overlap --nodes=1 --ntasks=1 --ntasks-per-node=1 --gres=gpu:1 --nodelist=
   done
 "
 
-rm -rf "/work/hi85udaj-flower/model_checkpoints_target"
+# rm -rf "/work/hi85udaj-flower/model_checkpoints_target"
 echo "✅ All MIA experiments finished successfully."
