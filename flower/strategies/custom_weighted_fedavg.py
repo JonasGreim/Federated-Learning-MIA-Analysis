@@ -274,6 +274,7 @@ class FedCustom(Strategy):
 
         # log to W&B
         wandb_log_metrics(metrics=server_metrics, step=server_round)
+        print(f"max rounds {self.max_server_rounds}, server round {server_round}", flush=True)
         if self.max_server_rounds == server_round:
             wandb_upload_artifact_model(artifact_name=f"{self.model_name}-metrics-round-{server_round}", artifact_path=metrics_file_path, wandb_type="metrics")
 

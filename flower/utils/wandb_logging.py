@@ -117,7 +117,7 @@ def wandb_upload_artifact_model(artifact_name: str, artifact_path: Path, wandb_t
     artifact = wandb.Artifact(name=artifact_name, type=wandb_type)
     artifact.add_file(str(artifact_path))
     wandb.log_artifact(artifact)
-    print(f"Artifact {artifact_name} uploaded to wandb successfully.")
+    print(f"Artifact {artifact_name} uploaded to wandb successfully.", flush=True)
 
 
 def disable_unnecessary_warnings():
