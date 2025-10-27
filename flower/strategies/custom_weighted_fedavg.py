@@ -24,7 +24,7 @@ from flower.utils.model_factory import create_model
 from flower.utils.training import test
 from flower.utils.model_utils import set_weights, create_save_folder
 from flower.utils.reproducibility import release_model
-from flower.utils.wandb_logging import wandb_log_metrics, wandb_upload_artifact_model
+from flower.utils.wandb_logging import wandb_log_metrics, wandb_upload_artifact_model, wandb_save_file
 from path_settings import (
     CHECKPOINTS_DIR_TARGET,
     D2_SPLIT_PATH,
@@ -275,7 +275,7 @@ class FedCustom(Strategy):
         # log to W&B
         wandb_log_metrics(metrics=server_metrics, step=server_round)
         if self.max_server_rounds == server_round:
-            wandb_upload_artifact_model(artifact_name=f"{self.model_name}-metrics-round-{server_round}", artifact_path=metrics_file_path, wandb_type="metrics")
+            wandb_save_file(metrics_file_path)
 
         release_model(net, self.device.type)
         print(f"eval_total={time.perf_counter() - t0:.3f}s", flush=True)

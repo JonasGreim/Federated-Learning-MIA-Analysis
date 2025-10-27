@@ -133,3 +133,6 @@ def disable_unnecessary_warnings():
         module=r"^google\.protobuf\.internal\.well_known_types$",
         message=r".*datetime\.datetime\.utcnow\(\).*",
     )
+
+def wandb_save_file(path: Path):
+    wandb.save(str(path))

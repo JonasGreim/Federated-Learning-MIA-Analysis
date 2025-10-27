@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import wandb
 import matplotlib
 from pathlib import Path
-from flower.utils.wandb_logging import wandb_upload_artifact_model
+from flower.utils.wandb_logging import wandb_save_file
 from path_settings import METRICS_DIR_MIA
 import json
 
@@ -73,7 +73,7 @@ def log_per_class_metrics(per_class_metrics: dict, class_names: list = None,
     with open(json_data_path, "w") as f:
         json.dump(per_class_metrics, f, indent=4)
 
-    wandb_upload_artifact_model(artifact_name="mia-per-class-metric", artifact_path=json_data_path, wandb_type="metrics")
+    wandb_save_file(json_data_path)
 
     for metric in metrics:
         values = [per_class_metrics[cls].get(metric, 0.0) for cls in class_keys]
@@ -123,8 +123,7 @@ def log_overall_metrics_with_error_bars(
     with open(json_data_path, "w") as f:
         json.dump(metrics_payload, f, indent=4)
 
-    wandb_upload_artifact_model(artifact_name="mia-overall-metris", artifact_path=json_data_path,
-                                wandb_type="metrics")
+    wandb_save_file(json_data_path)
 
     # Create the plot
     plt.figure(figsize=(8, 5))
