@@ -141,7 +141,7 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
   }' pyproject.toml
 
   # Sequentially run multiple Flower experiments
-  for run_id in \$(seq 2); do
+  for run_id in \$(seq 1 2); do
     echo \"🚀 Starting Flower run\${run_id}\"
     python -u run_flower_hpc.py \"flower=run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/flwr_run\${run_id}.log\"
     echo \"✅ Finished Flower run\${run_id}\"
@@ -160,15 +160,17 @@ echo "✅ All Flower processes finished successfully."
 
 # ---- Stop all Flower processes before MIA ----
 echo "🛑 Stopping Flower SuperLink and SuperNodes"
-srun --overlap --nodes=1 --nodelist="$SERVER_NODE" pkill -f "^flower-superlink"  || true
-srun --overlap --nodes="$NUM_CLIENTS" --nodelist="$CLIENT_HOSTS" pkill -f "^flower-supernode" || true
-sleep 3
-
+srun --overlap -N1 -w "$SERVER_NODE" --ntasks=1 --ntasks-per-node=1 bash -lc 'pkill -15 -f "^flower-superlink$" || true'
+srun --overlap -N"${NUM_CLIENTS}" -w "${CLIENT_HOSTS}" --ntasks="${NUM_CLIENTS}" --ntasks-per-node=1 bash -lc 'pkill -15 -f "^flower-supernode$" || true'
+sleep 2
+# KILL if anything still around
+srun --overlap -N1 -w "$SERVER_NODE" --ntasks=1 --ntasks-per-node=1 bash -lc 'pgrep -f "^flower-superlink$" >/dev/null && pkill -9 -f "^flower-superlink$" || true'
+srun --overlap -N"${NUM_CLIENTS}" -w "${CLIENT_HOSTS}" --ntasks="${NUM_CLIENTS}" --ntasks-per-node=1 bash -lc 'pgrep -f "^flower-supernode$" >/dev/null && pkill -9 -f "^flower-supernode$" || true'
 
 echo "🧠 Starting MIA experiments"
-srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --gres=gpu:1 --nodelist="$SERVER_NODE" bash -lc "
+srun --overlap --nodes=1 --ntasks=1 --ntasks-per-node=1 --gres=gpu:1 --nodelist="$SERVER_NODE" bash -lc "
   cd '$PROJECT_DIR'
-  for run_id in \$(seq 2); do
+  for run_id in \$(seq 1 2); do
     echo \"🚀 Starting MIA run\${run_id}\"
     python -u run_mia_experiment.py \"mia=run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/mia_run\${run_id}.log\"
     echo \"✅ Finished MIA run\${run_id}\"
