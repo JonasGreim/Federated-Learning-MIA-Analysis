@@ -10,4 +10,4 @@ parameters:
   weight_decay: 0.0
   run_name: "run1"
   target_model_folder: "2"
-  target_model_file: "global_model_round_10.pth"
+  target_model_file: "global_model_round_1.pth"
