@@ -64,6 +64,10 @@ wandb login
 - change in [base.yaml](experiments_conf/flower/base.yaml) and [base.yaml](experiments_conf/mia/base.yaml) device to cuda or cpu
 - You have to change the parameter in flower/base.yaml, because you have to set the client-resources for flower
 
+## metrics folder
+all metrics from flower and mia runs are saved in the metrics folder as json files
+also saved to wandb
+
 ## MIA 
 - You can run the MIA directly without a federated learning run: 
 ```

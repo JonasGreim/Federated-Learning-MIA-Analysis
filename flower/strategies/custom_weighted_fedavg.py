@@ -178,7 +178,7 @@ class FedCustom(Strategy):
             release_model(model, self.device.type)
             # Upload the final model to W&B as an artifact
             if self.max_server_rounds == server_round:
-                wandb_upload_artifact_model(artifact_name=f"{self.model_name}-{server_round}", artifact_path=model_path)
+                wandb_upload_artifact_model(artifact_name=f"{self.model_name}-model-round-{server_round}", artifact_path=model_path)
         print(f"[Round {server_round}] aggregate_fit: {time.perf_counter() - t0:.3f}s", flush=True)
         return parameters_aggregated, metrics_aggregated
 
@@ -267,12 +267,15 @@ class FedCustom(Strategy):
 
         # save metrics as json
         all_metrics = {**server_metrics, **self.cache_metric}
+        metrics_file_path = self.metric_save_folder / "results.json"
         self.all_round_metrics[server_round] = all_metrics
-        with open(self.metric_save_folder / "results.json", "w") as json_file:
+        with open(metrics_file_path, "w") as json_file:
             json.dump(self.all_round_metrics, json_file, indent=4)
 
         # log to W&B
         wandb_log_metrics(metrics=server_metrics, step=server_round)
+        if self.max_server_rounds == server_round:
+            wandb_upload_artifact_model(artifact_name=f"{self.model_name}-metrics-round-{server_round}", artifact_path=metrics_file_path, wandb_type="metrics")
 
         release_model(net, self.device.type)
         print(f"eval_total={time.perf_counter() - t0:.3f}s", flush=True)
