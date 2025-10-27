@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=00:40:00
+#SBATCH --time=00:30:00
 #SBATCH --gres=gpu:1
 
 # --- Environment Setup ---
@@ -141,13 +141,13 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
   }' pyproject.toml
 
   # Sequentially run multiple Flower experiments
-  for run_id in \$(seq 1 2); do
+  for run_id in \$(seq 2); do
     echo \"🚀 Starting Flower run\${run_id}\"
     python -u run_flower_hpc.py \"flower=run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/flwr_run\${run_id}.log\"
     echo \"✅ Finished Flower run\${run_id}\"
     echo
     # optional small pause for W&B sync or disk I/O
-    sleep 5
+    sleep 3
   done
 
   # Revert .toml so it's clean for next job
@@ -160,15 +160,15 @@ echo "✅ All Flower processes finished successfully."
 
 # ---- Stop all Flower processes before MIA ----
 echo "🛑 Stopping Flower SuperLink and SuperNodes"
-srun --nodes=1 --nodelist="$SERVER_NODE" pkill -f "^flower-superlink"  || true
-srun --nodes="$NUM_CLIENTS" --nodelist="$CLIENT_HOSTS" pkill -f "^flower-supernode" || true
+srun --overlap --nodes=1 --nodelist="$SERVER_NODE" pkill -f "^flower-superlink"  || true
+srun --overlap --nodes="$NUM_CLIENTS" --nodelist="$CLIENT_HOSTS" pkill -f "^flower-supernode" || true
 sleep 3
 
 
 echo "🧠 Starting MIA experiments"
 srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --gres=gpu:1 --nodelist="$SERVER_NODE" bash -lc "
   cd '$PROJECT_DIR'
-  for run_id in \$(seq 1 2); do
+  for run_id in \$(seq 2); do
     echo \"🚀 Starting MIA run\${run_id}\"
     python -u run_mia_experiment.py \"mia=run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/mia_run\${run_id}.log\"
     echo \"✅ Finished MIA run\${run_id}\"
