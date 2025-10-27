@@ -12,7 +12,6 @@
 
 # --- Environment Setup ---
 set -euo pipefail
-module purge
 mkdir -p logs
 
 # activate conda environment
@@ -39,7 +38,7 @@ PROJECT_DIR="$HOME/masterarbeit/Flower2"
 
 
 echo start MIA
-srun python -u run_mia_experiment.py "$@"
+srun python -u run_mia_experiment.py mia=run1 "$@"
 
 
 echo "✅ All MIA processes finished successfully."

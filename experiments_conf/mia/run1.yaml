@@ -5,9 +5,9 @@ parameters:
   num_shadow_models: 1
   model_arch: "simple_model"
   shadow_epochs: 50
-  train_size: 150
-  test_size: 150
+  train_size: 15000
+  test_size: 15000
   weight_decay: 0.0
   run_name: "run1"
-  target_model_folder: "3"
+  target_model_folder: "1"
   target_model_file: "global_model_round_10.pth"
