@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=00:20:00
+#SBATCH --time=00:30:00
 #SBATCH --gres=gpu:1
 
 # --- Environment Setup ---
@@ -177,3 +177,6 @@ srun --overlap --nodes=1 --ntasks=1 --ntasks-per-node=1 --gres=gpu:1 --nodelist=
     echo
   done
 "
+
+rm -rf "/work/hi85udaj-flower/model_checkpoints_target"
+echo "✅ All MIA experiments finished successfully."
