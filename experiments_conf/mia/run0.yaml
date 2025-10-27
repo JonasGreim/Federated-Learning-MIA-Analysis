@@ -8,6 +8,6 @@ parameters:
   train_size: 15000
   test_size: 15000
   weight_decay: 0.0
-  run_name: "run1"
-  target_model_folder: "1"
-  target_model_file: "global_model_round_20.pth"
+  run_name: "run0"
+  target_model_folder: "0"
+  target_model_file: "global_model_round_100.pth"

@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=00:15:00
+#SBATCH --time=00:35:00
 #SBATCH --gres=gpu:1
 
 # --- Environment Setup ---
@@ -126,31 +126,48 @@ PY
 # 4) Trigger the run from the server node (non-interactive)
 SERVER_ADDRESS="${SERVER_NODE}:${PORT_CTRL}"
 
-echo start Flower on server node "$SERVER_NODE"
+echo "🌼 Starting multiple Flower runs sequentially on $SERVER_NODE"
+
 srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
   cd '$PROJECT_DIR'
 
-  # Inject server address to flower .toml (server address defined only at runtime)
+  # Inject correct server address into pyproject.toml
   sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
     s/^address *= *.*/address = \"${SERVER_ADDRESS}\"/
   }' pyproject.toml
 
-  # Run Flower
-  python -u run_flower_hpc.py flower=run0 2>&1
+  # Sequentially run multiple Flower experiments
+  for run_id in \$(seq 0 2); do
+    echo \"🚀 Starting Flower run\${run_id}\"
+    python -u run_flower_hpc.py \"flower=run\${run_id}\" 2>&1 | tee \"logs/flwr_run_${SLURM_JOB_ID}_run\${run_id}.log\"
+    echo \"✅ Finished Flower run\${run_id}\"
+    echo
+    # optional small pause for W&B sync or disk I/O
+    sleep 5
+  done
 
-  # revert back to placeholder address for future runs
+  # Revert .toml so it's clean for next job
   sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
     s/^address *= *.*/address = \"SERVER_NODE:9093\"/
   }' pyproject.toml
-" | tee "logs/flwr_run_${SLURM_JOB_ID}.log"
-
+"
 
 echo "✅ All Flower processes finished successfully."
 
-# Cleanup if the script exits or is cancelled
-trap '{
-  # Kill the SuperLink on the server node
-  srun --nodes=1 --nodelist="$SERVER_NODE" pkill -f "^flower-superlink"  || true
-  # Kill all SuperNodes on client nodes
-  srun --nodes="$NUM_CLIENTS" --nodelist="$CLIENT_HOSTS" pkill -f "^flower-supernode" || true
-}' EXIT INT TERM
+# ---- Stop all Flower processes before MIA ----
+echo "🛑 Stopping Flower SuperLink and SuperNodes"
+srun --nodes=1 --nodelist="$SERVER_NODE" pkill -f "^flower-superlink"  || true
+srun --nodes="$NUM_CLIENTS" --nodelist="$CLIENT_HOSTS" pkill -f "^flower-supernode" || true
+sleep 3
+
+
+echo "🧠 Starting MIA experiments"
+srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" bash -lc "
+  cd '$PROJECT_DIR'
+  for run_id in \$(seq 0 2); do
+    echo \"🚀 Starting MIA run\${run_id}\"
+    python -u run_mia_experiment.py \"mia=run\${run_id}\" 2>&1 | tee \"logs/mia_${SLURM_JOB_ID}_run\${run_id}.log\"
+    echo \"✅ Finished MIA run\${run_id}\"
+    echo
+  done
+"

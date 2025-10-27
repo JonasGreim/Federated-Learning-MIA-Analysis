@@ -1,8 +1,8 @@
 defaults:
   - base
 
-num_server_rounds: 100
-local_epochs: 1
+num_server_rounds: 20
+local_epochs: 5
 weight_decay: 0.0
 model: "simple_model"
 iid_data_distribution: true
