@@ -14,7 +14,7 @@ parameters:
 parameters_static:
   device: "cuda"  # <-- "cpu" or "cuda"
   seed: 42
-  batch_size: 32
+  batch_size: 128
   learning_rate_decay: 1e-7
   learning_rate: 0.01
   num_workers: 2
