@@ -11,7 +11,7 @@ METRICS_DIR = ROOT_DIR / "metrics"
 METRICS_DIR_FLOWER = METRICS_DIR / "flower"
 METRICS_DIR_MIA = METRICS_DIR / "mia"
 # CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
-CHECKPOINTS_DIR_TARGET = Path("/work/hi85udaj-flower") / "model_checkpoints_target_complex_5_clients_dropout2"
+CHECKPOINTS_DIR_TARGET = Path("/work/hi85udaj-flower") / "model_checkpoints_target_complex_5_clients_dropout3"
 OUTPUTS_DIR = ROOT_DIR / "outputs"
 WANDB_DIR = ROOT_DIR / "wandb"
 
