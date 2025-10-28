@@ -3,11 +3,11 @@
 #SBATCH --output=logs/flower_%j_%N.out
 #SBATCH --error=logs/flower_%j_%N.err
 #SBATCH --partition=paula
-#SBATCH --nodes=3
+#SBATCH --nodes=11
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=00:25:00
+#SBATCH --time=00:20:00
 #SBATCH --gres=gpu:1
 
 # --- Environment Setup ---
@@ -141,7 +141,7 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
   }' pyproject.toml
 
   # Sequentially run multiple Flower experiments
-  for run_id in \$(seq 1 2); do
+  for run_id in \$(seq 2 3); do
     echo \"🚀 Starting Flower run\${run_id}\"
     python -u run_flower_hpc.py \"flower=run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/flwr_run\${run_id}.log\"
     echo \"✅ Finished Flower run\${run_id}\"
@@ -170,7 +170,7 @@ srun --overlap -N"${NUM_CLIENTS}" -w "${CLIENT_HOSTS}" --ntasks="${NUM_CLIENTS}"
 echo "🧠 Starting MIA experiments"
 srun --overlap --nodes=1 --ntasks=1 --ntasks-per-node=1 --gres=gpu:1 --nodelist="$SERVER_NODE" bash -lc "
   cd '$PROJECT_DIR'
-  for run_id in \$(seq 0 2); do
+  for run_id in \$(seq 2 3); do
     echo \"🚀 Starting MIA run\${run_id}\"
     python -u run_mia_experiment.py \"mia=run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/mia_run\${run_id}.log\"
     echo \"✅ Finished MIA run\${run_id}\"
