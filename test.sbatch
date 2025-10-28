@@ -3,11 +3,11 @@
 #SBATCH --output=logs/flower_%j_%N.out
 #SBATCH --error=logs/flower_%j_%N.err
 #SBATCH --partition=paula
-#SBATCH --nodes=10
+#SBATCH --nodes=9
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=00:40:00
+#SBATCH --time=00:30:00
 #SBATCH --gres=gpu:1
 
 # --- Environment Setup ---
