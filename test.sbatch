@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=00:20:00
+#SBATCH --time=00:40:00
 #SBATCH --gres=gpu:1
 
 # --- Environment Setup ---
