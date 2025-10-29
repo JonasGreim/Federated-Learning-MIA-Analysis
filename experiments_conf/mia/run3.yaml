@@ -2,12 +2,8 @@ defaults:
   - base
 
 parameters:
-  num_shadow_models: 1
-  model_arch: "simple_model"
-  shadow_epochs: 100
-  train_size: 15000
-  test_size: 15000
-  weight_decay: 0.0
+  model_arch: "complex_model_with_dropout"
+  weight_decay: 5e-4
   run_name: "run3"
-  target_model_folder: "2"
-  target_model_file: "global_model_round_10.pth"
+  target_model_folder: "3"
+  target_model_file: "global_model_round_100.pth"

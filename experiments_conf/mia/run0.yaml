@@ -2,11 +2,7 @@ defaults:
   - base
 
 parameters:
-  num_shadow_models: 1
   model_arch: "simple_model"
-  shadow_epochs: 100
-  train_size: 15000
-  test_size: 15000
   weight_decay: 0.0
   run_name: "run0"
   target_model_folder: "0"

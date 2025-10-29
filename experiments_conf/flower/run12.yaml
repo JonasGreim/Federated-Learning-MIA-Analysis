@@ -1,0 +1,9 @@
+defaults:
+  - base
+
+num_server_rounds: 5
+local_epochs: 20
+weight_decay: 0.0
+model: "simple_model"
+iid_data_distribution: true
+dirichlet_alpha: 0.0

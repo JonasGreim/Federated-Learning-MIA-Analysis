@@ -1,0 +1,9 @@
+defaults:
+  - base
+
+parameters:
+  model_arch: "complex_model"
+  weight_decay: 0.0
+  run_name: "run33"
+  target_model_folder: "33"
+  target_model_file: "global_model_round_10.pth"
