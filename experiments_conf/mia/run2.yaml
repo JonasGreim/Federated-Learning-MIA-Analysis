@@ -3,7 +3,7 @@ defaults:
 
 parameters:
   num_shadow_models: 1
-  model_arch: "simple_model_with_dropout"
+  model_arch: "complex_model"
   shadow_epochs: 100
   train_size: 15000
   test_size: 15000

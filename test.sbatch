@@ -3,7 +3,7 @@
 #SBATCH --output=logs/flower_%j_%N.out
 #SBATCH --error=logs/flower_%j_%N.err
 #SBATCH --partition=paula
-#SBATCH --nodes=2
+#SBATCH --nodes=6
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
@@ -76,101 +76,101 @@ PY
 fi
 
 
-## 1) Start SuperLink on server node (background)
-#srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
-#  cd '$PROJECT_DIR'
-#  mkdir -p logs
-#  flower-superlink \
-#    --insecure \
-#    --fleet-api-address 0.0.0.0:${PORT_FLEET} \
-#    --control-api-address 0.0.0.0:${PORT_CTRL} \
-#    --fleet-api-num-workers 8 \
-#    > ${LOG_DIR}/superlink.log 2>&1
-#" &
-#echo "SuperLink started on ${SERVER_NODE}"
-#sleep 3  # give it time to bind
-#
-## 2) Start ALL SuperNodes in ONE srun (one task per client node)
-##    Each task gets a unique PARTITION_ID via SLURM_PROCID (0..NUM_CLIENTS-1)
-#srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 \
-#     --nodelist="$CLIENT_HOSTS" --exclusive --kill-on-bad-exit=1 bash -lc "
-#  cd '$PROJECT_DIR' && mkdir -p logs
-#  PARTITION_ID=\$SLURM_PROCID
-#  LOCAL_SPLITS_PATH=\"/dev/shm/cifar_splits\"
-#
-#  mkdir -p \"\$LOCAL_SPLITS_PATH\"
-#  rsync -a --delete \"$SHARED_SPLITS_PATH/\" \"\$LOCAL_SPLITS_PATH/\"
-#
-#  export SPLITS_DIR=\"\$LOCAL_SPLITS_PATH\"
-#  echo \"[Node \$SLURMD_NODENAME] Using SPLITS_DIR=\$SPLITS_DIR\"
-#
-#  flower-supernode \
-#    --insecure \
-#    --superlink ${SERVER_NODE}:${PORT_FLEET} \
-#    --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\" \
-#    > ${LOG_DIR}/supernode_\${SLURMD_NODENAME}.log 2>&1
-#" &
-#
-#echo "SuperNodes started on client nodes: ${CLIENTS[*]}"
-#
-## 3) Wait until SuperLink Exec API is reachable
-#python - <<PY
-#import socket, time, sys
-#host="${SERVER_NODE}"; port=${PORT_CTRL}
-#for _ in range(180):
-#    try:
-#        with socket.create_connection((host, port), timeout=2):
-#            print("SuperLink Exec API reachable at %s:%s" % (host, port)); sys.exit(0)
-#    except OSError:
-#        time.sleep(1)
-#print("ERROR: SuperLink Exec API NOT reachable"); sys.exit(1)
-#PY
-#
-#
-## 4) Trigger the run from the server node (non-interactive)
-#SERVER_ADDRESS="${SERVER_NODE}:${PORT_CTRL}"
-#
-#echo "🌼 Starting multiple Flower runs sequentially on $SERVER_NODE"
-#
-#srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
-#  cd '$PROJECT_DIR'
-#
-#  # Inject correct server address into pyproject.toml
-#  sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
-#    s/^address *= *.*/address = \"${SERVER_ADDRESS}\"/
-#  }' pyproject.toml
-#
-#  # Sequentially run multiple Flower experiments
-#  for run_id in \$(seq 1 4); do
-#    echo \"🚀 Starting Flower run\${run_id}\"
-#    python -u run_flower_hpc.py \"flower=run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/flwr_run\${run_id}.log\"
-#    echo \"✅ Finished Flower run\${run_id}\"
-#    echo
-#    # optional small pause for W&B sync or disk I/O
-#    sleep 3
-#  done
-#
-#  # Revert .toml so it's clean for next job
-#  sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
-#    s/^address *= *.*/address = \"SERVER_NODE:9093\"/
-#  }' pyproject.toml
-#"
-#
-#echo "✅ All Flower processes finished successfully."
-#
-## ---- Stop all Flower processes before MIA ----
-#echo "🛑 Stopping Flower SuperLink and SuperNodes"
-#srun --overlap -N1 -w "$SERVER_NODE" --ntasks=1 --ntasks-per-node=1 bash -lc 'pkill -15 -f "^flower-superlink$" || true'
-#srun --overlap -N"${NUM_CLIENTS}" -w "${CLIENT_HOSTS}" --ntasks="${NUM_CLIENTS}" --ntasks-per-node=1 bash -lc 'pkill -15 -f "^flower-supernode$" || true'
-#sleep 2
-## KILL if anything still around
-#srun --overlap -N1 -w "$SERVER_NODE" --ntasks=1 --ntasks-per-node=1 bash -lc 'pgrep -f "^flower-superlink$" >/dev/null && pkill -9 -f "^flower-superlink$" || true'
-#srun --overlap -N"${NUM_CLIENTS}" -w "${CLIENT_HOSTS}" --ntasks="${NUM_CLIENTS}" --ntasks-per-node=1 bash -lc 'pgrep -f "^flower-supernode$" >/dev/null && pkill -9 -f "^flower-supernode$" || true'
+# 1) Start SuperLink on server node (background)
+srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
+  cd '$PROJECT_DIR'
+  mkdir -p logs
+  flower-superlink \
+    --insecure \
+    --fleet-api-address 0.0.0.0:${PORT_FLEET} \
+    --control-api-address 0.0.0.0:${PORT_CTRL} \
+    --fleet-api-num-workers 8 \
+    > ${LOG_DIR}/superlink.log 2>&1
+" &
+echo "SuperLink started on ${SERVER_NODE}"
+sleep 3  # give it time to bind
+
+# 2) Start ALL SuperNodes in ONE srun (one task per client node)
+#    Each task gets a unique PARTITION_ID via SLURM_PROCID (0..NUM_CLIENTS-1)
+srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 \
+     --nodelist="$CLIENT_HOSTS" --exclusive --kill-on-bad-exit=1 bash -lc "
+  cd '$PROJECT_DIR' && mkdir -p logs
+  PARTITION_ID=\$SLURM_PROCID
+  LOCAL_SPLITS_PATH=\"/dev/shm/cifar_splits\"
+
+  mkdir -p \"\$LOCAL_SPLITS_PATH\"
+  rsync -a --delete \"$SHARED_SPLITS_PATH/\" \"\$LOCAL_SPLITS_PATH/\"
+
+  export SPLITS_DIR=\"\$LOCAL_SPLITS_PATH\"
+  echo \"[Node \$SLURMD_NODENAME] Using SPLITS_DIR=\$SPLITS_DIR\"
+
+  flower-supernode \
+    --insecure \
+    --superlink ${SERVER_NODE}:${PORT_FLEET} \
+    --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\" \
+    > ${LOG_DIR}/supernode_\${SLURMD_NODENAME}.log 2>&1
+" &
+
+echo "SuperNodes started on client nodes: ${CLIENTS[*]}"
+
+# 3) Wait until SuperLink Exec API is reachable
+python - <<PY
+import socket, time, sys
+host="${SERVER_NODE}"; port=${PORT_CTRL}
+for _ in range(180):
+    try:
+        with socket.create_connection((host, port), timeout=2):
+            print("SuperLink Exec API reachable at %s:%s" % (host, port)); sys.exit(0)
+    except OSError:
+        time.sleep(1)
+print("ERROR: SuperLink Exec API NOT reachable"); sys.exit(1)
+PY
+
+
+# 4) Trigger the run from the server node (non-interactive)
+SERVER_ADDRESS="${SERVER_NODE}:${PORT_CTRL}"
+
+echo "🌼 Starting multiple Flower runs sequentially on $SERVER_NODE"
+
+srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
+  cd '$PROJECT_DIR'
+
+  # Inject correct server address into pyproject.toml
+  sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
+    s/^address *= *.*/address = \"${SERVER_ADDRESS}\"/
+  }' pyproject.toml
+
+  # Sequentially run multiple Flower experiments
+  for run_id in \$(seq 1 2); do
+    echo \"🚀 Starting Flower run\${run_id}\"
+    python -u run_flower_hpc.py \"flower=run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/flwr_run\${run_id}.log\"
+    echo \"✅ Finished Flower run\${run_id}\"
+    echo
+    # optional small pause for W&B sync or disk I/O
+    sleep 3
+  done
+
+  # Revert .toml so it's clean for next job
+  sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
+    s/^address *= *.*/address = \"SERVER_NODE:9093\"/
+  }' pyproject.toml
+"
+
+echo "✅ All Flower processes finished successfully."
+
+# ---- Stop all Flower processes before MIA ----
+echo "🛑 Stopping Flower SuperLink and SuperNodes"
+srun --overlap -N1 -w "$SERVER_NODE" --ntasks=1 --ntasks-per-node=1 bash -lc 'pkill -15 -f "^flower-superlink$" || true'
+srun --overlap -N"${NUM_CLIENTS}" -w "${CLIENT_HOSTS}" --ntasks="${NUM_CLIENTS}" --ntasks-per-node=1 bash -lc 'pkill -15 -f "^flower-supernode$" || true'
+sleep 2
+# KILL if anything still around
+srun --overlap -N1 -w "$SERVER_NODE" --ntasks=1 --ntasks-per-node=1 bash -lc 'pgrep -f "^flower-superlink$" >/dev/null && pkill -9 -f "^flower-superlink$" || true'
+srun --overlap -N"${NUM_CLIENTS}" -w "${CLIENT_HOSTS}" --ntasks="${NUM_CLIENTS}" --ntasks-per-node=1 bash -lc 'pgrep -f "^flower-supernode$" >/dev/null && pkill -9 -f "^flower-supernode$" || true'
 
 echo "🧠 Starting MIA experiments"
 srun --overlap --nodes=1 --ntasks=1 --ntasks-per-node=1 --gres=gpu:1 --nodelist="$SERVER_NODE" bash -lc "
   cd '$PROJECT_DIR'
-  for run_id in \$(seq 3 3); do
+  for run_id in \$(seq 1 2); do
     echo \"🚀 Starting MIA run\${run_id}\"
     python -u run_mia_experiment.py \"mia=run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/mia_run\${run_id}.log\"
     echo \"✅ Finished MIA run\${run_id}\"
