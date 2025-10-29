@@ -3,7 +3,7 @@
 #SBATCH --output=logs/flower_%j_%N.out
 #SBATCH --error=logs/flower_%j_%N.err
 #SBATCH --partition=paula
-#SBATCH --nodes=11
+#SBATCH --nodes=9
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
