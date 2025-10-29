@@ -445,7 +445,7 @@ def run_mia(config: MiaConfig):
 
     # Initialize wandb run
     run_name = f"{config.parameters.run_name}-model_ckp:{target_model_checkpoint_folder}/{target_model_checkpoint_file}-{config.parameters.model_arch}"
-    initialize_wandb_run(project_name="mia-shokri_all", config=OmegaConf.to_container(config, resolve=True),
+    initialize_wandb_run(project_name="mia-shokri_all_new", config=OmegaConf.to_container(config, resolve=True),
                          run_name=run_name)
     wandb.config.target_model_checkpoint_path = f"/{target_model_checkpoint_folder}/{target_model_checkpoint_file}"
 

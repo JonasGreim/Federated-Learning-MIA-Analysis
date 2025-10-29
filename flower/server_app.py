@@ -36,7 +36,7 @@ def server_fn(context: Context):
     for k, v in context.run_config.items():
         print(f"  {k}: {v}")
 
-    initialize_wandb_run(project_name="flower_target_model_all", run_name=f"{model_name}-{num_rounds}-{dirichlet_alpha}", config=context.run_config)
+    initialize_wandb_run(project_name="flower_target_model_all_new", run_name=f"{model_name}-{num_rounds}-{dirichlet_alpha}", config=context.run_config)
 
     # Create dataset splits if they do not exist
     ensure_split_data_exists()
