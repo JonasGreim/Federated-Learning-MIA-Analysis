@@ -10,4 +10,4 @@ model: "simple_model" # simple_model, simple_model_with_dropout, complex_model, 
 seed: 42
 iid_data_distribution: true # true, false
 dirichlet_alpha: 0.0 # if false, 0.5, 0.1
-num_clients: 8
+num_clients: 5

@@ -1,10 +1,10 @@
 defaults:
   - base
 
-num_server_rounds: 20
-local_epochs: 5
+num_server_rounds: 10
+local_epochs: 10
 weight_decay: 5e-4
-model: "complex_model_with_dropout"
-iid_data_distribution: false
-dirichlet_alpha: 0.1
+model: "simple_model_with_dropout"
+iid_data_distribution: true
+dirichlet_alpha: 0.0
 fraction_fit: 1.0 # maybe testing
