@@ -2,7 +2,7 @@ defaults:
   - base
 
 parameters:
-  num_shadow_models: 1
+  num_shadow_models: 5
   model_arch: "simple_model"
   shadow_epochs: 100
   train_size: 15000
