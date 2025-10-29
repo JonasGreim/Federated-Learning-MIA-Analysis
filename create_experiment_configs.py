@@ -12,8 +12,8 @@ MIA_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---- Define your grids (with exact text for YAML output) ----
 rounds_epochs = [
-    {"num_server_rounds": "1",  "local_epochs": "100"},
-    {"num_server_rounds": "5",  "local_epochs": "20"},
+    {"num_server_rounds": "100",  "local_epochs": "1"},
+    {"num_server_rounds": "20",  "local_epochs": "5"},
     {"num_server_rounds": "10", "local_epochs": "10"},
 ]
 
@@ -43,7 +43,7 @@ def yaml_runs(cfg: dict) -> str:
         f"dirichlet_alpha: {cfg['dirichlet_alpha']}\n"
     )
 
-def yaml_mia(run_name: str, run_idx_str: str, model_arch: str, weight_decay: str, local_epochs: str) -> str:
+def yaml_mia(run_name: str, run_idx_str: str, model_arch: str, weight_decay: str, num_server_rounds: str) -> str:
     return (
         "defaults:\n"
         "  - base\n\n"
@@ -52,7 +52,7 @@ def yaml_mia(run_name: str, run_idx_str: str, model_arch: str, weight_decay: str
         f"  weight_decay: {weight_decay}\n"
         f'  run_name: "{run_name}"\n'
         f'  target_model_folder: "{run_idx_str}"\n'
-        f'  target_model_file: "global_model_round_{local_epochs}.pth"\n'.format(local_epochs=local_epochs)
+        f'  target_model_file: "global_model_round_{num_server_rounds}.pth"\n'.format(local_epochs=num_server_rounds)
     )
 
 # ---- Generate all combinations ----
@@ -74,7 +74,7 @@ for re_cfg, d_cfg, m_cfg in product(rounds_epochs, dists, models):
         run_idx_str=run_idx_str,
         model_arch=cfg["model"],
         weight_decay=cfg["weight_decay"],
-        local_epochs=cfg["local_epochs"],
+        num_server_rounds=cfg["num_server_rounds"],
     )
     mia_path.write_text(mia_text)
 
