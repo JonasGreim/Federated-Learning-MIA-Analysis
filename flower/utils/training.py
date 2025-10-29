@@ -4,7 +4,7 @@ from flower.utils.reproducibility import release_model
 
 def train(net, trainloader, epochs, lr, lr_decay, weight_decay, device) -> tuple[float, float]:
     net.to(device)  # move model to GPU if available
-    criterion = torch.nn.CrossEntropyLoss(label_smoothing=0.1).to(device)
+    criterion = torch.nn.CrossEntropyLoss().to(device)
     print(f"weight_decay: {weight_decay}, lr: {lr}", flush=True)
     optimizer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=weight_decay, momentum=0.9)
     net.train()
