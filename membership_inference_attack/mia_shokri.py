@@ -95,7 +95,7 @@ def train_model(model: nn.Module, dataloader: DataLoader, epochs: int, learning_
         optimizer,
         lr_lambda=lambda e: 1 / (1 + learning_rate_decay * e)
     )
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     model.train()
 
     history = []
