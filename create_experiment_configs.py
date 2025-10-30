@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from itertools import product
-from pathlib import Path
 from path_settings import EXPERIMENTS_CONF_DIR
 
 # Output folders
@@ -53,7 +52,7 @@ def yaml_mia(run_name: str, run_idx_str: str, model_arch: str, weight_decay: str
         f"  weight_decay: {weight_decay}\n"
         f'  run_name: "{run_name}"\n'
         f'  target_model_folder: "{run_idx_str}"\n'
-        f'  target_model_file: "global_model_round_{num_server_rounds}.pth"\n'.format(local_epochs=num_server_rounds)
+        f'  target_model_file: "global_model_round_{num_server_rounds}.pth"\n'
     )
 
 # ---- Generate all combinations ----
