@@ -7,3 +7,4 @@ weight_decay: 0.0
 model: "complex_model"
 iid_data_distribution: true
 dirichlet_alpha: 0.0
+run_name: "run1"

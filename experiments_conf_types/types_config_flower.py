@@ -16,3 +16,4 @@ class FlowerConfig:
     iid_data_distribution: bool
     dirichlet_alpha: float
     num_clients: int
+    run_name: str

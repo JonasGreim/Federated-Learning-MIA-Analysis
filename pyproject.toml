@@ -56,6 +56,7 @@ seed = 42
 iid-data-distribution = true # if true, data is distributed iid among clients
 dirichlet-alpha = 0.0 # if iid_data_distribution is false, this is the dirichlet alpha parameter (0.1 -> strong non_iid, 0.5-> add bias to data)
 num-clients = 2 # number of clients only for visualization purposes, not used in the run
+run-name = "default-run" # wandb run name
 
 [tool.flwr.federations]
 default = "local-simulation-gpu"  # default setting for local simulation

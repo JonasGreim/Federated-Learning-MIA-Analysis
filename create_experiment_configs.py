@@ -31,7 +31,7 @@ models = [
 ]
 
 # ---- YAML render helpers (preserve order and formatting) ----
-def yaml_runs(cfg: dict) -> str:
+def yaml_runs(cfg: dict, run_name: str) -> str:
     return (
         "defaults:\n"
         "  - base\n\n"
@@ -41,6 +41,7 @@ def yaml_runs(cfg: dict) -> str:
         f'model: "{cfg["model"]}"\n'
         f"iid_data_distribution: {cfg['iid_data_distribution']}\n"
         f"dirichlet_alpha: {cfg['dirichlet_alpha']}\n"
+        f'run_name: "{run_name}"\n'
     )
 
 def yaml_mia(run_name: str, run_idx_str: str, model_arch: str, weight_decay: str, num_server_rounds: str) -> str:
@@ -66,7 +67,7 @@ for re_cfg, d_cfg, m_cfg in product(rounds_epochs, dists, models):
     mia_path = MIA_DIR / f"{run_name}.yaml"
 
     # Write runs config
-    flower_config_path.write_text(yaml_runs(cfg))
+    flower_config_path.write_text(yaml_runs(cfg, run_name))
 
     # Write mia config (derive fields from the same combo)
     mia_text = yaml_mia(

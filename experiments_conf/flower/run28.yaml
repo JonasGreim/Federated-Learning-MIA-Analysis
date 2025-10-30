@@ -7,3 +7,4 @@ weight_decay: 0.0
 model: "simple_model"
 iid_data_distribution: false
 dirichlet_alpha: 0.1
+run_name: "run28"

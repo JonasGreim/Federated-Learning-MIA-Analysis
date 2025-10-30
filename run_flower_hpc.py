@@ -33,6 +33,7 @@ def run(config: Config):
         f"iid-data-distribution={'true' if flower_cfg.iid_data_distribution else 'false'} "  # flower expects string
         f"dirichlet-alpha={flower_cfg.dirichlet_alpha} "
         f"num-clients={flower_cfg.num_clients}"
+        f"run-name={flower_cfg.run_name}"
     )
 
     os.chdir(get_original_cwd())
