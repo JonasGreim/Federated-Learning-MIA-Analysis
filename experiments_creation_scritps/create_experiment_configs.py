@@ -4,8 +4,8 @@ from path_settings import EXPERIMENTS_CONF_DIR
 
 # Output folders
 RUNS_DIR = EXPERIMENTS_CONF_DIR
-MIA_DIR = EXPERIMENTS_CONF_DIR / "mia"
-Flower_DIR = EXPERIMENTS_CONF_DIR / "flower"
+MIA_DIR = EXPERIMENTS_CONF_DIR / "mia" / "main_mia_experiments"
+Flower_DIR = EXPERIMENTS_CONF_DIR / "flower" / "main_mia_experiments"
 Flower_DIR.mkdir(parents=True, exist_ok=True)
 MIA_DIR.mkdir(parents=True, exist_ok=True)
 

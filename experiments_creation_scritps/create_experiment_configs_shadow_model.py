@@ -3,7 +3,7 @@ from path_settings import EXPERIMENTS_CONF_DIR
 
 # Output folders
 RUNS_DIR = EXPERIMENTS_CONF_DIR
-MIA_DIR = EXPERIMENTS_CONF_DIR / "mia"
+MIA_DIR = EXPERIMENTS_CONF_DIR / "mia" / "shadow_models_experiments"
 MIA_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---- Define your grids (with exact text for YAML output) ----
@@ -24,7 +24,7 @@ def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_de
     )
 
 # ---- Generate all combinations ----
-i = 39  # numeration start at i
+i = 36  # numeration start at i
 for num_shadow_cfg in num_shadow_models:
 
     run_name = f"run{i}"
