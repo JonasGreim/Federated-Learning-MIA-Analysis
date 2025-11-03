@@ -157,26 +157,3 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
 "
 
 echo "✅ All Flower processes finished successfully."
-
-# ---- Stop all Flower processes before MIA ----
-#echo "🛑 Stopping Flower SuperLink and SuperNodes"
-#srun --overlap -N1 -w "$SERVER_NODE" --ntasks=1 --ntasks-per-node=1 bash -lc 'pkill -15 -f "^flower-superlink$" || true'
-#srun --overlap -N"${NUM_CLIENTS}" -w "${CLIENT_HOSTS}" --ntasks="${NUM_CLIENTS}" --ntasks-per-node=1 bash -lc 'pkill -15 -f "^flower-supernode$" || true'
-#sleep 2
-## KILL if anything still around
-#srun --overlap -N1 -w "$SERVER_NODE" --ntasks=1 --ntasks-per-node=1 bash -lc 'pgrep -f "^flower-superlink$" >/dev/null && pkill -9 -f "^flower-superlink$" || true'
-#srun --overlap -N"${NUM_CLIENTS}" -w "${CLIENT_HOSTS}" --ntasks="${NUM_CLIENTS}" --ntasks-per-node=1 bash -lc 'pgrep -f "^flower-supernode$" >/dev/null && pkill -9 -f "^flower-supernode$" || true'
-#
-#echo "🧠 Starting MIA experiments"
-#srun --overlap --nodes=1 --ntasks=1 --ntasks-per-node=1 --gres=gpu:1 --nodelist="$SERVER_NODE" bash -lc "
-#  cd '$PROJECT_DIR'
-#  for run_id in \$(seq 0 35); do
-#    echo \"🚀 Starting MIA run\${run_id}\"
-#    python -u run_mia_experiment.py \"mia=main_mia_experiments/run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/mia_run\${run_id}.log\"
-#    echo \"✅ Finished MIA run\${run_id}\"
-#    echo
-#  done
-#"
-#
-## rm -rf "/work/hi85udaj-flower/model_checkpoints_target"
-#echo "✅ All MIA experiments finished successfully."
