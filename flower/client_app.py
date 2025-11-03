@@ -7,7 +7,7 @@ from flower.utils.reproducibility import seed_everything
 from flower.utils.training import test, train
 from path_settings import D3_SPLIT_PATH, D1_SPLIT_PATH
 from flower.utils.model_factory import create_model
-
+import time
 
 class FlowerClient(NumPyClient):
     def __init__(self, net, trainloader, valloader, local_epochs, device):
@@ -19,6 +19,7 @@ class FlowerClient(NumPyClient):
         self.net.to(self.device)
 
     def fit(self, parameters, config):
+        t0 = time.perf_counter()
         set_weights(self.net, parameters)
         train_loss, train_accuracy = train(
             self.net,
@@ -29,7 +30,7 @@ class FlowerClient(NumPyClient):
             config['weight_decay'],
             self.device,
         )
-
+        print(f"fit: {time.perf_counter() - t0:.3f}s", flush=True)
         return (
             get_weights(self.net),
             len(self.trainloader.dataset),
@@ -53,7 +54,7 @@ def client_fn(context: Context):
     model_name = context.run_config.get("model")
     iid = context.run_config.get("iid-data-distribution", True)
     alpha = context.run_config.get("dirichlet-alpha", 1.0)
-    train_target_model_as_shadow_model = context.run_config.get("train-target-model-as-shadow_model", False)
+    train_target_model_as_shadow_model = context.run_config.get("train-target-model-as-shadow-model", False)
 
     # Seed everything for reproducibility
     seed_everything(seed)
@@ -70,9 +71,11 @@ def client_fn(context: Context):
     else:
         split = D1_SPLIT_PATH
 
+    t0 = time.perf_counter()
     trainloader, valloader = load_data_custom(iid=iid, dirichlet_alpha=alpha, partition_id=partition_id,
                                               num_partitions=num_partitions, split=split,
                                               batch_size=batch_size, seed=seed)
+    print(f"loader_build={time.perf_counter() - t0:.3f}s", flush=True)
 
     # Return Client instance
     return FlowerClient(net, trainloader, valloader, local_epochs, device).to_client()

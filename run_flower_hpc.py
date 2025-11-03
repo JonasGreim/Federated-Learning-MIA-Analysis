@@ -1,4 +1,4 @@
-import os, sys, shlex
+import os, shlex
 from hydra.utils import get_original_cwd
 from hydra.main import main as hydra_main
 from omegaconf import OmegaConf
@@ -32,12 +32,13 @@ def run(config: Config):
         f"seed={flower_cfg.seed} "
         f"iid-data-distribution={'true' if flower_cfg.iid_data_distribution else 'false'} "  # flower expects string
         f"dirichlet-alpha={flower_cfg.dirichlet_alpha} "
-        f"num-clients={flower_cfg.num_clients}"
+        f"num-clients={flower_cfg.num_clients} "
+        f"run-name=\"{flower_cfg.run_name}\""
     )
 
     os.chdir(get_original_cwd())
     env = os.environ.copy()
-    env["PYTHONUNBUFFERED"] = "1"
+    env["PYTHONUNBUFFERED"] = "1" # disables output buffering
     env.setdefault("TERM", "dumb")
 
     argv = [
@@ -48,6 +49,7 @@ def run(config: Config):
     print("Executing:", " ".join(shlex.quote(x) for x in argv), flush=True)
     # Replace current process → SLURM captures flwr stdout/stderr directly
     os.execvpe(argv[0], argv, env)
+
 
 
 if __name__ == "__main__":

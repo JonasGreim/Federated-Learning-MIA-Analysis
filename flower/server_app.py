@@ -26,6 +26,7 @@ def server_fn(context: Context):
     iid = context.run_config.get("iid-data-distribution", True)
     num_clients = context.run_config.get("num-clients", 4)
     metric_save_folder = create_save_folder(save_dir=METRICS_DIR_FLOWER)
+    run_name = context.run_config.get("run-name", "default_run")
     print(f"Created metrics folder: {metric_save_folder}")
 
     # Seed everything for reproducibility
@@ -36,7 +37,7 @@ def server_fn(context: Context):
     for k, v in context.run_config.items():
         print(f"  {k}: {v}")
 
-    initialize_wandb_run(project_name="flower_target_model", run_name=f"{model_name}-{num_rounds}-{dirichlet_alpha}", config=context.run_config)
+    initialize_wandb_run(project_name="flower_target_model_all_new", run_name=f"{run_name}-{model_name}-{num_rounds}-{dirichlet_alpha}", config=context.run_config)
 
     # Create dataset splits if they do not exist
     ensure_split_data_exists()

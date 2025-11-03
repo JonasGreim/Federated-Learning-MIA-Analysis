@@ -1,0 +1,9 @@
+defaults:
+  - base
+
+parameters:
+  model_arch: "simple_model"
+  weight_decay: 0.0
+  run_name: "run8"
+  target_model_folder: "8"
+  target_model_file: "global_model_round_100.pth"

@@ -1,5 +1,6 @@
 from torchvision import models
 import torch.nn as nn
+import torch
 
 
 class ResNet18WithDropout(nn.Module):

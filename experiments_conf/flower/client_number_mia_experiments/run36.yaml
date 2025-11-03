@@ -7,4 +7,5 @@ weight_decay: 0.0
 model: "simple_model"
 iid_data_distribution: true
 dirichlet_alpha: 0.0
-fraction_fit: 1.0 # maybe testing
+run_name: "run36"
+num_clients: "2"

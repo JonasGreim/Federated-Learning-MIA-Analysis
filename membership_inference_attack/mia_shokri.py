@@ -178,10 +178,27 @@ def train_all_shadow_models_and_collect_features(shadow_train_subsets: list[Data
         torch_train_dataset = HFDatasetToTorch(train_subset, transform=transform)
         torch_test_dataset = HFDatasetToTorch(test_subset, transform=transform)
 
-        train_loader = DataLoader(torch_train_dataset, batch_size=batch_size, shuffle=True,
-                                  worker_init_fn=seed_worker,
-                                  generator=torch.Generator().manual_seed(seed + i), num_workers=num_workers)
-        test_loader = DataLoader(torch_test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+        train_loader = DataLoader(
+            torch_train_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            pin_memory=True,
+            persistent_workers=True,
+            worker_init_fn=seed_worker,
+            prefetch_factor=4,
+            generator=torch.Generator().manual_seed(seed + i)
+        )
+
+        test_loader = DataLoader(
+            torch_test_dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=num_workers,
+            pin_memory = True,
+            persistent_workers = True,
+            prefetch_factor = 4
+        )
 
         # Measure training time
         start_time = time.time()
@@ -428,7 +445,7 @@ def run_mia(config: MiaConfig):
 
     # Initialize wandb run
     run_name = f"{config.parameters.run_name}-model_ckp:{target_model_checkpoint_folder}/{target_model_checkpoint_file}-{config.parameters.model_arch}"
-    initialize_wandb_run(project_name="mia-shokri", config=OmegaConf.to_container(config, resolve=True),
+    initialize_wandb_run(project_name="mia-shokri_all_new", config=OmegaConf.to_container(config, resolve=True),
                          run_name=run_name)
     wandb.config.target_model_checkpoint_path = f"/{target_model_checkpoint_folder}/{target_model_checkpoint_file}"
 

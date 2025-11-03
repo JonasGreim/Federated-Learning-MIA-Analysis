@@ -3,11 +3,11 @@
 #SBATCH --output=logs/flower_%j_%N.out
 #SBATCH --error=logs/flower_%j_%N.err
 #SBATCH --partition=paula
-#SBATCH --nodes=3
+#SBATCH --nodes=6
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=00:15:00
+#SBATCH --time=00:20:00
 #SBATCH --gres=gpu:1
 
 # --- Environment Setup ---
@@ -16,6 +16,10 @@
 set -euo pipefail
 module purge
 mkdir -p logs
+LOG_DIR="logs/${SLURM_JOB_ID}"
+mkdir -p "$LOG_DIR"
+echo "Logs will be saved in: $LOG_DIR"
+
 
 # activate conda environment
 module load Anaconda3/2024.02-1
@@ -33,112 +37,86 @@ print("wandb version:", wandb.__version__)
 print("login ok:", wandb.login(relogin=False))  # uses saved key; returns True if configured
 PY
 
-
 # nvidia-smi  # shows Driver Version and “CUDA Version”
-# check gpu
-python - <<'PY'
-import torch
-print("CUDA available:", torch.cuda.is_available())
-if torch.cuda.is_available():
-    print("GPU count:", torch.cuda.device_count())
-    for i in range(torch.cuda.device_count()):
-        print(f"Device {i}: {torch.cuda.get_device_name(i)}")
-PY
-
 
 # --- Distribute Flower ---
 # Node 0 = Server, Nodes 1-9 = Clients
-PROJECT_DIR="$HOME/masterarbeit/Flower2"
 echo "SLURM_JOB_ID: $SLURM_JOB_ID"
 echo "Running on nodes:"
 scontrol show hostnames $SLURM_JOB_NODELIST
 
-# Liste aller zugewiesenen Nodes
+# --- Define Variables ---
+PROJECT_DIR="$HOME/masterarbeit/Flower2"
 NODES=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 SERVER_NODE=${NODES[0]}
 CLIENTS=("${NODES[@]:1}")
 NUM_CLIENTS=${#CLIENTS[@]}
 CLIENT_HOSTS=$(IFS=, ; echo "${CLIENTS[*]}")
 PORT_FLEET=9092   # SuperNodes -> SuperLink (Fleet API)
-PORT_EXEC=9093    # flwr run -> SuperLink (Exec API)
-CLIENTAPP_PORT=9094
+PORT_CTRL=9093    # flwr run -> SuperLink (CTRL API)
 
-echo "Server node: $SERVER_NODE  Fleet:${PORT_FLEET}  Exec:${PORT_EXEC}"
+echo "Server node: $SERVER_NODE  Fleet:${PORT_FLEET}  CTRL:${PORT_CTRL}"
 echo "Client nodes: ${CLIENTS[*]}"
 echo "Project dir: $PROJECT_DIR"
 
+# --- Prepare Data Splits (once per experiment) ---
+SHARED_SPLITS_PATH="/work/hi85udaj-flower/dataset_splits"
+mkdir -p "$SHARED_SPLITS_PATH"
+
+# Generate splits only if missing to fast hpc working dir
+if [ ! -d "$SHARED_SPLITS_PATH/D1" ]; then
+  python - <<PY
+from pathlib import Path
+from flower.utils.split_cifar10_mia import split_cifar10_for_target_and_shadow
+target = Path("$SHARED_SPLITS_PATH")
+print("Writing CIFAR-10 splits to:", target)
+split_cifar10_for_target_and_shadow(split_save_dir=target)
+print("✅ Wrote splits to:", target)
+PY
+fi
+
 
 # 1) Start SuperLink on server node (background)
-srun --nodes=1 --nodelist="$SERVER_NODE" -u --kill-on-bad-exit=1 bash -lc "
+srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
   cd '$PROJECT_DIR'
   mkdir -p logs
   flower-superlink \
     --insecure \
     --fleet-api-address 0.0.0.0:${PORT_FLEET} \
-    --exec-api-address 0.0.0.0:${PORT_EXEC} \
-    > logs/superlink_${SLURM_JOB_ID}.log 2>&1
+    --control-api-address 0.0.0.0:${PORT_CTRL} \
+    --fleet-api-num-workers 8 \
+    > ${LOG_DIR}/superlink.log 2>&1
 " &
+echo "SuperLink started on ${SERVER_NODE}"
+sleep 3  # give it time to bind
 
-# 2) Start one ClientApp + one SuperNode per client node (Non-blocking background run)
-srun --nodes="$NUM_CLIENTS" \
-     --ntasks="$NUM_CLIENTS" \
-     --ntasks-per-node=1 \
-     --nodelist="$CLIENT_HOSTS" \
-     --overlap -u --kill-on-bad-exit=1 bash -lc '
-  set -euo pipefail
-  cd "'"$PROJECT_DIR"'" && mkdir -p logs
-  PARTITION_ID=$SLURM_PROCID
-  CLIENT_PORT='"$CLIENTAPP_PORT"'
+# 2) Start ALL SuperNodes in ONE srun (one task per client node)
+#    Each task gets a unique PARTITION_ID via SLURM_PROCID (0..NUM_CLIENTS-1)
+srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 \
+     --nodelist="$CLIENT_HOSTS" --exclusive --kill-on-bad-exit=1 bash -lc "
+  cd '$PROJECT_DIR' && mkdir -p logs
+  PARTITION_ID=\$SLURM_PROCID
+  LOCAL_SPLITS_PATH=\"/dev/shm/cifar_splits\"
 
-  echo "[$HOSTNAME] PATH=$PATH"
-  which flwr-clientapp || { echo "flwr-clientapp not found in PATH"; exit 1; }
+  mkdir -p \"\$LOCAL_SPLITS_PATH\"
+  rsync -a --delete \"$SHARED_SPLITS_PATH/\" \"\$LOCAL_SPLITS_PATH/\"
 
-  # Clean slate (best effort)
-  pkill -f "flwr(-| )clientapp" >/dev/null 2>&1 || true
-  pkill -f "^flower-supernode( |$)" >/dev/null 2>&1 || true
+  export SPLITS_DIR=\"\$LOCAL_SPLITS_PATH\"
+  echo \"[Node \$SLURMD_NODENAME] Using SPLITS_DIR=\$SPLITS_DIR\"
 
-  # 2a) Start ClientApp
-  echo "[$HOSTNAME] starting flwr-clientapp on ${CLIENT_PORT}"
-  flwr-clientapp \
-    --insecure \
-    --clientappio-api-address 0.0.0.0:${CLIENT_PORT} \
-    --app-dir "'"$PROJECT_DIR"'" \
-    > logs/clientapp_${HOSTNAME}_'"$SLURM_JOB_ID"'.log 2>&1 &
-  CLIENTAPP_PID=$!
-  echo "[$HOSTNAME] flwr-clientapp PID=${CLIENTAPP_PID}"
-
-  # 2b) Readiness probe
-  echo "[$HOSTNAME] probing ClientApp on 127.0.0.1:${CLIENT_PORT}..."
-  MAX_RETRIES=20; i=0
-  while ! ( : < /dev/tcp/127.0.0.1/${CLIENT_PORT} ) 2>/dev/null; do
-    if [ $i -ge $MAX_RETRIES ]; then
-      echo "ERROR: ClientApp NOT reachable on $HOSTNAME after ${MAX_RETRIES} tries"
-      exit 1
-    fi
-    sleep 0.5; i=$((i+1))
-  done
-  echo "[$HOSTNAME] ClientApp is ready"
-
-  # 2c) Start SuperNode
-  echo "[$HOSTNAME] starting flower-supernode (partition=${PARTITION_ID}/'"$NUM_CLIENTS"')"
   flower-supernode \
     --insecure \
-    --superlink '"$SERVER_NODE"':'"$PORT_FLEET"' \
-    --node-config "partition-id=${PARTITION_ID} num-partitions='"$NUM_CLIENTS"'" \
-    > logs/supernode_${HOSTNAME}_'"$SLURM_JOB_ID"'.log 2>&1 &
-  SUPERNODE_PID=$!
-  echo "[$HOSTNAME] flower-supernode PID=${SUPERNODE_PID}"
+    --superlink ${SERVER_NODE}:${PORT_FLEET} \
+    --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\" \
+    > ${LOG_DIR}/supernode_\${SLURMD_NODENAME}.log 2>&1
+" &
 
-  # Keep this task alive while both are running
-  wait $CLIENTAPP_PID $SUPERNODE_PID
-' &
-
-
+echo "SuperNodes started on client nodes: ${CLIENTS[*]}"
 
 # 3) Wait until SuperLink Exec API is reachable
 python - <<PY
 import socket, time, sys
-host="${SERVER_NODE}"; port=${PORT_EXEC}
+host="${SERVER_NODE}"; port=${PORT_CTRL}
 for _ in range(180):
     try:
         with socket.create_connection((host, port), timeout=2):
@@ -150,25 +128,32 @@ PY
 
 
 # 4) Trigger the run from the server node (non-interactive)
-SERVER_ADDRESS="${SERVER_NODE}:${PORT_EXEC}"
+SERVER_ADDRESS="${SERVER_NODE}:${PORT_CTRL}"
 
-srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap -u --kill-on-bad-exit=1 bash -lc "
+echo "🌼 Starting multiple Flower runs sequentially on $SERVER_NODE"
+
+srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
   cd '$PROJECT_DIR'
 
-  # Inject server address to flower .toml (server address defined only at runtime)
+  # Inject correct server address into pyproject.toml
   sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
     s/^address *= *.*/address = \"${SERVER_ADDRESS}\"/
   }' pyproject.toml
 
-  # Run Flower
-  python -u run_flower_hpc.py flower=run0 2>&1
+  # Sequentially run multiple Flower experiments
+  for run_id in \$(seq 35 35); do
+    echo \"🚀 Starting Flower run\${run_id}\"
+    python -u run_flower_hpc.py \"flower=main_mia_experiments/run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/flwr_run\${run_id}.log\"
+    echo \"✅ Finished Flower run\${run_id}\"
+    echo
+    # optional small pause for W&B sync or disk I/O
+    sleep 3
+  done
 
-  # revert back to placeholder address for future runs
+  # Revert .toml so it's clean for next job
   sed -i '/^\[tool\.flwr\.federations\.hpc-deploy\]/,/^\[/{
     s/^address *= *.*/address = \"SERVER_NODE:9093\"/
   }' pyproject.toml
-" | tee "logs/flwr_run_${SLURM_JOB_ID}.log"
-
-wait
+"
 
 echo "✅ All Flower processes finished successfully."

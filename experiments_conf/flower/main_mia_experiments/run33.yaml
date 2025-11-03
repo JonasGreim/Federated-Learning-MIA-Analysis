@@ -1,0 +1,10 @@
+defaults:
+  - base
+
+num_server_rounds: 10
+local_epochs: 10
+weight_decay: 0.0
+model: "complex_model"
+iid_data_distribution: false
+dirichlet_alpha: 0.5
+run_name: "run33"

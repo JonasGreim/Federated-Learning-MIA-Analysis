@@ -3,7 +3,7 @@ parameters:
   num_shadow_models: 1 # shorki used 100 for cifar10
   # loader defined in utils.model_factory.create_model
   model_arch: "simple_model" # <-- simple_model, simple_model_with_dropout, complex_model, complex_model_with_dropout
-  shadow_epochs: 50
+  shadow_epochs: 100
   train_size: 15000 # Size of train/test sets for shadow models (>15.000 samples would be with duplicates)
   test_size: 15000 # 15000 is the max for cifar10 here without duplicates
   weight_decay: 0.0  # shokri used 0.0, 5e-4 is common for federated learning
@@ -14,8 +14,8 @@ parameters:
 parameters_static:
   device: "cuda"  # <-- "cpu" or "cuda"
   seed: 42
-  batch_size: 32
+  batch_size: 128
   learning_rate_decay: 1e-7
   learning_rate: 0.01
-  num_workers: 2
+  num_workers: 6
   class_names: ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']

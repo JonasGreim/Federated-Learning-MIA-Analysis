@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 # Root directory of the project
 ROOT_DIR = Path(__file__).resolve().parent
@@ -9,14 +10,21 @@ IMAGES_DIR = ROOT_DIR / "images"
 METRICS_DIR = ROOT_DIR / "metrics"
 METRICS_DIR_FLOWER = METRICS_DIR / "flower"
 METRICS_DIR_MIA = METRICS_DIR / "mia"
-CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
 OUTPUTS_DIR = ROOT_DIR / "outputs"
 WANDB_DIR = ROOT_DIR / "wandb"
-SPLITS_DIR = ROOT_DIR / "dataset_splits"
 EXPERIMENTS_CONF_DIR = ROOT_DIR / "experiments_conf"
-
-# Config or metadata paths
 PYPROJECT_PATH = ROOT_DIR / "pyproject.toml"
+
+# HPC Configs
+SHARED_NFS_PATH = "/work/hi85udaj-flower/dataset_splits"
+SPLITS_DIR_STR = os.getenv("SPLITS_DIR", SHARED_NFS_PATH)
+SPLITS_DIR = Path(SPLITS_DIR_STR)
+CHECKPOINTS_DIR_TARGET = Path("/work/hi85udaj-flower") / "all_models_new"
+
+# Local Simulation Configs
+# SPLITS_DIR = ROOT_DIR / "dataset_splits"
+# CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
+
 
 # Specific splits
 D1_SPLIT_PATH = SPLITS_DIR / "D1"

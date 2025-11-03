@@ -112,12 +112,12 @@ def wandb_log_metrics(metrics: dict, step: int):
     wandb.log(metrics, step=step)
 
 
-def wandb_upload_artifact_model(artifact_name: str, artifact_path: Path):
+def wandb_upload_artifact_model(artifact_name: str, artifact_path: Path, wandb_type: str = "model"):
     """Upload an artifact to the current wandb run."""
-    artifact = wandb.Artifact(name=artifact_name, type="model")
+    artifact = wandb.Artifact(name=artifact_name, type=wandb_type)
     artifact.add_file(str(artifact_path))
     wandb.log_artifact(artifact)
-    print(f"Artifact {artifact_name} uploaded to wandb successfully.")
+    print(f"Artifact {artifact_name} uploaded to wandb successfully.", flush=True)
 
 
 def disable_unnecessary_warnings():
@@ -133,3 +133,6 @@ def disable_unnecessary_warnings():
         module=r"^google\.protobuf\.internal\.well_known_types$",
         message=r".*datetime\.datetime\.utcnow\(\).*",
     )
+
+def wandb_save_file(path: Path):
+    wandb.save(str(path))
