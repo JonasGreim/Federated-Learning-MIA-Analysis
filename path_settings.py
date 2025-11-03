@@ -19,7 +19,7 @@ PYPROJECT_PATH = ROOT_DIR / "pyproject.toml"
 SHARED_NFS_PATH = "/work/hi85udaj-flower/dataset_splits"
 SPLITS_DIR_STR = os.getenv("SPLITS_DIR", SHARED_NFS_PATH)
 SPLITS_DIR = Path(SPLITS_DIR_STR)
-CHECKPOINTS_DIR_TARGET = Path("/work/hi85udaj-flower") / "all_models_new_test"
+CHECKPOINTS_DIR_TARGET = Path("/work/hi85udaj-flower") / "all_models_new_test2"
 
 # Local Simulation Configs
 # SPLITS_DIR = ROOT_DIR / "dataset_splits"
