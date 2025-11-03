@@ -7,9 +7,9 @@ MIA_DIR = EXPERIMENTS_CONF_DIR / "mia"
 MIA_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---- Define your grids (with exact text for YAML output) ----
-num_shadow_models = [1, 3, 10, 20, 100]
+num_shadow_models = [1, 3, 10, 20, 50]
 
-def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_decay: str, num_server_rounds: int, num_shadow_models: int) -> str:
+def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_decay: str, num_server_rounds: int, num_shadow_models: int, train_size: int) -> str:
     return (
         "defaults:\n"
         "  - base\n\n"
@@ -20,6 +20,7 @@ def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_de
         f'  target_model_folder: "{target_model_folder}"\n'
         f'  target_model_file: "global_model_round_{num_server_rounds}.pth"\n'
         f'  num_shadow_models: {num_shadow_models}\n'
+        f'  train_size: {train_size}\n'
     )
 
 # ---- Generate all combinations ----
@@ -33,11 +34,12 @@ for num_shadow_cfg in num_shadow_models:
     # Write mia config (derive fields from the same combo)
     mia_text = yaml_mia(
         run_name=run_name,
-        target_model_folder="7",
+        target_model_folder="24",
         model_arch="simple_model",
         weight_decay="0.0",
         num_server_rounds=10,
         num_shadow_models=num_shadow_cfg,
+        train_size=10000,
     )
     mia_path.write_text(mia_text)
 

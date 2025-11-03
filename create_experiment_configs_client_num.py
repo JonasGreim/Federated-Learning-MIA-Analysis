@@ -34,7 +34,7 @@ def yaml_runs(cfg: dict, run_name: str, client_num: int) -> str:
         f'num_clients: "{client_num}"\n'
     )
 
-def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_decay: float, num_server_rounds: str, train_size: int) -> str:
+def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_decay: float, num_server_rounds: str) -> str:
     return (
         "defaults:\n"
         "  - base\n\n"
@@ -44,7 +44,6 @@ def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_de
         f'  run_name: "{run_name}"\n'
         f'  target_model_folder: "{target_model_folder}"\n'
         f'  target_model_file: "global_model_round_{num_server_rounds}.pth"\n'
-        f'  train_size: {train_size}\n'
     )
 
 # ---- Generate all combinations ----
@@ -66,7 +65,6 @@ for client_num in client_nums:
         model_arch="simple_model",
         weight_decay=0.0,
         num_server_rounds='10',
-        train_size=10000,
     )
     mia_path.write_text(mia_text)
 
