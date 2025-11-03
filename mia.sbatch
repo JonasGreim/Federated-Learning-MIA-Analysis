@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=mia_parallel
-#SBATCH --output=${HOME}/slurm_logs/mia_%A_%a.out
-#SBATCH --error=${HOME}/slurm_logs/mia_%A_%a.err
+#SBATCH --output=logs/%A/mia_%A_%a_%N.out
+#SBATCH --error=logs/%A/mia_%A_%a_%N.err
 #SBATCH --partition=paula
-#SBATCH --array=0-35%10            # 36 runs total; up to 10 run in parallel
+#SBATCH --array=0-34%10            # 36 runs total; up to 10 run in parallel
 #SBATCH --nodes=1                  # one node per run
 #SBATCH --ntasks=1                 # one task per run
 #SBATCH --cpus-per-task=8          # adjust to your Python workload
@@ -13,7 +13,7 @@
 
 set -euo pipefail
 mkdir -p logs
-LOG_DIR="logs/mia_$SLURM_JOB_ID"
+LOG_DIR="logs/mia_${SLURM_ARRAY_JOB_ID}"
 mkdir -p "$LOG_DIR"
 echo "Logs will be saved in: $LOG_DIR"
 PROJECT_DIR="$HOME/masterarbeit/Flower2"
