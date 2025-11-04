@@ -107,6 +107,7 @@ srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 \
   flower-supernode \
     --insecure \
     --superlink ${SERVER_NODE}:${PORT_FLEET} \
+    --max-retries 0 \
     --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\" \
     > ${LOG_DIR}/supernode_\${SLURMD_NODENAME}.log 2>&1
 " &
