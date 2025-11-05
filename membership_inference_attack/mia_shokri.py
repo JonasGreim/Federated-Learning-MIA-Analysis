@@ -22,7 +22,7 @@ from omegaconf import OmegaConf
 from membership_inference_attack.utils.wandb_logging_mia import log_per_class_metrics, \
     log_overall_metrics_with_error_bars, log_class_distribution
 from path_settings import CHECKPOINTS_DIR_TARGET, D1_SPLIT_PATH, D2_SPLIT_PATH, D3_SPLIT_PATH, D4_SPLIT_PATH, \
-    METRICS_DIR_MIA
+    METRICS_DIR_MIA, WANDB_PROJECT_NAME_MIA
 from pathlib import Path
 
 
@@ -445,7 +445,7 @@ def run_mia(config: MiaConfig):
 
     # Initialize wandb run
     run_name = f"{config.parameters.run_name}-model_ckp:{target_model_checkpoint_folder}/{target_model_checkpoint_file}-{config.parameters.model_arch}"
-    initialize_wandb_run(project_name="mia-shokri_all_new2", config=OmegaConf.to_container(config, resolve=True),
+    initialize_wandb_run(project_name=WANDB_PROJECT_NAME_MIA, config=OmegaConf.to_container(config, resolve=True),
                          run_name=run_name)
     wandb.config.target_model_checkpoint_path = f"/{target_model_checkpoint_folder}/{target_model_checkpoint_file}"
 

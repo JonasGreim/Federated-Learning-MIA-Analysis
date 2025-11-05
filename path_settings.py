@@ -1,6 +1,8 @@
 from pathlib import Path
 import os
 
+from ray.air.integrations.wandb import WANDB_PROJECT_ENV_VAR
+
 # Root directory of the project
 ROOT_DIR = Path(__file__).resolve().parent
 
@@ -15,6 +17,10 @@ WANDB_DIR = ROOT_DIR / "wandb"
 EXPERIMENTS_CONF_DIR = ROOT_DIR / "experiments_conf"
 PYPROJECT_PATH = ROOT_DIR / "pyproject.toml"
 
+# wandb project name
+WANDB_PROJECT_NAME_FLOWER = "flower_test_run"
+WANDB_PROJECT_NAME_MIA = "mia_test_run"
+
 # HPC Configs
 SHARED_NFS_PATH = "/work/hi85udaj-flower/dataset_splits"
 SPLITS_DIR_STR = os.getenv("SPLITS_DIR", SHARED_NFS_PATH)
@@ -26,7 +32,6 @@ FLOWER_BUILD_DIR = Path("/work/hi85udaj-flower/build")
 # SPLITS_DIR = ROOT_DIR / "dataset_splits"
 # CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
 # FLOWER_BUILD_DIR = ROOT_DIR / "build"
-
 
 # Specific splits
 D1_SPLIT_PATH = SPLITS_DIR / "D1"

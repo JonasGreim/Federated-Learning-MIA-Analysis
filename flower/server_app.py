@@ -5,7 +5,7 @@ from flower.utils.model_utils import get_weights, create_save_folder
 from flower.utils.reproducibility import seed_everything
 from flower.strategies.custom_weighted_fedavg import FedCustom
 from flower.utils.wandb_logging import run_data_partitioning_for_visualization, initialize_wandb_run
-from path_settings import METRICS_DIR_FLOWER
+from path_settings import METRICS_DIR_FLOWER, WANDB_PROJECT_NAME_FLOWER
 from flower.utils.model_factory import create_model
 
 
@@ -37,7 +37,7 @@ def server_fn(context: Context):
     for k, v in context.run_config.items():
         print(f"  {k}: {v}")
 
-    initialize_wandb_run(project_name="flower_target_model_all_new2", run_name=f"{run_name}-{model_name}-{num_rounds}-{dirichlet_alpha}", config=context.run_config)
+    initialize_wandb_run(project_name=WANDB_PROJECT_NAME_FLOWER, run_name=f"{run_name}-{model_name}-{num_rounds}-{dirichlet_alpha}", config=context.run_config)
 
     # Create dataset splits if they do not exist
     ensure_split_data_exists()
