@@ -176,6 +176,10 @@ with CPU: (change in toml device parameter)
 flwr run . 
 ```
 
+
+explain flower build: especially for non-simulation runs (with real clients)
+- flwr run . -> automatically builds the package .fab and installs it in a virtual env -> runtime erros after long run (corrupted files)
+
 Difference to Shokri:
  - Attack Model Type RandomForestClassifier instead of small MLP
  - number of Shadow Models: 4+ instead of 1

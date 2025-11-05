@@ -64,6 +64,7 @@ SHARED_SPLITS_PATH="/work/hi85udaj-flower/dataset_splits"
 mkdir -p "$SHARED_SPLITS_PATH"
 
 # Generate splits only if missing to fast hpc working dir
+echo "Creating Splits: $SHARED_SPLITS_PATH"
 if [ ! -d "$SHARED_SPLITS_PATH/D1" ]; then
   python - <<PY
 from pathlib import Path
@@ -75,6 +76,13 @@ print("✅ Wrote splits to:", target)
 PY
 fi
 
+echo "Building Flower App in remote work directory"
+# --- Build Flower package (once per job) ---
+python - <<PY
+from build_flower import build_flower
+build_flower()
+PY
+echo "Build successfully"
 
 # 1) Start SuperLink on server node (background)
 srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
@@ -96,13 +104,6 @@ srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 \
      --nodelist="$CLIENT_HOSTS" --exclusive --kill-on-bad-exit=1 bash -lc "
   cd '$PROJECT_DIR' && mkdir -p logs
   PARTITION_ID=\$SLURM_PROCID
-  LOCAL_SPLITS_PATH=\"/dev/shm/cifar_splits\"
-
-  mkdir -p \"\$LOCAL_SPLITS_PATH\"
-  rsync -a --delete \"$SHARED_SPLITS_PATH/\" \"\$LOCAL_SPLITS_PATH/\"
-
-  export SPLITS_DIR=\"\$LOCAL_SPLITS_PATH\"
-  echo \"[Node \$SLURMD_NODENAME] Using SPLITS_DIR=\$SPLITS_DIR\"
 
   flower-supernode \
     --insecure \

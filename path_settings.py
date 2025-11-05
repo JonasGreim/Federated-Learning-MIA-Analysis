@@ -20,10 +20,12 @@ SHARED_NFS_PATH = "/work/hi85udaj-flower/dataset_splits"
 SPLITS_DIR_STR = os.getenv("SPLITS_DIR", SHARED_NFS_PATH)
 SPLITS_DIR = Path(SPLITS_DIR_STR)
 CHECKPOINTS_DIR_TARGET = Path("/work/hi85udaj-flower") / "all_models_complete_run"
+FLOWER_BUILD_DIR = Path("/work/hi85udaj-flower/build")
 
 # Local Simulation Configs
 # SPLITS_DIR = ROOT_DIR / "dataset_splits"
 # CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
+# FLOWER_BUILD_DIR = ROOT_DIR
 
 
 # Specific splits
@@ -32,6 +34,8 @@ D2_SPLIT_PATH = SPLITS_DIR / "D2"
 D3_SPLIT_PATH = SPLITS_DIR / "D3"
 D4_SPLIT_PATH = SPLITS_DIR / "D4"
 
+# build path
+FLOWER_BUILD_FAB_PATH = FLOWER_BUILD_DIR / "flower_app.fab"
 
 # Utility
 def ensure_dir_exist(path: Path):

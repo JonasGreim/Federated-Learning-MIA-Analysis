@@ -4,6 +4,7 @@ from hydra.main import main as hydra_main
 from omegaconf import OmegaConf
 from experiments_conf_types.types_config import Config
 from experiments_conf_types.types_config_flower import FlowerConfig
+from path_settings import FLOWER_BUILD_FAB_PATH
 
 
 @hydra_main(config_path="experiments_conf", config_name="config", version_base=None)
@@ -42,7 +43,7 @@ def run(config: Config):
     env.setdefault("TERM", "dumb")
 
     argv = [
-        "flwr", "run", ".", "hpc-deploy",
+        "flwr", "run", str(FLOWER_BUILD_FAB_PATH), "hpc-deploy",
         "--run-config", run_config,
         "--stream",
     ]
