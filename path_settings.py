@@ -1,5 +1,4 @@
 from pathlib import Path
-import os
 
 from ray.air.integrations.wandb import WANDB_PROJECT_ENV_VAR
 

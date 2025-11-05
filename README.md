@@ -228,3 +228,8 @@ real federated run:
 - pyproject anpassen package (non simulation) + federation anpassen ohne supernodes
 - Script schreiben (Setup auf jedem Node, run all tests)
 - alle localen daten downloaden (jsons, checkpoints)
+
+
+
+TODO:
+later rename data label -> original label in german because in wandb set the data label as diagram axis names
