@@ -18,8 +18,8 @@ EXPERIMENTS_CONF_DIR = ROOT_DIR / "experiments_conf"
 PYPROJECT_PATH = ROOT_DIR / "pyproject.toml"
 
 # wandb project name
-WANDB_PROJECT_NAME_FLOWER = "flower_test_run"
-WANDB_PROJECT_NAME_MIA = "mia_test_run"
+WANDB_PROJECT_NAME_FLOWER = "flower_complete_run"
+WANDB_PROJECT_NAME_MIA = "mia_complete_run"
 
 # HPC Configs
 SHARED_NFS_PATH = "/work/hi85udaj-flower/dataset_splits"
