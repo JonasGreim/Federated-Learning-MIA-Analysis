@@ -4,14 +4,19 @@ from hydra.main import main as hydra_main
 import ray
 import gc
 import subprocess
+from build_flower import build_flower
 from experiments_conf_types.types_config import Config
 from experiments_conf_types.types_config_flower import FlowerConfig
+import torch
 
 
 @hydra_main(config_path="experiments_conf", config_name="config", version_base=None)
 def run(config: Config):
     # if no config is passed via command line, base config is used
     # python3 run_flower_experiment.py flower=run1
+
+    # build flower app
+    build_flower()
 
     # Load flower configuration and run flower with config parameters
     # f.e.: flwr run . --run-config 'num-server-rounds=1 local-epochs=1 ...'
@@ -21,6 +26,9 @@ def run(config: Config):
     os.makedirs(config.output_dir, exist_ok=True)
     OmegaConf.save(flower_cfg, os.path.join(config.output_dir, "flower_config.yaml"))
 
+    device = torch.device(flower_cfg.device if torch.cuda.is_available() or "cpu" in flower_cfg.device else "cpu")
+    print("Using device:", device)
+
     run_config = (
         f"num-server-rounds={flower_cfg.num_server_rounds} "
         f"local-epochs={flower_cfg.local_epochs} "
@@ -28,7 +36,7 @@ def run(config: Config):
         f"learning-rate-decay={flower_cfg.learning_rate_decay} "
         f"batch-size={flower_cfg.batch_size} "
         f"fraction-fit={flower_cfg.fraction_fit} "
-        f"device=\"{flower_cfg.device}\" "
+        f"device=\"{device}\" "
         f"weight-decay={flower_cfg.weight_decay} "
         f"model=\"{flower_cfg.model}\" "
         f"seed={flower_cfg.seed} "
@@ -39,7 +47,7 @@ def run(config: Config):
     )
     print(f"flwr run . --run-config '{run_config}'")
 
-    device_flag = "local-simulation-gpu" if flower_cfg.device == "cuda" else "local-simulation-cpu"
+    device_flag = "local-simulation-gpu" if device == "cuda" else "local-simulation-cpu"
     subprocess.run(["flwr", "run", ".", device_flag, "--run-config", run_config])
 
     # clean up resources
