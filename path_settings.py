@@ -13,7 +13,7 @@ WANDB_PROJECT_NAME_MIA = "mia_complete_run"
 PERSISTENT_MEMORY_DIR = Path("/work/hi85udaj-flower")
 SPLITS_DIR = PERSISTENT_MEMORY_DIR / "dataset_splits"
 FLOWER_BUILD_DIR = PERSISTENT_MEMORY_DIR / "build"
-CHECKPOINTS_DIR_TARGET =  PERSISTENT_MEMORY_DIR / "all_models_complete_run"
+CHECKPOINTS_DIR_TARGET =  PERSISTENT_MEMORY_DIR / "all_models_full_run_5_clients"
 
 
 # Local Simulation Configs
