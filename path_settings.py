@@ -6,32 +6,33 @@ from ray.air.integrations.wandb import WANDB_PROJECT_ENV_VAR
 # Root directory of the project
 ROOT_DIR = Path(__file__).resolve().parent
 
-# Subdirectories
-MY_APP_DIR = ROOT_DIR / "flower"
-IMAGES_DIR = ROOT_DIR / "images"
-METRICS_DIR = ROOT_DIR / "metrics"
-METRICS_DIR_FLOWER = METRICS_DIR / "flower"
-METRICS_DIR_MIA = METRICS_DIR / "mia"
-OUTPUTS_DIR = ROOT_DIR / "outputs"
-WANDB_DIR = ROOT_DIR / "wandb"
-EXPERIMENTS_CONF_DIR = ROOT_DIR / "experiments_conf"
-PYPROJECT_PATH = ROOT_DIR / "pyproject.toml"
-
 # wandb project name
 WANDB_PROJECT_NAME_FLOWER = "flower_complete_run"
 WANDB_PROJECT_NAME_MIA = "mia_complete_run"
 
 # HPC Configs
-SHARED_NFS_PATH = "/work/hi85udaj-flower/dataset_splits"
-SPLITS_DIR_STR = os.getenv("SPLITS_DIR", SHARED_NFS_PATH)
-SPLITS_DIR = Path(SPLITS_DIR_STR)
-CHECKPOINTS_DIR_TARGET = Path("/work/hi85udaj-flower") / "all_models_complete_run"
-FLOWER_BUILD_DIR = Path("/work/hi85udaj-flower/build")
+PERSISTENT_MEMORY_DIR = Path("/work/hi85udaj-flower")
+SPLITS_DIR = PERSISTENT_MEMORY_DIR / "dataset_splits"
+FLOWER_BUILD_DIR = PERSISTENT_MEMORY_DIR / "build"
+CHECKPOINTS_DIR_TARGET =  PERSISTENT_MEMORY_DIR / "all_models_complete_run"
+
 
 # Local Simulation Configs
 # SPLITS_DIR = ROOT_DIR / "dataset_splits"
-# CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
 # FLOWER_BUILD_DIR = ROOT_DIR / "build"
+# CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
+
+# Subdirectories
+MY_APP_DIR = ROOT_DIR / "flower"
+OUTPUTS_DIR = ROOT_DIR / "outputs"
+WANDB_DIR = ROOT_DIR / "wandb"
+EXPERIMENTS_CONF_DIR = ROOT_DIR / "experiments_conf"
+PYPROJECT_PATH = ROOT_DIR / "pyproject.toml"
+EXPERIMENTS_ANALYSIS_DIR_DATA = ROOT_DIR / "experiments_data_analysis" / "run_data"
+METRICS_DIR = ROOT_DIR / "metrics"
+METRICS_DIR_FLOWER = METRICS_DIR / "flower"
+METRICS_DIR_MIA = METRICS_DIR / "mia"
+
 
 # Specific splits
 D1_SPLIT_PATH = SPLITS_DIR / "D1"
