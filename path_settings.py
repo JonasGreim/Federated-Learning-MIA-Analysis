@@ -25,7 +25,7 @@ FLOWER_BUILD_DIR = Path("/work/hi85udaj-flower/build")
 # Local Simulation Configs
 # SPLITS_DIR = ROOT_DIR / "dataset_splits"
 # CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
-# FLOWER_BUILD_DIR = ROOT_DIR
+# FLOWER_BUILD_DIR = ROOT_DIR / "build"
 
 
 # Specific splits
