@@ -69,7 +69,7 @@ def log_per_class_metrics(per_class_metrics: dict, class_names: list = None,
         class_names = [str(cls) for cls in class_keys]  # fallback if not passed
 
     # Save per-class metrics to JSON
-    json_data_path = metric_save_folder / "per_class_metric.json"
+    json_data_path = metric_save_folder / "mia_per_class.json"
     with open(json_data_path, "w") as f:
         json.dump(per_class_metrics, f, indent=4)
 
@@ -119,7 +119,7 @@ def log_overall_metrics_with_error_bars(
         for name, m, s in zip(metrics_names, means, stds)
     }
 
-    json_data_path = metric_save_folder / "overall_metrics.json"
+    json_data_path = metric_save_folder / "mia_summary.json"
     with open(json_data_path, "w") as f:
         json.dump(metrics_payload, f, indent=4)
 

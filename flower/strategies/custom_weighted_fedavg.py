@@ -267,7 +267,7 @@ class FedCustom(Strategy):
 
         # save metrics as json
         all_metrics = {**server_metrics, **self.cache_metric}
-        metrics_file_path = self.metric_save_folder / "results.json"
+        metrics_file_path = self.metric_save_folder / "federated_learning_rounds.json"
         self.all_round_metrics[server_round] = all_metrics
         with open(metrics_file_path, "w") as json_file:
             json.dump(self.all_round_metrics, json_file, indent=4)
