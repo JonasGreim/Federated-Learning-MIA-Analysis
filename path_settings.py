@@ -5,7 +5,8 @@ ROOT_DIR = Path(__file__).resolve().parent
 
 # wandb project name
 WANDB_PROJECT_NAME_FLOWER = "flower_complete_run"
-WANDB_PROJECT_NAME_MIA = "mia_complete_run"
+# WANDB_PROJECT_NAME_MIA = "mia_complete_run"
+WANDB_PROJECT_NAME_MIA = "mia-shokri_all_new"
 
 # HPC Configs
 PERSISTENT_MEMORY_DIR = Path("/work/hi85udaj-flower")
