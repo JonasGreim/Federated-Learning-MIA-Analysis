@@ -10,13 +10,11 @@ WANDB_PROJECT_NAME_MIA = "mia_complete_run"
 # HPC Configs
 PERSISTENT_MEMORY_DIR = Path("/work/hi85udaj-flower")
 SPLITS_DIR = PERSISTENT_MEMORY_DIR / "dataset_splits"
-FLOWER_BUILD_DIR = PERSISTENT_MEMORY_DIR / "build"
 CHECKPOINTS_DIR_TARGET = PERSISTENT_MEMORY_DIR / "all_models_full_run_5_clients"
 
 
 # Local Simulation Configs
 # SPLITS_DIR = ROOT_DIR / "dataset_splits"
-# FLOWER_BUILD_DIR = ROOT_DIR / "build"
 # CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
 
 # Subdirectories
@@ -36,9 +34,6 @@ D1_SPLIT_PATH = SPLITS_DIR / "D1"
 D2_SPLIT_PATH = SPLITS_DIR / "D2"
 D3_SPLIT_PATH = SPLITS_DIR / "D3"
 D4_SPLIT_PATH = SPLITS_DIR / "D4"
-
-# build path
-FLOWER_BUILD_FAB_PATH = FLOWER_BUILD_DIR / "flower_app.fab"
 
 
 # Utility

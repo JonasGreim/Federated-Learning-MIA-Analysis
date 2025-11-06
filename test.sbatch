@@ -143,7 +143,7 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
   }' pyproject.toml
 
   # Sequentially run multiple Flower experiments
-  for run_id in \$(seq 0 35); do
+  for run_id in \$(seq 35 35); do
     echo \"🚀 Starting Flower run\${run_id}\"
     python -u run_flower_hpc.py \"flower=main_mia_experiments/run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/flwr_run\${run_id}.log\"
     echo \"✅ Finished Flower run\${run_id}\"

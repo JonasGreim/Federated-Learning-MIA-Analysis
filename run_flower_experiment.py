@@ -4,7 +4,6 @@ from hydra.main import main as hydra_main
 import ray
 import gc
 import subprocess
-from build_flower import build_flower
 from experiments_conf_types.types_config import Config
 from experiments_conf_types.types_config_flower import FlowerConfig
 import torch
@@ -14,9 +13,6 @@ import torch
 def run(config: Config):
     # if no config is passed via command line, base config is used
     # python3 run_flower_experiment.py flower=run1
-
-    # build flower app
-    build_flower()
 
     # Load flower configuration and run flower with config parameters
     # f.e.: flwr run . --run-config 'num-server-rounds=1 local-epochs=1 ...'
@@ -45,9 +41,10 @@ def run(config: Config):
         f"num-clients={flower_cfg.num_clients} "
         f"run-name=\"{flower_cfg.run_name}\""
     )
-    print(f"flwr run . --run-config '{run_config}'")
 
     device_flag = "local-simulation-gpu" if device == "cuda" else "local-simulation-cpu"
+
+    print(f"flwr run . {device_flag} --run-config '{run_config}'")
     subprocess.run(["flwr", "run", ".", device_flag, "--run-config", run_config])
 
     # clean up resources
