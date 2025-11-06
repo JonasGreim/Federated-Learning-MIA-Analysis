@@ -1,4 +1,5 @@
-import os, shlex
+import os
+import shlex
 from hydra.utils import get_original_cwd
 from hydra.main import main as hydra_main
 from omegaconf import OmegaConf
@@ -39,7 +40,7 @@ def run(config: Config):
 
     os.chdir(get_original_cwd())
     env = os.environ.copy()
-    env["PYTHONUNBUFFERED"] = "1" # disables output buffering
+    env["PYTHONUNBUFFERED"] = "1"  # disables output buffering
     env.setdefault("TERM", "dumb")
 
     argv = [
@@ -50,7 +51,6 @@ def run(config: Config):
     print("Executing:", " ".join(shlex.quote(x) for x in argv), flush=True)
     # Replace current process → SLURM captures flwr stdout/stderr directly
     os.execvpe(argv[0], argv, env)
-
 
 
 if __name__ == "__main__":

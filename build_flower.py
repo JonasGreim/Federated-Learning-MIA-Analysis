@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from path_settings import FLOWER_BUILD_DIR, FLOWER_BUILD_FAB_PATH
 
+
 def build_flower():
     """Builds the Flower App into a .fab file on /work."""
     Path(FLOWER_BUILD_DIR).mkdir(parents=True, exist_ok=True)

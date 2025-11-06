@@ -1,7 +1,5 @@
 from pathlib import Path
 
-from ray.air.integrations.wandb import WANDB_PROJECT_ENV_VAR
-
 # Root directory of the project
 ROOT_DIR = Path(__file__).resolve().parent
 
@@ -13,7 +11,7 @@ WANDB_PROJECT_NAME_MIA = "mia_complete_run"
 PERSISTENT_MEMORY_DIR = Path("/work/hi85udaj-flower")
 SPLITS_DIR = PERSISTENT_MEMORY_DIR / "dataset_splits"
 FLOWER_BUILD_DIR = PERSISTENT_MEMORY_DIR / "build"
-CHECKPOINTS_DIR_TARGET =  PERSISTENT_MEMORY_DIR / "all_models_full_run_5_clients"
+CHECKPOINTS_DIR_TARGET = PERSISTENT_MEMORY_DIR / "all_models_full_run_5_clients"
 
 
 # Local Simulation Configs
@@ -41,6 +39,7 @@ D4_SPLIT_PATH = SPLITS_DIR / "D4"
 
 # build path
 FLOWER_BUILD_FAB_PATH = FLOWER_BUILD_DIR / "flower_app.fab"
+
 
 # Utility
 def ensure_dir_exist(path: Path):
