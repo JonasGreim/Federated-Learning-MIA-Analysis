@@ -3,7 +3,7 @@
 #SBATCH --output=logs/mia_%A_%a_%N.out
 #SBATCH --error=logs/mia_%A_%a_%N.err
 #SBATCH --partition=paula
-#SBATCH --array=0-34%5            # 36 runs total; up to 10 run in parallel
+#SBATCH --array=35-35%1            # 36 runs total; up to 10 run in parallel
 #SBATCH --nodes=1                  # one node per run
 #SBATCH --ntasks=1                 # one task per run
 #SBATCH --cpus-per-task=8          # adjust to your Python workload
