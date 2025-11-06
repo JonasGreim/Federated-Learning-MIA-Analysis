@@ -3,11 +3,11 @@
 #SBATCH --output=logs/flower_%j_%N.out
 #SBATCH --error=logs/flower_%j_%N.err
 #SBATCH --partition=paula
-#SBATCH --nodes=3
+#SBATCH --nodes=5
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=00:10:00
+#SBATCH --time=12:00:00
 #SBATCH --gres=gpu:1
 
 # --- Environment Setup ---
@@ -76,14 +76,6 @@ print("✅ Wrote splits to:", target)
 PY
 fi
 
-echo "Building Flower App in remote work directory"
-# --- Build Flower package (once per job) ---
-python - <<PY
-from build_flower import build_flower
-build_flower()
-PY
-echo "Build successfully"
-
 # 1) Start SuperLink on server node (background)
 srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
   cd '$PROJECT_DIR'
@@ -143,7 +135,7 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
   }' pyproject.toml
 
   # Sequentially run multiple Flower experiments
-  for run_id in \$(seq 35 35); do
+  for run_id in \$(seq 0 35); do
     echo \"🚀 Starting Flower run\${run_id}\"
     python -u run_flower_hpc.py \"flower=main_mia_experiments/run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/flwr_run\${run_id}.log\"
     echo \"✅ Finished Flower run\${run_id}\"
