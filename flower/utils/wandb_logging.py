@@ -104,8 +104,8 @@ def visualize_label_distribution(partitioner, output_dir: Path = METRICS_DIR):
 def initialize_wandb_run(project_name: str, run_name: str, config: dict = None, directory: Path = ROOT_DIR):
     if not wandb.run:
         disable_unnecessary_warnings()
-        timestamp = datetime.now(UTC).strftime("%Y-%m-%d_%H-%M-%S")
-        wandb.init(project=project_name, name=f"{run_name}-{timestamp}", config=config, dir=directory)
+        timestamp = datetime.now(UTC).strftime("%Y-%m-%d_%H-%M")
+        wandb.init(project=project_name, name=f"{run_name}-{timestamp}", config=config, dir=directory, settings=wandb.Settings(init_timeout=240, start_method="thread"))
 
 
 def wandb_log_metrics(metrics: dict, step: int):

@@ -141,7 +141,7 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
     echo \"✅ Finished Flower run\${run_id}\"
     echo
     # optional small pause for W&B sync or disk I/O
-    sleep 3
+    sleep 10
   done
 
   # Revert .toml so it's clean for next job
@@ -151,20 +151,3 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
 "
 
 echo "✅ All Flower processes finished successfully."
-
-
-echo "Copying results to shared storage..."
-
-RESULTS_SRC="$PROJECT_DIR/metrics/flower"   # or an absolute path if it’s outside the project
-RESULTS_DEST="/work/hi85udaj-flower/results_flower/${SLURM_JOB_ID}"
-
-mkdir -p "$RESULTS_DEST"
-
-if [ -d "$RESULTS_SRC" ]; then
-  echo "📦 Copying from $RESULTS_SRC to $RESULTS_DEST ..."
-  cp -r "$RESULTS_SRC"/* "$RESULTS_DEST"/ || echo "⚠️ Some files could not be copied"
-else
-  echo "⚠️ Source folder not found: $RESULTS_SRC"
-fi
-
-echo "✅ Results saved to: $RESULTS_DEST"

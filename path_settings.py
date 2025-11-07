@@ -11,11 +11,12 @@ WANDB_PROJECT_NAME_MIA = "mia_complete_run"
 PERSISTENT_MEMORY_DIR = Path("/work/hi85udaj-flower")
 SPLITS_DIR = PERSISTENT_MEMORY_DIR / "dataset_splits"
 CHECKPOINTS_DIR_TARGET = PERSISTENT_MEMORY_DIR / "all_models_full_run_5_clients2"
-
+METRICS_DIR = PERSISTENT_MEMORY_DIR / "metrics"
 
 # Local Simulation Configs
 # SPLITS_DIR = ROOT_DIR / "dataset_splits"
 # CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
+# METRICS_DIR = ROOT_DIR / "metrics"
 
 # Subdirectories
 MY_APP_DIR = ROOT_DIR / "flower"
@@ -24,7 +25,6 @@ WANDB_DIR = ROOT_DIR / "wandb"
 EXPERIMENTS_CONF_DIR = ROOT_DIR / "experiments_conf"
 PYPROJECT_PATH = ROOT_DIR / "pyproject.toml"
 EXPERIMENTS_ANALYSIS_DIR_DATA = ROOT_DIR / "experiments_data_analysis" / "run_data"
-METRICS_DIR = ROOT_DIR / "metrics"
 METRICS_DIR_FLOWER = METRICS_DIR / "flower"
 METRICS_DIR_MIA = METRICS_DIR / "mia"
 
