@@ -6,4 +6,4 @@ parameters:
   weight_decay: 0.0
   run_name: "run38"
   target_model_folder: "38"
-  target_model_file: "global_model_round_10.pth"
+  target_model_file: "global_model_round_100.pth"

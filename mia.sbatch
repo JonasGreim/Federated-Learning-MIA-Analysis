@@ -3,13 +3,17 @@
 #SBATCH --output=logs/mia_%A_%a_%N.out
 #SBATCH --error=logs/mia_%A_%a_%N.err
 #SBATCH --partition=paula
-#SBATCH --array=35-35%1            # 36 runs total; up to 10 run in parallel
+#SBATCH --array=0-35%5            # 36 runs total; up to 10 run in parallel
 #SBATCH --nodes=1                  # one node per run
 #SBATCH --ntasks=1                 # one task per run
 #SBATCH --cpus-per-task=8          # adjust to your Python workload
 #SBATCH --gres=gpu:1               # one GPU per run
 #SBATCH --mem=16G                  # memory per run
 #SBATCH --time=04:00:00
+
+# 0-35: main experiments
+# 36-38: clients experiments (same save folder + change wandb run)
+# 39-43: shadow experiments (same save folder + change wandb run)
 
 set -euo pipefail
 mkdir -p logs

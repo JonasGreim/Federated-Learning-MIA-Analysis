@@ -64,7 +64,7 @@ for client_num in client_nums:
         target_model_folder=target_model_folder,
         model_arch="simple_model",
         weight_decay=0.0,
-        num_server_rounds='10',
+        num_server_rounds=flower_conf.get("num_server_rounds", 100),
     )
     mia_path.write_text(mia_text)
 

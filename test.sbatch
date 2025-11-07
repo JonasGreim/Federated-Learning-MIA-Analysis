@@ -10,6 +10,13 @@
 #SBATCH --time=12:00:00
 #SBATCH --gres=gpu:1
 
+
+# Client experiments (same save folder + change wandb run)
+#### --nodes=2
+#### --nodes=5
+#### --nodes=10
+# folders: 36-38 clients experiments
+
 # --- Environment Setup ---
 # --nodes=3 -> set client number(nodes-1) also in the experiment_config.flower.base.yaml
 

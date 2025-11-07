@@ -34,10 +34,10 @@ for num_shadow_cfg in num_shadow_models:
     # Write mia config (derive fields from the same combo)
     mia_text = yaml_mia(
         run_name=run_name,
-        target_model_folder="24",
+        target_model_folder="0",
         model_arch="simple_model",
         weight_decay="0.0",
-        num_server_rounds=10,
+        num_server_rounds=100,
         num_shadow_models=num_shadow_cfg,
         train_size=10000,
     )
