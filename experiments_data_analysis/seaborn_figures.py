@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 os.makedirs("figures", exist_ok=True)
 
 # Load data
-merged = pd.read_csv("merged_output.csv")
+merged = pd.read_csv("data/merged_output.csv")
 
 # --- 1️⃣ Effect of Local Epochs ---
 plt.figure(figsize=(6, 4))

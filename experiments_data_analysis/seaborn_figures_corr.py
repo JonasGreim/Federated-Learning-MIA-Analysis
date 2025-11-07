@@ -3,7 +3,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Load your merged data
-merged = pd.read_csv("merged_output.csv")
+merged = pd.read_csv("data/merged_output.csv")
 
 # Select columns of interest
 cols_of_interest = [

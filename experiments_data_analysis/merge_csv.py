@@ -2,8 +2,8 @@ import pandas as pd
 import math
 
 # Load both CSVs
-mia = pd.read_csv("./wandb_mia.csv")
-flower = pd.read_csv("./wandb_flower.csv")
+mia = pd.read_csv("data/wandb_mia.csv")
+flower = pd.read_csv("data/wandb_flower.csv")
 
 # Perform the join (inner join by default)
 merged = flower.merge(
@@ -64,7 +64,7 @@ def map_model_name(model):
 merged["model"] = merged["model"].apply(map_model_name)
 
 # Save result
-merged.to_csv("merged_output.csv", index=False)
+merged.to_csv("data/merged_output.csv", index=False)
 print("Merged shape:", merged.shape)
 
 
