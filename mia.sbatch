@@ -41,20 +41,3 @@ if [ $EXIT_CODE -eq 0 ]; then
 else
   echo "❌ MIA run${RUN_ID} failed with exit code $EXIT_CODE."
 fi
-
-
-echo "Copying results to shared storage..."
-
-RESULTS_SRC="$PROJECT_DIR/metrics/mia"   # or an absolute path if it’s outside the project
-RESULTS_DEST="/work/hi85udaj-flower/results_mia/${SLURM_JOB_ID}"
-
-mkdir -p "$RESULTS_DEST"
-
-if [ -d "$RESULTS_SRC" ]; then
-  echo "📦 Copying from $RESULTS_SRC to $RESULTS_DEST ..."
-  cp -r "$RESULTS_SRC"/* "$RESULTS_DEST"/ || echo "⚠️ Some files could not be copied"
-else
-  echo "⚠️ Source folder not found: $RESULTS_SRC"
-fi
-
-echo "✅ Results saved to: $RESULTS_DEST"
