@@ -1,73 +1,47 @@
 import pandas as pd
-import math
+from experiments_data_analysis.utils.merge_utils import map_regularization, map_model_name, map_distribution
+
+# set output path
+output_path = "data/merged_output2.csv"
 
 # Load both CSVs
-mia = pd.read_csv("data/wandb_mia.csv")
-flower = pd.read_csv("data/wandb_flower.csv")
+mia = pd.read_csv("data/mia_complete_run2.csv")
+flower = pd.read_csv("data/flower_complete_run2.csv")
 
 # Perform the join (inner join by default)
 merged = flower.merge(
     mia,
-    left_on="run_name",
-    right_on="parameters.run_name",
+    left_on="run-name",
+    right_on="run_name",
     how="inner"
 )
 
-# Rename columns (example)
+# Rename columns
 merged = merged.rename(columns={
-    "Runtime_y": "Runtime_MIA",
-    "Runtime_x": "Runtime_Flower",
+    "_runtime_y": "Runtime_MIA",
+    "_runtime_x": "Runtime_Flower",
 })
 
-# Optional: drop redundant join key if needed
-drop_columns = ["Name_x", "Name_y", "parameters.model_arch", "parameters.num_shadow_models", "parameters.shadow_epochs",
-               "parameters.target_model_file", "parameters.test_size", "parameters.train_size", "num-clients", "parameters.run_name"]
-merged = merged.drop(columns=drop_columns)
+# Drop columns that are duplicates or not needed
+drop_columns_dublicates = ["run_name", "model_arch", "weight_decay", "num-clients"]
+drop_colums_side_experiments = ["num_shadow_models", "shadow_epochs", "train_size", "num-clients"]
+drop_colums = drop_columns_dublicates + drop_colums_side_experiments
+merged = merged.drop(columns=drop_colums)
 
+# add regularization column (weight-decay>0.0 -> "True", else -> "False")
+merged["regularization"] = merged["weight-decay"].apply(map_regularization)
+merged = merged.drop(columns=["weight-decay"])
 
-def map_regularization(weight_decay):
-    return math.isclose(weight_decay, 0.0005, rel_tol=1e-9)
-
-
-merged["regularization"] = merged["parameters.weight_decay"].apply(map_regularization)
-
+# Round all numeric columns to 2 decimal places
 merged = merged.round(2)
 
-# "dirichlet-alpha" => 0.0 = iid, 0.5 = semi-noniid, 0.1 = noniid
-def map_distribution(alpha):
-    if alpha == 0.0:
-        return "IID"
-    elif alpha == 0.5:
-        return "semi-non-IID"
-    elif alpha == 0.1:
-        return "non-IID"
-    else:
-        return f"unknown ({alpha})"
-
+# Map "dirichlet-alpha" values: 0.0 -> "iid", 0.5 -> "semi-noniid", 0.1 -> "noniid"
 merged["data_distribution"] = merged["dirichlet-alpha"].apply(map_distribution)
 merged = merged.drop(columns=["iid-data-distribution", "dirichlet-alpha"])
-merged = merged.drop(columns=["Runtime_MIA", "Runtime_Flower", "parameters.weight_decay", "weight-decay"])
 
-
-def map_model_name(model):
-    if model == "simple_model":
-        return "Shokri-CNN"
-    elif model == "simple_model_with_dropout":
-        return "Shokri-CNN"
-    elif model == "complex_model":
-        return "ResNet-18"
-    elif model == "complex_model_with_dropout":
-        return "ResNet-18"
-    else:
-        return f"unknown ({model})"
-
+# Map model names for better readability
 merged["model"] = merged["model"].apply(map_model_name)
 
 # Save result
-merged.to_csv("data/merged_output.csv", index=False)
+merged.to_csv(output_path, index=False)
 print("Merged shape:", merged.shape)
-
-
-summary_cols = [
-    "model", "local-epochs", "dirichlet-alpha", "metrics/AUC", "Test-Accuracy (Server)"
-]
