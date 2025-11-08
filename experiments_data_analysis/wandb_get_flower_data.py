@@ -7,6 +7,7 @@ api = wandb.Api()
 # Replace with your entity (username or team) and project name
 entity = "kizaru-university-leipzig"
 project = "flower_complete_run2"
+# project = WANDB_PROJECT_NAME_FLOWER
 
 # Fetch runs
 runs = api.runs(f"{entity}/{project}")
