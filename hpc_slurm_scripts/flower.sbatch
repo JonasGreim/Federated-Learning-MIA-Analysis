@@ -3,11 +3,9 @@
 #SBATCH --output=logs/flower_%j.out
 #SBATCH --error=logs/flower_%j.err
 #SBATCH --partition=paula
-#SBATCH --nodes=5
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=11:00:00
 #SBATCH --gres=gpu:1
 
 
@@ -61,6 +59,10 @@ NUM_CLIENTS=${#CLIENTS[@]}
 CLIENT_HOSTS=$(IFS=, ; echo "${CLIENTS[*]}")
 PORT_FLEET=9092   # SuperNodes -> SuperLink (Fleet API)
 PORT_CTRL=9093    # flwr run -> SuperLink (CTRL API)
+SEQ_START="${SEQ_START:-0}"
+SEQ_END="${SEQ_END:-35}"
+FLOWER_RUN_CONFIG_FOLDER="${FLOWER_RUN_CONFIG_FOLDER:-main_mia_experiments}"
+
 
 echo "Server node: $SERVER_NODE  Fleet:${PORT_FLEET}  CTRL:${PORT_CTRL}"
 echo "Client nodes: ${CLIENTS[*]}"
@@ -86,7 +88,6 @@ fi
 # 1) Start SuperLink on server node (background)
 srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
   cd '$PROJECT_DIR'
-  mkdir -p logs
   flower-superlink \
     --insecure \
     --fleet-api-address 0.0.0.0:${PORT_FLEET} \
@@ -101,7 +102,7 @@ sleep 3  # give it time to bind
 #    Each task gets a unique PARTITION_ID via SLURM_PROCID (0..NUM_CLIENTS-1)
 srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 \
      --nodelist="$CLIENT_HOSTS" --exclusive --kill-on-bad-exit=1 bash -lc "
-  cd '$PROJECT_DIR' && mkdir -p logs
+  cd '$PROJECT_DIR'
   PARTITION_ID=\$SLURM_PROCID
 
   flower-supernode \
@@ -142,9 +143,9 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
   }' pyproject.toml
 
   # Sequentially run multiple Flower experiments
-  for run_id in \$(seq 0 35); do
+  for run_id in \$(seq ${SEQ_START} ${SEQ_END}); do
     echo \"🚀 Starting Flower run\${run_id}\"
-    python -u run_flower_hpc.py \"flower=main_mia_experiments/run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/flwr_run\${run_id}.log\"
+    python -u run_flower_hpc.py \"flower=${FLOWER_RUN_CONFIG_FOLDER}/run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/flwr_run\${run_id}.log\"
     echo \"✅ Finished Flower run\${run_id}\"
     echo
     # optional small pause for W&B sync or disk I/O

@@ -18,8 +18,8 @@
 #
 # -------------------------------------------------------------
 
-jid1=$(sbatch --parsable -N 6  -t 11:00:00 --export=ALL,SEQ_START=0,SEQ_END=35 flower2.sbatch)
-jid2=$(sbatch --parsable --dependency=afterok:${jid1} -t 00:10:00 --array=0-35%5 mia2.sbatch)
+jid1=$(sbatch --parsable -N 6  -t 11:00:00 --export=ALL,SEQ_START=0,SEQ_END=35 flower.sbatch)
+jid2=$(sbatch --parsable --dependency=afterok:${jid1} -t 00:10:00 --array=0-35%5 mia.sbatch)
 
 echo "Submitted: $jid1 -> $jid2"
 
