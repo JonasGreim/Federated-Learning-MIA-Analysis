@@ -220,9 +220,8 @@ python3 run_flower_experiment.py flower=run1
 ```
 
 explain hpc logging:
-- for every mia.sbatch all logs from all runs in one folder  -> mia_${SLURM_JOB_ID} (all runs) + every single run in top folder
-- for every flower.sbatch all flower runs in one folder -> flower_${SLURM_JOB_ID} + flower_%j_%N (everything is written there)
-- Improvement: all flower logs land in one folder and all mia logs in one folder -> easier to find later
+- for every mia.sbatch all logs from all runs in one folder  -> mia_${SLURM_JOB_ID} (all runs) + every single run in top folder (not easy to change)
+- for every flower.sbatch all flower runs in one folder -> flower_${SLURM_JOB_ID} + flower_%j_%N.out /.err (everything from all runs is written there)
 
 
 real federated run:
@@ -248,5 +247,3 @@ TODO later:
 
 - wandb warning: (also surpressed some warnings with a method)
     wandb: WARNING `start_method` is deprecated and will be removed in a future version of wandb. This setting is currently non-functional and safely ignored.
-
-- Improvement: all flower logs land in one folder and all mia logs in one folder -> easier to find later
