@@ -1,7 +1,7 @@
 from flwr.common import Context, ndarrays_to_parameters
 from flwr.server import ServerApp, ServerAppComponents, ServerConfig
 from flower.utils.data_loading import ensure_split_data_exists
-from flower.utils.model_utils import get_weights, create_save_folder
+from flower.utils.model_utils import get_weights, create_metric_save_folder
 from flower.utils.reproducibility import seed_everything
 from flower.strategies.custom_weighted_fedavg import FedCustom
 from flower.utils.wandb_logging import run_data_partitioning_for_visualization, initialize_wandb_run
@@ -25,8 +25,8 @@ def server_fn(context: Context):
     dirichlet_alpha = context.run_config.get("dirichlet-alpha", 0.5)
     iid = context.run_config.get("iid-data-distribution", True)
     num_clients = context.run_config.get("num-clients", 4)
-    metric_save_folder = create_save_folder(save_dir=METRICS_DIR_FLOWER)
     run_name = context.run_config.get("run-name", "default_run")
+    metric_save_folder = create_metric_save_folder(save_dir=METRICS_DIR_FLOWER, run_name=run_name)
     print(f"Created metrics folder: {metric_save_folder}")
 
     # Seed everything for reproducibility

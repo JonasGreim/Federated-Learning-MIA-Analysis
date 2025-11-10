@@ -22,7 +22,7 @@ import json
 import torch
 from flower.utils.model_factory import create_model
 from flower.utils.training import test
-from flower.utils.model_utils import set_weights, create_save_folder
+from flower.utils.model_utils import set_weights, create_model_checkpoint_save_folder
 from flower.utils.reproducibility import release_model
 from flower.utils.wandb_logging import wandb_log_metrics, wandb_upload_artifact_model, wandb_save_file
 from path_settings import (
@@ -75,7 +75,7 @@ class FedCustom(Strategy):
         self.batch_size = batch_size
         self.max_server_rounds = max_server_rounds
 
-        self.model_saving_folder = create_save_folder(save_dir=CHECKPOINTS_DIR_TARGET)
+        self.model_saving_folder = create_model_checkpoint_save_folder(save_dir=CHECKPOINTS_DIR_TARGET)
         print(f"Created model checkpoint folder: {self.model_saving_folder}")
         self.all_round_metrics = {}
         self.cache_metric = {}

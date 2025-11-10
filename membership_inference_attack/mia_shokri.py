@@ -10,7 +10,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.utils import resample
 from flower.utils.data_loading import get_transforms_custom, ensure_split_data_exists
 from flower.utils.huggingface_to_pytorch import HFDatasetToTorch
-from flower.utils.model_utils import create_save_folder
+from flower.utils.model_utils import create_metric_save_folder
 from flower.utils.reproducibility import seed_worker, release_model, seed_everything
 from flower.utils.model_factory import create_model
 from flower.utils.wandb_logging import initialize_wandb_run
@@ -450,7 +450,7 @@ def run_mia(config: MiaConfig):
     wandb.config.target_model_checkpoint_path = f"/{target_model_checkpoint_folder}/{target_model_checkpoint_file}"
 
     # Initialize metric save folder
-    metric_save_folder = create_save_folder(save_dir=METRICS_DIR_MIA)
+    metric_save_folder = create_metric_save_folder(save_dir=METRICS_DIR_MIA, run_name=config.parameters.run_name)
     print(f"Created metrics folder: {metric_save_folder}")
 
     # Set random seed and device

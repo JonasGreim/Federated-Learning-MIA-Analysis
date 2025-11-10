@@ -230,6 +230,17 @@ real federated run:
 - alle localen daten downloaden (jsons, checkpoints)
 
 
+///////////
+TODO later:
+- local simulation explain how checkpoints are saved and used. Folder, delete before run or change (not good, but worked)
+    -> use run-name as safe folder for checkpoints -> what if run-name exists? -> cannot add timestamp -> no static filename for mia to load 
 
-TODO:
-later rename data label -> original label in german because in wandb set the data label as diagram axis names
+- later rename data label -> original label in german because in wandb set the data label as diagram axis names
+
+-Only using cpu:
+    warnings:
+    UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+    warnings.warn(warn_msg)
+
+- wandb warning: (also surpressed some warnings with a method)
+    wandb: WARNING `start_method` is deprecated and will be removed in a future version of wandb. This setting is currently non-functional and safely ignored.
