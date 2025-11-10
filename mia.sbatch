@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=mia_parallel
-#SBATCH --output=logs/mia_%A_%a_%N.out
-#SBATCH --error=logs/mia_%A_%a_%N.err
+#SBATCH --output=logs/mia_%A_%a.out
+#SBATCH --error=logs/mia_%A_%a.err
 #SBATCH --partition=paula
 #SBATCH --array=0-35%5             # 36 runs total; up to 5 run in parallel
 #SBATCH --nodes=1                  # one node per run

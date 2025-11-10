@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=flower-cluster
-#SBATCH --output=logs/flower_%j_%N.out
-#SBATCH --error=logs/flower_%j_%N.err
+#SBATCH --output=logs/flower_%j.out
+#SBATCH --error=logs/flower_%j.err
 #SBATCH --partition=paula
 #SBATCH --nodes=5
 #SBATCH --ntasks-per-node=1
