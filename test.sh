@@ -13,8 +13,12 @@
 # Notes:
 #   -N <n>          → number of nodes to allocate (for Flower: 1 server + n−1 clients)
 #   -t <hh:mm:ss>   → time limit for the job
-#   --export        → pass environment variables into the job (e.g. run indices)
 #   --array=36-38%5 → array job with 3 tasks (36–38), max 5 running concurrently
+#   --export        → pass environment variables into the job
+#       - SEQ_START, SEQ_END: run indices for Flower runs
+#       - FLOWER_RUN_CONFIG_FOLDER: config folder for Flower runs
+#       - MIA_RUN_CONFIG_FOLDER: config folder for MIA runs
+#       - ALL: pass all current environment variables
 # -------------------------------------------------------------
 
 jid1=$(sbatch --parsable -N 3  -t 00:45:00 --export=ALL,SEQ_START=36,SEQ_END=36,FLOWER_RUN_CONFIG_FOLDER=client_number_mia_experiments flower2.sbatch)

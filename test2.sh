@@ -11,7 +11,9 @@
 # Notes:
 #   -N <n>        → number of nodes to allocate (for Flower: 1 server + n−1 clients)
 #   -t <hh:mm:ss> → time limit for the job
-#   --export      → pass environment variables into the job (e.g. run indices)
+#   --export        → pass environment variables into the job
+#       - SEQ_START, SEQ_END: run indices for Flower runs
+#       - ALL: pass all current environment variables
 #   --array=0-35%5 → array job with 36 tasks (0–35), max 5 running concurrently
 #
 # -------------------------------------------------------------
