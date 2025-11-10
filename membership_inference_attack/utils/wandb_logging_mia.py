@@ -55,7 +55,7 @@ def log_class_distribution(
     plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
     plt.tight_layout()
     metric_save_file = metric_save_folder / f"histogram_class_distribution_train_{wandb_plot_prefix}.png"
-    plt.savefig(metric_save_file, dpi=300)
+    plt.savefig(metric_save_file, dpi=300, bbox_inches="tight")
     wandb.log({f"{wandb_cluster_name}/{wandb_plot_prefix}_class_histogram": wandb.Image(plt)})
     plt.close()
 
@@ -90,7 +90,7 @@ def log_per_class_metrics(per_class_metrics: dict, class_names: list = None,
         plt.ylim(0, 1.0)
         plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
 
-        plt.savefig(metric_save_folder / f"per_class_{metric}_metrics.png", dpi=300)
+        plt.savefig(metric_save_folder / f"per_class_{metric}_metrics.png", dpi=300, bbox_inches="tight")
         wandb.log({f"attack_eval/per_class_{metric}_vertical": wandb.Image(plt)})
         plt.close()
 
