@@ -21,6 +21,7 @@ LOG_DIR="logs/mia_${SLURM_ARRAY_JOB_ID}"
 mkdir -p "$LOG_DIR"
 echo "Logs will be saved in: $LOG_DIR"
 
+MIA_RUN_CONFIG_FOLDER="${MIA_RUN_CONFIG_FOLDER:-main_mia_experiments}"
 RUN_ID=$SLURM_ARRAY_TASK_ID
 
 # activate conda environment
@@ -35,7 +36,7 @@ echo "SLURM JobID: ${SLURM_JOB_ID}, ArrayTaskID: ${SLURM_ARRAY_TASK_ID}"
 cd "$PROJECT_DIR" || { echo "ERROR: cannot cd to $PROJECT_DIR"; exit 1; }
 
 # --- Execute the run ---
-python -u run_mia_experiment.py "mia=main_mia_experiments/run${RUN_ID}" \
+python -u run_mia_experiment.py "mia=${MIA_RUN_CONFIG_FOLDER}/run${RUN_ID}" \
   2>&1 | tee "${LOG_DIR}/run${RUN_ID}.log"
 
 EXIT_CODE=${PIPESTATUS[0]}

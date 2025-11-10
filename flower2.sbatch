@@ -62,6 +62,7 @@ PORT_FLEET=9092   # SuperNodes -> SuperLink (Fleet API)
 PORT_CTRL=9093    # flwr run -> SuperLink (CTRL API)
 SEQ_START="${SEQ_START:-0}"
 SEQ_END="${SEQ_END:-35}"
+FLOWER_RUN_CONFIG_FOLDER="${FLOWER_RUN_CONFIG_FOLDER:-main_mia_experiments}"
 
 
 echo "Server node: $SERVER_NODE  Fleet:${PORT_FLEET}  CTRL:${PORT_CTRL}"
@@ -146,7 +147,7 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
   # Sequentially run multiple Flower experiments
   for run_id in \$(seq ${SEQ_START} ${SEQ_END}); do
     echo \"🚀 Starting Flower run\${run_id}\"
-    python -u run_flower_hpc.py \"flower=main_mia_experiments/run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/flwr_run\${run_id}.log\"
+    python -u run_flower_hpc.py \"flower=${FLOWER_RUN_CONFIG_FOLDER}/run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/flwr_run\${run_id}.log\"
     echo \"✅ Finished Flower run\${run_id}\"
     echo
     # optional small pause for W&B sync or disk I/O

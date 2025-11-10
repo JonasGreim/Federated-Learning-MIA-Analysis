@@ -47,11 +47,12 @@ def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_de
     )
 
 # ---- Generate all combinations ----
-i = 36  # start at 0 to match your earlier run1.yaml example
+run_id = 36  # start at 0 to match your earlier run1.yaml example
+folder_name = 0
 for client_num in client_nums:
 
-    run_name = f"run{i}"
-    target_model_folder = str(i)  # used for target_model_folder
+    run_name = f"run{run_id}"
+    target_model_folder = str(folder_name)  # used for target_model_folder
     flower_config_path = Flower_DIR / f"{run_name}.yaml"
     mia_path = MIA_DIR / f"{run_name}.yaml"
 
@@ -68,9 +69,10 @@ for client_num in client_nums:
     )
     mia_path.write_text(mia_text)
 
-    i += 1
+    run_id += 1
+    folder_name += 1
 
-print(f"Created {i-1} run files in {RUNS_DIR}/ and {MIA_DIR}/")
+print(f"Created {run_id - 1} run files in {RUNS_DIR}/ and {MIA_DIR}/")
 
 
 

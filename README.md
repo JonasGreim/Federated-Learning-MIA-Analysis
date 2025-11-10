@@ -238,6 +238,7 @@ real federated run:
 TODO later:
 - local simulation explain how checkpoints are saved and used. Folder, delete before run or change (not good, but worked)
     -> use run-name as safe folder for checkpoints -> what if run-name exists? -> cannot add timestamp -> no static filename for mia to load 
+    -> also rewrite experiments creation scripts
 
 - later rename data label -> original label in german because in wandb set the data label as diagram axis names
 
