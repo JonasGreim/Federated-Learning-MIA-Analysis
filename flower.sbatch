@@ -23,7 +23,7 @@
 set -euo pipefail
 module purge
 mkdir -p logs
-LOG_DIR="logs/${SLURM_JOB_ID}"
+LOG_DIR="logs/flower_${SLURM_JOB_ID}"
 mkdir -p "$LOG_DIR"
 echo "Logs will be saved in: $LOG_DIR"
 
