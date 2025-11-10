@@ -222,6 +222,7 @@ python3 run_flower_experiment.py flower=run1
 explain hpc logging:
 - for every mia.sbatch all logs from all runs in one folder  -> mia_${SLURM_JOB_ID} (all runs) + mia_%A_%a.out every single run in top folder 
 - for every flower.sbatch all flower runs in one folder -> flower_${SLURM_JOB_ID} + flower_%j.out /.err (everything from all runs is written there)
+- → logs alle in einen folder → nur umgehbar mit sh script das folder erstellt und dann output festlegt
 
 
 real federated run:
