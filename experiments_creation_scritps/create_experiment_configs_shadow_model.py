@@ -24,7 +24,7 @@ def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_de
     )
 
 # ---- Generate all combinations ----
-i = 39  # numeration start at i
+i = 42  # numeration start at i
 for num_shadow_cfg in num_shadow_models:
 
     run_name = f"run{i}"
