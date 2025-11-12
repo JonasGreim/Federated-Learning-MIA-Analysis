@@ -3,9 +3,9 @@
 # This script submits a series of SLURM jobs that run in order.
 #
 # /// MAIN EXPERIMENTS ///
-# The first job runs `flower2.sbatch` — it performs all 36 Flower runs
+# The first job runs `flower.sbatch` — it performs all 36 Flower runs
 #     sequentially, using 5 nodes (1 server + 4 clients per run).
-# When that job finishes successfully, the second job runs `mia2.sbatch`
+# When that job finishes successfully, the second job runs `mia.sbatch`
 #     as an array job (tasks 0–35), launching the MIA analysis for each run.
 #
 # Notes:

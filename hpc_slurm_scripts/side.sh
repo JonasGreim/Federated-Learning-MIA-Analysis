@@ -3,10 +3,10 @@
 # This script submits a series of SLURM jobs that run in order.
 #
 # /// SIDE EXPERIMENTS ///
-# The first three jobs run `flower2.sbatch` with different client counts.
-# The fourth job runs `mia2.sbatch` as an array job (tasks 36–38),
+# The first three jobs run `flower.sbatch` with different client counts.
+# The fourth job runs `mia.sbatch` as an array job (tasks 36–38),
 #     executing MIA analysis on the three corresponding Flower runs.
-# The fifth job runs `mia2.sbatch` as an array job (tasks 39–43),
+# The fifth job runs `mia.sbatch` as an array job (tasks 39–43),
 #     executing MIA analysis on the first Flower run but with varying
 #     numbers of shadow models.
 #
