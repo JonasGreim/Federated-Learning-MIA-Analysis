@@ -1,12 +1,14 @@
 import pandas as pd
+
+from experiments_data_analysis.file_name_settings import mia_data_path, flower_data_path, merge_file_name
 from experiments_data_analysis.utils.merge_utils import map_regularization, map_model_name, map_distribution
 
 # set output path
-output_path = "data/merged_output2.csv"
+output_path = merge_file_name
 
 # Load both CSVs
-mia = pd.read_csv("data/mia_complete_run2.csv")
-flower = pd.read_csv("data/flower_complete_run2.csv")
+mia = pd.read_csv(mia_data_path)
+flower = pd.read_csv(flower_data_path)
 
 # Perform the join (inner join by default)
 merged = flower.merge(
@@ -42,6 +44,16 @@ merged = merged.drop(columns=["iid-data-distribution", "dirichlet-alpha"])
 # Map model names for better readability
 merged["model"] = merged["model"].apply(map_model_name)
 
+# rename some colums no "," in column names
+merged = merged.rename(columns={
+    "Overfitting-Gap (Clients aggregiert, Accuracy)": "Overfitting-Gap (Clients aggregiert: Accuracy)",
+    "Overfitting-Gap (Clients aggregiert, Loss)": "Overfitting-Gap (Clients aggregiert: Loss)",
+    "Overfitting-Gap (Server, Accuracy)": "Overfitting-Gap (Server: Accuracy)",
+    "Overfitting-Gap (Server, Loss)": "Overfitting-Gap (Server: Loss)",
+})
+
 # Save result
 merged.to_csv(output_path, index=False)
+
+print(merged.columns.tolist())
 print("Merged shape:", merged.shape)

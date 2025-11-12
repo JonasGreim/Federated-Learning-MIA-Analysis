@@ -1,13 +1,14 @@
 import wandb
 import pandas as pd
 
+from experiments_data_analysis.file_name_settings import wandb_entity, wandb_project_flower_name
+
 # Authenticate
 api = wandb.Api()
 
 # Replace with your entity (username or team) and project name
-entity = "kizaru-university-leipzig"
-project = "flower_complete_run2"
-# project = WANDB_PROJECT_NAME_FLOWER
+entity = wandb_entity
+project = wandb_project_flower_name
 
 # Fetch runs
 runs = api.runs(f"{entity}/{project}")
