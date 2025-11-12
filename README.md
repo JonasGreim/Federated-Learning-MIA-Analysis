@@ -249,3 +249,5 @@ TODO later:
 
 - wandb warning: (also surpressed some warnings with a method)
     wandb: WARNING `start_method` is deprecated and will be removed in a future version of wandb. This setting is currently non-functional and safely ignored.
+
+- optimize analysis scripts for mia and flower run -> only pass in wandb project name and entity -> auto. aggregates data and creates plots

@@ -2,12 +2,13 @@ import os
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from experiments_data_analysis.file_name_settings import merge_file_name
 
 # Ensure figures directory exists
 os.makedirs("figures", exist_ok=True)
 
 # Load data
-merged = pd.read_csv("data/4_clients/merged_output.csv")
+merged = pd.read_csv(merge_file_name)
 
 # --- 1️⃣ Effect of Local Epochs ---
 plt.figure(figsize=(6, 4))
@@ -48,7 +49,7 @@ g = sns.catplot(
     kind="bar",
     height=5, aspect=1.2
 )
-g.fig.suptitle("Interaction: Architecture × Data Distribution", y=1.02)
+g.figure.suptitle("Interaction: Architecture × Data Distribution", y=1.02)
 g.set_axis_labels("Data Distribution", "Mean MIA AUC")
 g.savefig("figures/interaction_architecture_data.png", dpi=300)
 plt.close()
