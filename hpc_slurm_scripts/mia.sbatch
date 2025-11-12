@@ -10,8 +10,8 @@
 #SBATCH --mem=16G                  # memory per run
 
 # 0-35: main experiments
-# 36-38: clients experiments (same save folder + change wandb run)
-# 39-43: shadow experiments (same save folder + change wandb run)
+# 36-41: clients experiments (same save folder + change wandb run)
+# 42-46: shadow experiments (same save folder + change wandb run)
 
 set -euo pipefail
 mkdir -p logs

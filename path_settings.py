@@ -4,14 +4,14 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent
 
 # wandb project name
-WANDB_PROJECT_NAME_FLOWER = "flower_complete_main_experiments_run"
-WANDB_PROJECT_NAME_MIA = "mia_complete_main_experiments_run"
+WANDB_PROJECT_NAME_FLOWER = "flower_complete_side_experiments_run2"
+WANDB_PROJECT_NAME_MIA = "mia_complete_side_experiments_run2"
 
 # HPC Configs
 PERSISTENT_MEMORY_DIR = Path("/work/hi85udaj-flower")
 SPLITS_DIR = PERSISTENT_MEMORY_DIR / "dataset_splits"
-CHECKPOINTS_DIR_TARGET = PERSISTENT_MEMORY_DIR / "all_models_full_main_experiments"
-METRICS_DIR = PERSISTENT_MEMORY_DIR / "metrics5Clients"
+CHECKPOINTS_DIR_TARGET = PERSISTENT_MEMORY_DIR / "all_models_full_side_experiments2"
+METRICS_DIR = PERSISTENT_MEMORY_DIR / "metrics_side_experiments2"
 
 # Local Simulation Configs
 # SPLITS_DIR = ROOT_DIR / "dataset_splits"
@@ -30,6 +30,7 @@ METRICS_DIR_MIA = METRICS_DIR / "mia"
 
 
 # Specific splits
+# D1=target train set, D2=target test set, D3=shadow train set, D4=shadow test set
 D1_SPLIT_PATH = SPLITS_DIR / "D1"
 D2_SPLIT_PATH = SPLITS_DIR / "D2"
 D3_SPLIT_PATH = SPLITS_DIR / "D3"
