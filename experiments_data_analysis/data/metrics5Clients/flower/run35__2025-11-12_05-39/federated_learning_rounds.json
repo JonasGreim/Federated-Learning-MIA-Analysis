@@ -1,0 +1,128 @@
+{
+    "0": {
+        "Test-Loss (Server)": 2.5432231184802476,
+        "Test-Accuracy (Server)": 0.0982,
+        "Overfitting-Gap (Clients aggregiert, Loss)": null,
+        "Overfitting-Gap (Clients aggregiert, Accuracy)": null,
+        "Overfitting-Gap (Server, Loss)": null,
+        "Overfitting-Gap (Server, Accuracy)": null
+    },
+    "1": {
+        "Test-Loss (Server)": 3.1839606218700167,
+        "Test-Accuracy (Server)": 0.1948,
+        "Overfitting-Gap (Clients aggregiert, Loss)": null,
+        "Overfitting-Gap (Clients aggregiert, Accuracy)": null,
+        "Overfitting-Gap (Server, Loss)": 2.257246316119959,
+        "Overfitting-Gap (Server, Accuracy)": 0.4815157894736841,
+        "Trainings-Loss (Clients aggregiert)": 0.9267143057500575,
+        "Trainings-Accuracy (Clients aggregiert)": 0.6763157894736841
+    },
+    "2": {
+        "Test-Loss (Server)": 1.8378795853144005,
+        "Test-Accuracy (Server)": 0.4468,
+        "Overfitting-Gap (Clients aggregiert, Loss)": 2.8439306560984514,
+        "Overfitting-Gap (Clients aggregiert, Accuracy)": 0.6994153348378943,
+        "Overfitting-Gap (Server, Loss)": 1.5189099061638738,
+        "Overfitting-Gap (Server, Accuracy)": 0.44726800850106274,
+        "Trainings-Loss (Clients aggregiert)": 0.31896967915052676,
+        "Trainings-Accuracy (Clients aggregiert)": 0.8940680085010627,
+        "Validierungs-Loss (Clients aggregiert)": 3.1629003352489784,
+        "Validierungs-Accuracy (Clients aggregiert)": 0.1946526736631684
+    },
+    "3": {
+        "Test-Loss (Server)": 1.7616437598119807,
+        "Test-Accuracy (Server)": 0.4745,
+        "Overfitting-Gap (Clients aggregiert, Loss)": 1.6067548779641112,
+        "Overfitting-Gap (Clients aggregiert, Accuracy)": 0.4903716256636027,
+        "Overfitting-Gap (Server, Loss)": 1.559247190692942,
+        "Overfitting-Gap (Server, Accuracy)": 0.4623983622952869,
+        "Trainings-Loss (Clients aggregiert)": 0.2023965691190388,
+        "Trainings-Accuracy (Clients aggregiert)": 0.9368983622952869,
+        "Validierungs-Loss (Clients aggregiert)": 1.80915144708315,
+        "Validierungs-Accuracy (Clients aggregiert)": 0.4465267366316842
+    },
+    "4": {
+        "Test-Loss (Server)": 1.7126855457885355,
+        "Test-Accuracy (Server)": 0.5183,
+        "Overfitting-Gap (Clients aggregiert, Loss)": 1.636924217818339,
+        "Overfitting-Gap (Clients aggregiert, Accuracy)": 0.49142471831967505,
+        "Overfitting-Gap (Server, Loss)": 1.5918122818857388,
+        "Overfitting-Gap (Server, Accuracy)": 0.444389086135767,
+        "Trainings-Loss (Clients aggregiert)": 0.12087326390279662,
+        "Trainings-Accuracy (Clients aggregiert)": 0.962689086135767,
+        "Validierungs-Loss (Clients aggregiert)": 1.7577974817211355,
+        "Validierungs-Accuracy (Clients aggregiert)": 0.47126436781609193
+    },
+    "5": {
+        "Test-Loss (Server)": 1.6812460241438467,
+        "Test-Accuracy (Server)": 0.5353,
+        "Overfitting-Gap (Clients aggregiert, Loss)": 1.6253310113207702,
+        "Overfitting-Gap (Clients aggregiert, Accuracy)": 0.46799865475438307,
+        "Overfitting-Gap (Server, Loss)": 1.591743338984104,
+        "Overfitting-Gap (Server, Accuracy)": 0.43694653081635204,
+        "Trainings-Loss (Clients aggregiert)": 0.08950268515974266,
+        "Trainings-Accuracy (Clients aggregiert)": 0.972246530816352,
+        "Validierungs-Loss (Clients aggregiert)": 1.7148336964805129,
+        "Validierungs-Accuracy (Clients aggregiert)": 0.504247876061969
+    },
+    "6": {
+        "Test-Loss (Server)": 1.6705232209797147,
+        "Test-Accuracy (Server)": 0.5448,
+        "Overfitting-Gap (Clients aggregiert, Loss)": 1.6041332465491938,
+        "Overfitting-Gap (Clients aggregiert, Accuracy)": 0.44627046084408717,
+        "Overfitting-Gap (Server, Loss)": 1.6060547123311943,
+        "Overfitting-Gap (Server, Accuracy)": 0.4349537192149018,
+        "Trainings-Loss (Clients aggregiert)": 0.06446850864852033,
+        "Trainings-Accuracy (Clients aggregiert)": 0.9797537192149017,
+        "Validierungs-Loss (Clients aggregiert)": 1.6686017551977141,
+        "Validierungs-Accuracy (Clients aggregiert)": 0.5334832583708146
+    },
+    "7": {
+        "Test-Loss (Server)": 1.672574091561233,
+        "Test-Accuracy (Server)": 0.5561,
+        "Overfitting-Gap (Clients aggregiert, Loss)": 1.6355976028432175,
+        "Overfitting-Gap (Clients aggregiert, Accuracy)": 0.45010484506465354,
+        "Overfitting-Gap (Server, Loss)": 1.6329131548307387,
+        "Overfitting-Gap (Server, Accuracy)": 0.43173597949743714,
+        "Trainings-Loss (Clients aggregiert)": 0.03966093673049435,
+        "Trainings-Accuracy (Clients aggregiert)": 0.9878359794974372,
+        "Validierungs-Loss (Clients aggregiert)": 1.6752585395737118,
+        "Validierungs-Accuracy (Clients aggregiert)": 0.5377311344327836
+    },
+    "8": {
+        "Test-Loss (Server)": 1.6748276692402513,
+        "Test-Accuracy (Server)": 0.5609,
+        "Overfitting-Gap (Clients aggregiert, Loss)": 1.629888155442348,
+        "Overfitting-Gap (Clients aggregiert, Accuracy)": 0.43790237647771935,
+        "Overfitting-Gap (Server, Loss)": 1.6542411970826953,
+        "Overfitting-Gap (Server, Accuracy)": 0.4332242655331917,
+        "Trainings-Loss (Clients aggregiert)": 0.02058647215755599,
+        "Trainings-Accuracy (Clients aggregiert)": 0.9941242655331917,
+        "Validierungs-Loss (Clients aggregiert)": 1.650474627599904,
+        "Validierungs-Accuracy (Clients aggregiert)": 0.5562218890554723
+    },
+    "9": {
+        "Test-Loss (Server)": 1.6838686345498772,
+        "Test-Accuracy (Server)": 0.5687,
+        "Overfitting-Gap (Clients aggregiert, Loss)": 1.6611911561533184,
+        "Overfitting-Gap (Clients aggregiert, Accuracy)": 0.43722432133102085,
+        "Overfitting-Gap (Server, Loss)": 1.6766039540851534,
+        "Overfitting-Gap (Server, Accuracy)": 0.4299935866983372,
+        "Trainings-Loss (Clients aggregiert)": 0.007264680464723911,
+        "Trainings-Accuracy (Clients aggregiert)": 0.9986935866983372,
+        "Validierungs-Loss (Clients aggregiert)": 1.6684558366180422,
+        "Validierungs-Accuracy (Clients aggregiert)": 0.5614692653673163
+    },
+    "10": {
+        "Test-Loss (Server)": 1.7160592380958268,
+        "Test-Accuracy (Server)": 0.5666,
+        "Overfitting-Gap (Clients aggregiert, Loss)": 1.6682417321250105,
+        "Overfitting-Gap (Clients aggregiert, Accuracy)": 0.42802941884477186,
+        "Overfitting-Gap (Server, Loss)": 1.7116656477555725,
+        "Overfitting-Gap (Server, Accuracy)": 0.43289368671083883,
+        "Trainings-Loss (Clients aggregiert)": 0.004393590340254236,
+        "Trainings-Accuracy (Clients aggregiert)": 0.9994936867108388,
+        "Validierungs-Loss (Clients aggregiert)": 1.6726353224652648,
+        "Validierungs-Accuracy (Clients aggregiert)": 0.571464267866067
+    }
+}
