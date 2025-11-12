@@ -26,5 +26,5 @@ SCRIPT_DIR="$(dirname "$0")"
 jid1=$(sbatch --parsable -N 6  -t 11:00:00 --export=ALL,SEQ_START=0,SEQ_END=35 "$SCRIPT_DIR/flower.sbatch")
 jid2=$(sbatch --parsable --dependency=afterok:${jid1} -t 00:10:00 --array=0-35%5 "$SCRIPT_DIR/mia.sbatch")
 
-echo "Submitted: $jid1 -> $jid2"
+echo "Submitted: flower: $jid1 -> mia: $jid2"
 
