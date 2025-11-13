@@ -1,11 +1,11 @@
 import pandas as pd
-from experiments_data_analysis.file_name_settings import merge_file_name, overview_file_name
+from experiments_data_analysis.file_name_settings import merge_data_file_path, overview_file_path
 
 # set output path
-output_path = overview_file_name
+output_path = overview_file_path
 
 # Load both CSVs
-full_data_tables = pd.read_csv(merge_file_name)
+full_data_tables = pd.read_csv(merge_data_file_path)
 
 keep_columns = ["model", "data_distribution", "local-epochs", "num-server-rounds", "metrics/AUC", "Overfitting-Gap (Server: Loss)", "Test-Accuracy (Server)"]
 overview_table = full_data_tables[keep_columns]

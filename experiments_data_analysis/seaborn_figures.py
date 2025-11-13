@@ -2,13 +2,13 @@ import os
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from experiments_data_analysis.file_name_settings import merge_file_name
+from experiments_data_analysis.file_name_settings import merge_data_file_path
 
 # Ensure figures directory exists
 os.makedirs("figures", exist_ok=True)
 
 # Load data
-merged = pd.read_csv(merge_file_name)
+merged = pd.read_csv(merge_data_file_path)
 
 # --- 1️⃣ Effect of Local Epochs ---
 plt.figure(figsize=(6, 4))

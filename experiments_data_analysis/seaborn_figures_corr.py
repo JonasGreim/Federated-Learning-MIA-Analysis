@@ -1,10 +1,10 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from experiments_data_analysis.file_name_settings import merge_file_name
+from experiments_data_analysis.file_name_settings import merge_data_file_path
 
 # Load your merged data
-merged = pd.read_csv(merge_file_name)
+merged = pd.read_csv(merge_data_file_path)
 
 # Select columns of interest
 cols_of_interest = [
