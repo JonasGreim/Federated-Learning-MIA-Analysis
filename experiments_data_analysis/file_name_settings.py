@@ -11,6 +11,4 @@ flower_data_path = f"data/{wandb_project_flower_name}.csv"
 merge_data_file_path = f"data/merged_{wandb_project_flower_name}_{wandb_project_mia_name}.csv"
 
 overview_file_path = f"data/overview_{wandb_project_flower_name}_{wandb_project_mia_name}.csv"
-
-table_file_path = f"data/table_{wandb_project_flower_name}_{wandb_project_mia_name}.csv"
 table_file_latex_path = f"data/table_latex_{wandb_project_flower_name}_{wandb_project_mia_name}.csv"

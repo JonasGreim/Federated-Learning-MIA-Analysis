@@ -27,3 +27,10 @@ def map_model_name(model):
         return "ResNet-18"
     else:
         return f"unknown ({model})"
+
+def map_regularization_diagram(regularization):
+    if regularization:
+        return "Ja"
+    else:
+        return "Nein"
+    return regularization
