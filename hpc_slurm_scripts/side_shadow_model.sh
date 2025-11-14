@@ -27,4 +27,4 @@ SCRIPT_DIR="$(dirname "$0")"
 
 jid1_shadow_models=$(sbatch --parsable -t 01:00:00 --array=42-57%5 --export=ALL,MIA_RUN_CONFIG_FOLDER=shadow_models_experiments "$SCRIPT_DIR/mia.sbatch")
 
-echo "Submitted shadow model experiment: $jid1_complex_model"
+echo "Submitted shadow model experiment: $jid1_shadow_models"
