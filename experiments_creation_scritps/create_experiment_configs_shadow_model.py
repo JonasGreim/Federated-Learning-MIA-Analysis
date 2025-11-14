@@ -7,7 +7,9 @@ MIA_DIR = EXPERIMENTS_CONF_DIR / "mia" / "shadow_models_experiments"
 MIA_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---- Define your grids (with exact text for YAML output) ----
-num_shadow_models = [1, 3, 10, 20, 50]
+num_shadow_models = [1, 3, 10, 20]
+model_architectures = ["simple_model", "complex_model"]
+data_distributions = ["iid", "non-iid"]
 
 def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_decay: str, num_server_rounds: int, num_shadow_models: int, train_size: int) -> str:
     return (
@@ -24,25 +26,35 @@ def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_de
     )
 
 # ---- Generate all combinations ----
-i = 42  # numeration start at i
-for num_shadow_cfg in num_shadow_models:
+run_id = 42  # numeration start at i
+target_model_path = [0, 1, 4, 5] # use model checkpoints from main runs
+i = 0
+for model_architecture in model_architectures:
+    for data_distribution in data_distributions:
+        for num_shadow_cfg in num_shadow_models:
 
-    run_name = f"run{i}"
-    run_idx_str = str(i)  # used for target_model_folder
-    mia_path = MIA_DIR / f"{run_name}.yaml"
+            run_name = f"run{run_id}"
+            run_idx_str = str(run_id)  # used for target_model_folder
+            mia_path = MIA_DIR / f"{run_name}.yaml"
 
-    # Write mia config (derive fields from the same combo)
-    mia_text = yaml_mia(
-        run_name=run_name,
-        target_model_folder="0",
-        model_arch="simple_model",
-        weight_decay="0.0",
-        num_server_rounds=100,
-        num_shadow_models=num_shadow_cfg,
-        train_size=10000,
-    )
-    mia_path.write_text(mia_text)
+            # Write mia config (derive fields from the same combo)
+            if num_shadow_cfg==1:
+                train_size = 15000
+            else:
+                train_size = 10000
 
-    i += 1
+            mia_text = yaml_mia(
+                run_name=run_name,
+                target_model_folder=f"{target_model_path[i]}",
+                model_arch=model_architecture,
+                weight_decay="0.0",
+                num_server_rounds=100,
+                num_shadow_models=num_shadow_cfg,
+                train_size=train_size,
+            )
+            mia_path.write_text(mia_text)
 
-print(f"Created {i-1} run files in {RUNS_DIR}/ and {MIA_DIR}/")
+            run_id += 1
+        i += 1
+
+print(f"Created {run_id - 1} run files in {RUNS_DIR}/ and {MIA_DIR}/")

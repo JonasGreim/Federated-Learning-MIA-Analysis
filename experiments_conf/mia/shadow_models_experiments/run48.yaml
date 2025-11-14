@@ -4,8 +4,8 @@ defaults:
 parameters:
   model_arch: "simple_model"
   weight_decay: 0.0
-  run_name: "run42"
-  target_model_folder: "0"
+  run_name: "run48"
+  target_model_folder: "1"
   target_model_file: "global_model_round_100.pth"
-  num_shadow_models: 1
-  train_size: 15000
+  num_shadow_models: 10
+  train_size: 10000
