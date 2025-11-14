@@ -81,8 +81,6 @@ plt.tight_layout()
 plt.savefig("figures/regularization_influence.png", dpi=300)
 plt.close()
 
-
-
 plt.figure(figsize=(10, 4))
 g = sns.catplot(
     data=merged,
@@ -94,8 +92,6 @@ g = sns.catplot(
     height=4,
     aspect=1
 )
-
-g.fig.suptitle("Einfluss der Regularisierung getrennt nach Modellarchitektur", y=1.05)
-
+g.figure.suptitle("Einfluss der Regularisierung getrennt nach Modellarchitektur", y=1.05)
 plt.savefig("figures/regularization_per_model.png", dpi=300)
 plt.close()
