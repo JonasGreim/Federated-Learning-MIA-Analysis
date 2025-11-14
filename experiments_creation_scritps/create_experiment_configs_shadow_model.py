@@ -27,7 +27,7 @@ def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_de
 
 # ---- Generate all combinations ----
 run_id = 42  # numeration start at i
-target_model_path = [0, 1, 4, 5] # use model checkpoints from main runs
+target_model_path = [0, 4, 1, 5] # use model checkpoints from main runs
 i = 0
 for model_architecture in model_architectures:
     for data_distribution in data_distributions:

@@ -12,7 +12,7 @@
 #
 # Notes:
 #   -t <hh:mm:ss>   → time limit for the job
-#   --array=36-38%5 → array job with 5 tasks (run42–57), max 5 running concurrently
+#   --array=42-57%5 → array job with 5 tasks (run42–57), max 5 running concurrently
 #   --export        → pass environment variables into the job
 #       - MIA_RUN_CONFIG_FOLDER: config folder for MIA runs
 #       - ALL: pass all current environment variables
