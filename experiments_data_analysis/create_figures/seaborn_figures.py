@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from experiments_data_analysis.data_interface.column_names import Col
+from experiments_data_analysis.data_interface.column_names_merged_table import Col
 from experiments_data_analysis.utils.merge_utils import map_regularization_diagram
 from pathlib import Path
 
