@@ -33,4 +33,3 @@ def map_regularization_diagram(regularization):
         return "Ja"
     else:
         return "Nein"
-    return regularization
