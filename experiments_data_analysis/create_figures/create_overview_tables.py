@@ -6,7 +6,6 @@ from pathlib import Path
 def create_overview_table(
         data_path: Path,
         output_path: Path,
-        output_path_latex: Path,
 ):
     # Load both CSVs
     full_data_tables = pd.read_csv(data_path)
@@ -17,7 +16,6 @@ def create_overview_table(
     ]
 
     overview_table = full_data_tables[keep_columns]
-
 
     overview_table = overview_table.rename(columns={
         Col.MODEL: "Model",
@@ -50,12 +48,12 @@ def create_overview_table(
         ["Model", "Reg.", "Data Dist.", "Local Epochs"]
     )
 
-
-    overview_table.to_csv(output_path, index=False)
-
+    file_name_overview = output_path / "overview.csv"
+    overview_table.to_csv(file_name_overview, index=False)
 
     # to latex format
     latex_table = overview_table.to_latex(index=False, float_format="%.2f")
 
-    with open(output_path_latex, "w") as f:
+    file_name_text = output_path / "table_latex.txt"
+    with open(file_name_text, "w") as f:
         f.write(latex_table)

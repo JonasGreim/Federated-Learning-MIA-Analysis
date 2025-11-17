@@ -32,5 +32,4 @@ create_analysis_figures(data_path=MERGED_DATA_FILE_PATH, figures_dir=FIGURES_DIR
 create_analysis_figures_corr(data_path=MERGED_DATA_FILE_PATH, figures_dir=FIGURES_DIR)
 
 # create overview table
-create_overview_table(data_path=MERGED_DATA_FILE_PATH, output_path=OVERVIEW_FILE_PATH,
-                      output_path_latex=TABLE_FILE_LATEX_PATH)
+create_overview_table(data_path=MERGED_DATA_FILE_PATH, output_path=DATA_SUBDIR_MAIN)

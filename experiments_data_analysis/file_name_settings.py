@@ -22,10 +22,6 @@ FLOWER_DATA_PATH = DATA_SUBDIR_MAIN / FILE_NAME_FLOWER
 MIA_DATA_PATH = DATA_SUBDIR_MAIN / FILE_NAME_MIA
 MERGED_DATA_FILE_PATH = DATA_SUBDIR_MAIN / FILE_NAME_MERGED
 
-# table file paths
-OVERVIEW_FILE_PATH = DATA_SUBDIR_MAIN / "overview.csv"
-TABLE_FILE_LATEX_PATH = DATA_SUBDIR_MAIN / "table_latex.tex"
-
 # /// Side Experiments Settings ///
 
 # --- shadow model experiments ---
