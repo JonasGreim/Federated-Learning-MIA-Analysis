@@ -1,0 +1,7 @@
+run-name,Runtime_Flower,Overfitting Gap Loss (Clients),Overfitting Gap Acc. (Clients),Overfitting Gap Acc.,Overfitting Gap Loss,Test-Accuracy (Server),Test-Loss (Server),Trainings-Accuracy (Clients aggregiert),Trainings-Loss (Clients aggregiert),Validierungs-Accuracy (Clients aggregiert),Validierungs-Loss (Clients aggregiert),model,local-epochs,num-server-rounds,num-clients,Runtime_MIA,num_shadow_models,shadow_epochs,train_size,metrics/AUC,metrics/Accuracy,metrics/F1-Score,metrics/Precision,metrics/Recall,std/std_AUC,std/std_Accuracy,std/std_F1-Score,std/std_Precision,std/std_Recall,regularization,data_distribution
+run36,2078.24,0.36,1.58,0.35,1.55,0.65,1.55,1.0,0.01,0.64,1.59,Shokri-CNN,1,100,2,115,1,100,15000,0.71,0.73,0.75,0.7,0.82,0.06,0.05,0.03,0.06,0.02,False,IID
+run37,2305.96,0.31,0.96,0.31,1.0,0.65,1.18,0.97,0.18,0.66,1.14,Shokri-CNN,1,100,5,112,1,100,15000,0.66,0.55,0.4,0.6,0.31,0.05,0.01,0.05,0.06,0.07,False,IID
+run38,2223.4,0.12,0.28,0.1,0.23,0.64,1.01,0.74,0.79,0.62,1.06,Shokri-CNN,1,100,10,120,1,100,15000,0.56,0.5,0.06,0.53,0.04,0.02,0.0,0.05,0.05,0.03,False,IID
+run39,2464.36,0.38,1.85,0.38,1.85,0.62,1.85,1.0,0.0,0.62,1.85,ResNet-18,1,100,2,318,1,100,15000,0.81,0.75,0.78,0.71,0.87,0.05,0.05,0.03,0.06,0.03,False,IID
+run40,2547.54,0.44,2.06,0.45,2.1,0.55,2.1,1.0,0.0,0.56,2.06,ResNet-18,1,100,5,316,1,100,15000,0.81,0.79,0.8,0.76,0.84,0.05,0.04,0.03,0.06,0.02,False,IID
+run41,3164.88,0.54,2.06,0.53,2.06,0.47,2.06,1.0,0.0,0.46,2.06,ResNet-18,1,100,10,318,1,100,15000,0.61,0.6,0.45,0.76,0.32,0.01,0.01,0.03,0.07,0.04,False,IID
