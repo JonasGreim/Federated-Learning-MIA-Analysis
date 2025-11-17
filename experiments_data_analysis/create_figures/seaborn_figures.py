@@ -11,9 +11,6 @@ def create_analysis_figures(
         data_path: Path,
         figures_dir: Path
 ):
-    # Ensure figures directory exists
-    os.makedirs(figures_dir, exist_ok=True)
-
     # Load data
     merged = pd.read_csv(data_path)
 
