@@ -1,4 +1,6 @@
 import pandas as pd
+
+from experiments_data_analysis.file_name_settings import FILE_NAME_MERGED
 from experiments_data_analysis.utils.merge_utils import map_regularization, map_model_name, map_distribution
 from pathlib import Path
 
@@ -53,7 +55,8 @@ def merge_flower_mia_wandb_runs_to_csv(
     })
 
     # Save result
-    merged.to_csv(output_path, index=False)
+    file_name = output_path / FILE_NAME_MERGED
+    merged.to_csv(file_name, index=False)
 
     print(merged.columns.tolist())
     print("Merged shape:", merged.shape)

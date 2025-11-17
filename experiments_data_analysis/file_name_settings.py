@@ -5,30 +5,39 @@ ANALYSIS_ROOT_DIR = Path(__file__).resolve().parent
 DATA_DIR = ANALYSIS_ROOT_DIR / "data"
 FIGURES_DIR = ANALYSIS_ROOT_DIR / "figures"
 
-# Wandb name settings
-wandb_entity = "kizaru-university-leipzig"
-wandb_project_flower_name = "flower_complete_main_experiments_run"
-wandb_project_mia_name = "mia_complete_main_experiments_run"
+# shared
+WANDB_ENTITY = "kizaru-university-leipzig"
+FILE_NAME_FLOWER = "flower.csv"
+FILE_NAME_MIA = "mia.csv"
+FILE_NAME_MERGED = "merged_flower_mia.csv"
 
-# # shadow model experiments
-# mia_side_experiments_shadow_models
+# /// Main Experiments Settings ///
+WANDB_PROJECT_FLOWER_MAIN = "flower_complete_main_experiments_run"
+WANDB_PROJECT_MIA_MAIN = "mia_complete_main_experiments_run"
 
-# # clients experiments
-# flower_complete_side_experiments_run4
-# mia_complete_side_experiments_run4
-
-file_name_flower = "main_flower"
-file_name_mia = "main_mia"
-DATA_SUBDIR = DATA_DIR / "main_experiments"
+DATA_SUBDIR_MAIN = DATA_DIR / "main_experiments"
 
 # data file paths
-flower_data_path = DATA_SUBDIR / f"{file_name_flower}.csv"
-mia_data_path = DATA_SUBDIR / f"{file_name_mia}.csv"
-merge_data_file_path = DATA_SUBDIR / f"merged_{file_name_flower}_{file_name_mia}.csv"
+FLOWER_DATA_PATH = DATA_SUBDIR_MAIN / FILE_NAME_FLOWER
+MIA_DATA_PATH = DATA_SUBDIR_MAIN / FILE_NAME_MIA
+MERGED_DATA_FILE_PATH = DATA_SUBDIR_MAIN / FILE_NAME_MERGED
 
 # table file paths
-overview_file_path = DATA_SUBDIR / f"overview_{file_name_flower}_{file_name_mia}.csv"
-table_file_latex_path = DATA_SUBDIR / f"table_latex_{file_name_flower}_{file_name_mia}.csv"
+OVERVIEW_FILE_PATH = DATA_SUBDIR_MAIN / "overview.csv"
+TABLE_FILE_LATEX_PATH = DATA_SUBDIR_MAIN / "table_latex.tex"
 
-# figures file paths
-figure_dir_path = FIGURES_DIR
+# /// Side Experiments Settings ///
+
+# --- shadow model experiments ---
+WANDB_PROJECT_MIA_SIDE_SHADOW_MODELS = "mia_side_experiments_shadow_models"
+DATA_SUBDIR_SHADOW = DATA_DIR / "side_experiments_shadow_models"
+MIA_SIDE_SHADOW_DATA_PATH = DATA_SUBDIR_SHADOW / FILE_NAME_MIA
+
+# --- clients experiments ---
+WANDB_PROJECT_FLOWER_SIDE_CLIENTS = "flower_complete_side_experiments_run4"
+WANDB_PROJECT_MIA_SIDE_CLIENTS = "mia_complete_side_experiments_run4"
+DATA_SUBDIR_CLIENTS = DATA_DIR / "side_experiments_clients"
+
+FLOWER_SIDE_CLIENTS_DATA_PATH = DATA_SUBDIR_CLIENTS / FILE_NAME_FLOWER
+MIA_SIDE_CLIENTS_DATA_PATH = DATA_SUBDIR_CLIENTS / FILE_NAME_MIA
+MERGED_SIDE_CLIENTS_DATA_FILE_PATH = DATA_SUBDIR_CLIENTS / FILE_NAME_MERGED

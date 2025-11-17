@@ -2,6 +2,8 @@ import wandb
 import pandas as pd
 from pathlib import Path
 
+from experiments_data_analysis.file_name_settings import FILE_NAME_FLOWER
+
 
 def export_flower_wandb_runs_to_csv(
         entity: str,
@@ -59,6 +61,7 @@ def export_flower_wandb_runs_to_csv(
     df = df[[col for col in columns_to_keep if col in df.columns]]
 
     # Save to CSV
-    df.to_csv(output_path, index=False)
+    file_name = output_path / FILE_NAME_FLOWER
+    df.to_csv(file_name, index=False)
 
     print(f"✅ Saved filtered CSV with {len(df)} runs and {len(df.columns)} columns -> {output_path}")
