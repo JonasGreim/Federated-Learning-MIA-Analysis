@@ -4,8 +4,7 @@ from experiments_data_analysis.create_dataset.wandb_get_mia_data import export_m
 from experiments_data_analysis.create_figures.create_overview_tables import create_overview_table
 from experiments_data_analysis.create_figures.seaborn_figures import create_analysis_figures
 from experiments_data_analysis.create_figures.seaborn_figures_corr import create_analysis_figures_corr
-from experiments_data_analysis.file_name_settings import WANDB_PROJECT_FLOWER_MAIN, \
-    OVERVIEW_FILE_PATH, TABLE_FILE_LATEX_PATH, DATA_SUBDIR_MAIN, FIGURES_DIR, \
+from experiments_data_analysis.file_name_settings import WANDB_PROJECT_FLOWER_MAIN, DATA_SUBDIR_MAIN, FIGURES_DIR, \
     FLOWER_DATA_PATH, MIA_DATA_PATH, MERGED_DATA_FILE_PATH
 from experiments_data_analysis.file_name_settings import WANDB_ENTITY, WANDB_PROJECT_MIA_MAIN
 import os
