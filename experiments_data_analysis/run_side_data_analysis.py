@@ -3,6 +3,8 @@ from experiments_data_analysis.create_dataset.merge_flower_mia_data import merge
 from experiments_data_analysis.create_dataset.wandb_get_flower_data import export_flower_wandb_runs_to_csv
 from experiments_data_analysis.create_dataset.wandb_get_mia_data import export_mia_wandb_runs_to_csv
 from experiments_data_analysis.create_figures.side_experiments_clients.create_client_num_figures import create_client_num_figures
+from experiments_data_analysis.create_figures.side_experiments_clients.create_overview_table import \
+    create_overview_table_clients_experiments
 from experiments_data_analysis.file_name_settings import WANDB_ENTITY, FIGURES_DIR, \
     WANDB_PROJECT_MIA_SIDE_SHADOW_MODELS, DATA_SUBDIR_SHADOW, \
     WANDB_PROJECT_MIA_SIDE_CLIENTS, DATA_SUBDIR_CLIENTS, WANDB_PROJECT_FLOWER_SIDE_CLIENTS, MIA_SIDE_CLIENTS_DATA_PATH, \
@@ -35,4 +37,4 @@ merge_flower_mia_wandb_runs_to_csv(
 )
 
 create_client_num_figures(data_path=MERGED_SIDE_CLIENTS_DATA_FILE_PATH, figures_dir=FIGURES_DIR_CLIENTS)
-# TODO create overview table
+create_overview_table_clients_experiments(data_path=MERGED_SIDE_CLIENTS_DATA_FILE_PATH, output_path=DATA_SUBDIR_CLIENTS, figures_dir=FIGURES_DIR_CLIENTS)
