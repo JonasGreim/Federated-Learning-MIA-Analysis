@@ -25,6 +25,11 @@ set -euo pipefail
 # Get the directory of the current script
 SCRIPT_DIR="$(dirname "$0")"
 
-jid1_shadow_models=$(sbatch --parsable -t 01:00:00 --array=42-57%5 --export=ALL,MIA_RUN_CONFIG_FOLDER=shadow_models_experiments "$SCRIPT_DIR/mia.sbatch")
+#jid1_shadow_models=$(sbatch --parsable -t 01:20:00 --array=42-57%5 --export=ALL,MIA_RUN_CONFIG_FOLDER=shadow_models_experiments "$SCRIPT_DIR/mia.sbatch")
 
-echo "Submitted shadow model experiment: $jid1_shadow_models"
+jid1_shadow_models=$(sbatch --parsable -t 01:20:00 --array=53-53%5 --export=ALL,MIA_RUN_CONFIG_FOLDER=shadow_models_experiments "$SCRIPT_DIR/mia.sbatch")
+jid2_shadow_models=$(sbatch --parsable -t 01:20:00 --array=57-57%5 --export=ALL,MIA_RUN_CONFIG_FOLDER=shadow_models_experiments "$SCRIPT_DIR/mia.sbatch")
+
+
+#echo "Submitted shadow model experiment: $jid1_shadow_models"
+echo "Submitted shadow model experiment: $jid1_shadow_models, $jid2_shadow_models"
