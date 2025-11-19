@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class Col(str, Enum):
     RUN_NAME = "run-name"
 
