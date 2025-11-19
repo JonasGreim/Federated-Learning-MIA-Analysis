@@ -6,6 +6,7 @@ from pathlib import Path
 def create_overview_table(
         data_path: Path,
         output_path: Path,
+        figures_dir: Path
 ):
     # Load both CSVs
     full_data_tables = pd.read_csv(data_path)
@@ -54,6 +55,6 @@ def create_overview_table(
     # to latex format
     latex_table = overview_table.to_latex(index=False, float_format="%.2f")
 
-    file_name_text = output_path / "table_latex.txt"
+    file_name_text = figures_dir / "table_latex.txt"
     with open(file_name_text, "w") as f:
         f.write(latex_table)
