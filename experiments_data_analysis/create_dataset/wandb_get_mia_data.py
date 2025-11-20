@@ -54,11 +54,9 @@ def export_mia_wandb_runs_to_csv(
         "std/std_Recall",  # example metric
     ]
 
-    # Keep only those columns that exist in the DataFrame
-    print(df.columns)
-
     df = df[[col for col in columns_to_keep if col in df.columns]]
 
+    df = df.round(2)
     # Save to CSV
     file_name = output_path / FILE_NAME_MIA
     df.to_csv(file_name, index=False)

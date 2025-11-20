@@ -55,10 +55,10 @@ def export_flower_wandb_runs_to_csv(
         "num-clients",
     ]
 
-    # Keep only those columns that exist in the DataFrame
-    print(df.columns)
-
     df = df[[col for col in columns_to_keep if col in df.columns]]
+
+    cols_to_round = [c for c in df.columns if c != "weight-decay"]
+    df[cols_to_round] = df[cols_to_round].round(2)
 
     # Save to CSV
     file_name = output_path / FILE_NAME_FLOWER
