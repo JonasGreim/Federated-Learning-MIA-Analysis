@@ -46,6 +46,6 @@ def create_overview_table_clients_experiments(
     # to latex format
     latex_table = overview_table.to_latex(index=False, float_format="%.2f")
 
-    file_name_text = figures_dir / "table_latex.txt"
+    file_name_text = figures_dir / "table_latex.tex"
     with open(file_name_text, "w") as f:
         f.write(latex_table)
