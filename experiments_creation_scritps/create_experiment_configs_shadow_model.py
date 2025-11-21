@@ -11,7 +11,9 @@ num_shadow_models = [1, 3, 10, 20]
 model_architectures = ["simple_model", "complex_model"]
 data_distributions = ["iid", "non-iid"]
 
-def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_decay: str, num_server_rounds: int, num_shadow_models: int, train_size: int) -> str:
+
+def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_decay: str, num_server_rounds: int,
+             num_shadow_models: int, train_size: int) -> str:
     return (
         "defaults:\n"
         "  - base\n\n"
@@ -25,9 +27,10 @@ def yaml_mia(run_name: str, target_model_folder: str, model_arch: str, weight_de
         f'  train_size: {train_size}\n'
     )
 
+
 # ---- Generate all combinations ----
 run_id = 42  # numeration start at i
-target_model_path = [0, 4, 1, 5] # use model checkpoints from main runs
+target_model_path = [0, 4, 1, 5]  # use model checkpoints from main runs
 i = 0
 for model_architecture in model_architectures:
     for data_distribution in data_distributions:
@@ -38,7 +41,7 @@ for model_architecture in model_architectures:
             mia_path = MIA_DIR / f"{run_name}.yaml"
 
             # Write mia config (derive fields from the same combo)
-            if num_shadow_cfg==1:
+            if num_shadow_cfg == 1:
                 train_size = 15000
             else:
                 train_size = 10000
@@ -57,4 +60,4 @@ for model_architecture in model_architectures:
             run_id += 1
         i += 1
 
-print(f"Created {run_id - 1} run files in {RUNS_DIR}/ and {MIA_DIR}/")
+print(f"Created {i} run files in {RUNS_DIR}/ and {MIA_DIR}/")
