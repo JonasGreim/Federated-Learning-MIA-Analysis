@@ -225,15 +225,6 @@ explain hpc logging:
 - → logs alle in einen folder → nur umgehbar mit sh script das folder erstellt und dann output festlegt
 
 
-real federated run:
-- run one flower run and then one mia run or run first all flowers rund and then all mia runs?
-- wandb init on server
-- data split creation (Split in script verteilen an clients oder script einfach auf jeden client laufen lassen)
-- pyproject anpassen package (non simulation) + federation anpassen ohne supernodes
-- Script schreiben (Setup auf jedem Node, run all tests)
-- alle localen daten downloaden (jsons, checkpoints)
-
-
 ///////////
 TODO later:
 - local simulation explain how checkpoints are saved and used. Folder, delete before run or change (not good, but worked)
@@ -250,6 +241,6 @@ TODO later:
 - wandb warning: (also surpressed some warnings with a method)
     wandb: WARNING `start_method` is deprecated and will be removed in a future version of wandb. This setting is currently non-functional and safely ignored.
 
-- optimize analysis scripts for mia and flower run -> only pass in wandb project name and entity -> auto. aggregates data and creates plots
-
 - upload metric files to wandb with a static folder name for each run -> easier download
+
+- analysis scripts handle re-naming and all plots in german
