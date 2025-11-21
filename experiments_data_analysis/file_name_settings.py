@@ -30,6 +30,7 @@ WANDB_PROJECT_MIA_SIDE_SHADOW_MODELS = "mia_side_experiments_shadow_models"
 DATA_SUBDIR_SHADOW = DATA_DIR / "side_experiments_shadow_models"
 FIGURES_DIR_SHADOW = FIGURES_DIR / "side_experiments_shadow_models"
 MIA_SIDE_SHADOW_DATA_PATH = DATA_SUBDIR_SHADOW / FILE_NAME_MIA
+MIA_SIDE_SHADOW_DATA_OVERVIEW = DATA_SUBDIR_SHADOW / "overview.csv"
 
 # --- clients experiments ---
 WANDB_PROJECT_FLOWER_SIDE_CLIENTS = "flower_complete_side_experiments_run4"

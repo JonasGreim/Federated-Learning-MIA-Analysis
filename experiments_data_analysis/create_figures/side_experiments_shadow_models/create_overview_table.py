@@ -1,7 +1,6 @@
 import pandas as pd
 from experiments_data_analysis.data_interface.column_names_merged_table import Col
 from pathlib import Path
-
 from experiments_data_analysis.utils.merge_utils import map_model_name, map_run_name
 
 
@@ -35,10 +34,6 @@ def create_overview_table_shadow_experiments(
         ascending=[True, True, True]
     )
 
-
-
-
-
     # overview_table = overview_table.rename(columns={
     #     Col.RUN_NAME: "run-name",
     #     Col.MODEL: "Model",
@@ -46,7 +41,6 @@ def create_overview_table_shadow_experiments(
     #     Col.TRAIN_SIZE: "Train Size",
     #     Col.METRICS_AUC: "MIA AUC",
     # })
-
 
     file_name_overview = output_path / "overview.csv"
     overview_table.to_csv(file_name_overview, index=False)
@@ -57,3 +51,5 @@ def create_overview_table_shadow_experiments(
     file_name_text = figures_dir / "table_latex.tex"
     with open(file_name_text, "w") as f:
         f.write(latex_table)
+
+

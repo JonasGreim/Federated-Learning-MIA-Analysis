@@ -7,11 +7,13 @@ from experiments_data_analysis.create_figures.side_experiments_clients.create_ov
     create_overview_table_clients_experiments
 from experiments_data_analysis.create_figures.side_experiments_shadow_models.create_overview_table import \
     create_overview_table_shadow_experiments
+from experiments_data_analysis.create_figures.side_experiments_shadow_models.create_shadow_model_number_figures import \
+    create_shadow_model_number_figures
 from experiments_data_analysis.file_name_settings import WANDB_ENTITY, FIGURES_DIR, \
     WANDB_PROJECT_MIA_SIDE_SHADOW_MODELS, DATA_SUBDIR_SHADOW, \
     WANDB_PROJECT_MIA_SIDE_CLIENTS, DATA_SUBDIR_CLIENTS, WANDB_PROJECT_FLOWER_SIDE_CLIENTS, MIA_SIDE_CLIENTS_DATA_PATH, \
     FLOWER_SIDE_CLIENTS_DATA_PATH, MERGED_SIDE_CLIENTS_DATA_FILE_PATH, FIGURES_DIR_CLIENTS, MIA_SIDE_SHADOW_DATA_PATH, \
-    FIGURES_DIR_SHADOW
+    FIGURES_DIR_SHADOW, MIA_SIDE_SHADOW_DATA_OVERVIEW
 
 # Ensure figures directory exists
 os.makedirs(DATA_SUBDIR_SHADOW, exist_ok=True)
@@ -24,12 +26,13 @@ os.makedirs(FIGURES_DIR_SHADOW, exist_ok=True)
 # Export flower wandb runs to CSV
 # export_mia_wandb_runs_to_csv(entity=WANDB_ENTITY, project=WANDB_PROJECT_MIA_SIDE_SHADOW_MODELS,
 #                              output_path=DATA_SUBDIR_SHADOW)
-# TODO create figures
 create_overview_table_shadow_experiments(
         data_path=MIA_SIDE_SHADOW_DATA_PATH,
         output_path=DATA_SUBDIR_SHADOW,
         figures_dir=FIGURES_DIR_SHADOW
 )
+
+create_shadow_model_number_figures(data_path=MIA_SIDE_SHADOW_DATA_OVERVIEW, figures_dir=FIGURES_DIR_SHADOW)
 
 # --- clients experiments ---
 # Export flower wandb runs to CSV
