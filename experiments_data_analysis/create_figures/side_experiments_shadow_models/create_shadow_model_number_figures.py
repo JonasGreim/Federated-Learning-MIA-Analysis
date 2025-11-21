@@ -37,12 +37,26 @@ def create_shadow_model_number_figures(data_path: Path, figures_dir: Path):
                 label=label,
             )
 
-    plt.xlabel("Number of Shadow Models")
+    plt.xlabel("Anzahl der Shadow Models")
     plt.ylabel("MIA AUC")
-    plt.title("Shadow Model Experiments")
+    plt.title("Einfluss der Anzahl von Shadow Models auf die MIA AUC", pad=20)
     plt.xticks([1, 3, 10, 20])
-    plt.legend()
-    plt.tight_layout()
 
+    legend_labels = {
+        "Shokri-CNN (IID)": "Shokri-CNN (IID)",
+        "Shokri-CNN (non_IID)": "Shokri-CNN (non-IID)",
+        "ResNet-18 (IID)": "ResNet-18 (IID)",
+        "ResNet-18 (non_IID)": "ResNet-18 (non-IID)",
+    }
+    handles, labels = plt.gca().get_legend_handles_labels()
+    new_labels = [legend_labels.get(lbl, lbl) for lbl in labels]
+    plt.legend(
+        handles,
+        new_labels,
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5),
+        title="Modell (Datenverteilung)",
+    )
+    plt.tight_layout()
     plt.savefig(figures_dir / "auc_per_shadow_model_number_per_model.png", dpi=300)
     plt.close()
