@@ -244,3 +244,5 @@ TODO later:
 - upload metric files to wandb with a static folder name for each run -> easier download
 
 - analysis scripts handle re-naming and all plots in german
+
+- handle experiments folder better -> less folder in root directory
