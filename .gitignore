@@ -9,7 +9,6 @@ metrics
 outputs
 multirun
 dataset_splits
-/experiments_data_analysis/figures/
 
 # ignore model checkpoints except example folder and its contents
 model_checkpoints_target/*

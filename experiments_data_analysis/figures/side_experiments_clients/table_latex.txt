@@ -1,0 +1,12 @@
+\begin{tabular}{llrrr}
+\toprule
+Model & Client Number & MIA AUC & Overfitting Gap Loss & Overfitting Gap Acc \\
+\midrule
+Shokri-CNN & 2 & 0.71 & 1.55 & 0.35 \\
+Shokri-CNN & 5 & 0.66 & 1.00 & 0.31 \\
+Shokri-CNN & 10 & 0.56 & 0.23 & 0.10 \\
+ResNet-18 & 2 & 0.81 & 1.85 & 0.38 \\
+ResNet-18 & 5 & 0.81 & 2.10 & 0.45 \\
+ResNet-18 & 10 & 0.61 & 2.06 & 0.53 \\
+\bottomrule
+\end{tabular}
