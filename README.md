@@ -246,3 +246,5 @@ TODO later:
 - analysis scripts handle re-naming and all plots in german
 
 - handle experiments folder better -> less folder in root directory
+
+- better run script for multiple simulation experiments, too many run scripts in root
