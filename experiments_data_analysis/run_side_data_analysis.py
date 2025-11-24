@@ -24,8 +24,8 @@ os.makedirs(FIGURES_DIR_SHADOW, exist_ok=True)
 
 # --- shadow model experiments ---
 # Export flower wandb runs to CSV
-# export_mia_wandb_runs_to_csv(entity=WANDB_ENTITY, project=WANDB_PROJECT_MIA_SIDE_SHADOW_MODELS,
-#                              output_path=DATA_SUBDIR_SHADOW)
+export_mia_wandb_runs_to_csv(entity=WANDB_ENTITY, project=WANDB_PROJECT_MIA_SIDE_SHADOW_MODELS,
+                             output_path=DATA_SUBDIR_SHADOW)
 create_overview_table_shadow_experiments(
         data_path=MIA_SIDE_SHADOW_DATA_PATH,
         output_path=DATA_SUBDIR_SHADOW,
@@ -36,16 +36,16 @@ create_shadow_model_number_figures(data_path=MIA_SIDE_SHADOW_DATA_OVERVIEW, figu
 
 # --- clients experiments ---
 # Export flower wandb runs to CSV
-# export_flower_wandb_runs_to_csv(entity=WANDB_ENTITY, project=WANDB_PROJECT_FLOWER_SIDE_CLIENTS,
-#                                 output_path=DATA_SUBDIR_CLIENTS)
-# export_mia_wandb_runs_to_csv(entity=WANDB_ENTITY, project=WANDB_PROJECT_MIA_SIDE_CLIENTS,
-#                              output_path=DATA_SUBDIR_CLIENTS)
-# # Merge both CSVs
-# merge_flower_mia_wandb_runs_to_csv(
-#     mia_data_path=MIA_SIDE_CLIENTS_DATA_PATH,
-#     flower_data_path=FLOWER_SIDE_CLIENTS_DATA_PATH,
-#     output_path=DATA_SUBDIR_CLIENTS,
-# )
-#
-# create_client_num_figures(data_path=MERGED_SIDE_CLIENTS_DATA_FILE_PATH, figures_dir=FIGURES_DIR_CLIENTS)
-# create_overview_table_clients_experiments(data_path=MERGED_SIDE_CLIENTS_DATA_FILE_PATH, output_path=DATA_SUBDIR_CLIENTS, figures_dir=FIGURES_DIR_CLIENTS)
+export_flower_wandb_runs_to_csv(entity=WANDB_ENTITY, project=WANDB_PROJECT_FLOWER_SIDE_CLIENTS,
+                                output_path=DATA_SUBDIR_CLIENTS)
+export_mia_wandb_runs_to_csv(entity=WANDB_ENTITY, project=WANDB_PROJECT_MIA_SIDE_CLIENTS,
+                             output_path=DATA_SUBDIR_CLIENTS)
+# Merge both CSVs
+merge_flower_mia_wandb_runs_to_csv(
+    mia_data_path=MIA_SIDE_CLIENTS_DATA_PATH,
+    flower_data_path=FLOWER_SIDE_CLIENTS_DATA_PATH,
+    output_path=DATA_SUBDIR_CLIENTS,
+)
+
+create_client_num_figures(data_path=MERGED_SIDE_CLIENTS_DATA_FILE_PATH, figures_dir=FIGURES_DIR_CLIENTS)
+create_overview_table_clients_experiments(data_path=MERGED_SIDE_CLIENTS_DATA_FILE_PATH, output_path=DATA_SUBDIR_CLIENTS, figures_dir=FIGURES_DIR_CLIENTS)
