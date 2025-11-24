@@ -225,6 +225,10 @@ explain hpc logging:
 - → logs alle in einen folder → nur umgehbar mit sh script das folder erstellt und dann output festlegt
 
 
+explain experiments data analysis:
+- set wandb entity and wandb project names in file_name_settings.py
+
+
 ///////////
 TODO later:
 - local simulation explain how checkpoints are saved and used. Folder, delete before run or change (not good, but worked)
