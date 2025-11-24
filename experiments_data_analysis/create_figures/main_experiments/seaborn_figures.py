@@ -1,7 +1,7 @@
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 from experiments_data_analysis.data_interface.column_names_merged_table import Col
+from experiments_data_analysis.utils.create_figures_main import plot_parameter_per_model, \
+    create_analysis_figures_both_models
 from experiments_data_analysis.utils.merge_utils import map_regularization_diagram
 from pathlib import Path
 
@@ -10,67 +10,31 @@ def create_analysis_figures(
         data_path: Path,
         figures_dir: Path
 ):
-    # Load data
+    # Load merged data
     merged = pd.read_csv(data_path)
 
     # --- 1 Effect of Local Epochs ---
-    plt.figure(figsize=(6, 4))
-    sns.boxplot(data=merged, x=Col.LOCAL_EPOCHS, y=Col.METRICS_AUC)
-    plt.xlabel("Lokale Epochen")
-    plt.ylabel("MIA AUC")
-    plt.tight_layout()
-    plt.savefig(figures_dir / "effect_local_epochs.png", dpi=300)
-    plt.close()
+    create_analysis_figures_both_models(dataset=merged, x_value=Col.LOCAL_EPOCHS, x_label="Lokale Epochen",
+                                        figures_dir=figures_dir)
 
     # --- 2 Architecture Influence ---
-    plt.figure(figsize=(6, 4))
-    sns.boxplot(data=merged, x=Col.MODEL, y=Col.METRICS_AUC)
-    plt.xlabel("Modellarchitektur")
-    plt.ylabel("MIA AUC")
-    plt.tight_layout()
-    plt.savefig(figures_dir / "architecture_influence.png", dpi=300)
-    plt.close()
+    create_analysis_figures_both_models(dataset=merged, x_value=Col.MODEL, x_label="Modellarchitektur",
+                                        figures_dir=figures_dir)
 
     # --- 3 Data Distribution Influence ---
-    plt.figure(figsize=(6, 4))
-    sns.boxplot(data=merged, x=Col.DATA_DISTRIBUTION, y=Col.METRICS_AUC, order=["IID", "semi-non-IID", "non-IID"])
-    plt.xlabel("Datenverteilung")
-    plt.ylabel("MIA AUC")
-    plt.tight_layout()
-    plt.savefig(figures_dir / "data_distribution_influence.png", dpi=300)
-    plt.close()
+    create_analysis_figures_both_models(dataset=merged, x_value=Col.DATA_DISTRIBUTION, x_label="Datenverteilung",
+                                        figures_dir=figures_dir,
+                                        order=["IID", "semi-non-IID", "non-IID"])
 
     # --- 4 Regularization Influence ---
     merged[Col.REGULARIZATION] = merged[Col.REGULARIZATION].apply(map_regularization_diagram)
-    plt.figure(figsize=(6, 4))
-    sns.boxplot(data=merged, x=Col.REGULARIZATION, y=Col.METRICS_AUC)
-    plt.xlabel("Regularisierung")
-    plt.ylabel("MIA AUC")
-    plt.tight_layout()
-    plt.savefig(figures_dir / "regularization_influence.png", dpi=300)
-    plt.close()
+    create_analysis_figures_both_models(dataset=merged, x_value=Col.REGULARIZATION, x_label="Regularisierung",
+                                        figures_dir=figures_dir)
 
     # --- 5 Regularization per Model Architecture ---
-    plt.figure(figsize=(10, 4))
-    g = sns.catplot(
-        data=merged,
-        x=Col.REGULARIZATION,
-        y=Col.METRICS_AUC,
-        col=Col.MODEL,
-        kind="box",
-        sharey=True,
-        height=4,
-        aspect=1
-    )
-    g.set_axis_labels("Regularisierung", "MIA AUC")
-    new_titles = {
-        "Shokri-CNN": "Shokri CNN",
-        "ResNet-18": "ResNet-18",
-        # add more mappings if needed
-    }
-
-    for ax, model_name in zip(g.axes.flat, g.col_names):
-        nice_title = new_titles.get(model_name, model_name)
-        ax.set_title(nice_title)
-    plt.savefig(figures_dir / "regularization_per_model.png", dpi=300)
-    plt.close()
+    plot_parameter_per_model(dataset=merged, x_value=Col.REGULARIZATION, x_label="Regularisierung",
+                             figures_dir=figures_dir)
+    plot_parameter_per_model(dataset=merged, x_value=Col.LOCAL_EPOCHS, x_label="Lokale Epochen",
+                             figures_dir=figures_dir)
+    plot_parameter_per_model(dataset=merged, x_value=Col.DATA_DISTRIBUTION, x_label="Datenverteilung",
+                             figures_dir=figures_dir, order=["IID", "semi-non-IID", "non-IID"])
