@@ -252,3 +252,5 @@ TODO later:
 - handle experiments folder better -> less folder in root directory
 
 - better run script for multiple simulation experiments, too many run scripts in root
+
+- split mia_shokri.py in smaller files 
