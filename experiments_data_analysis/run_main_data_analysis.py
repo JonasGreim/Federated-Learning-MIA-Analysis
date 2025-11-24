@@ -1,5 +1,4 @@
 import os
-
 from experiments_data_analysis.create_dataset.merge_flower_mia_data import merge_flower_mia_wandb_runs_to_csv
 from experiments_data_analysis.create_dataset.wandb_get_flower_data import export_flower_wandb_runs_to_csv
 from experiments_data_analysis.create_dataset.wandb_get_mia_data import export_mia_wandb_runs_to_csv
@@ -15,18 +14,18 @@ os.makedirs(DATA_SUBDIR_MAIN, exist_ok=True)
 os.makedirs(FIGURES_DIR, exist_ok=True)
 os.makedirs(FIGURES_DIR_MAIN, exist_ok=True)
 
-# # Export flower wandb runs to CSV
-# export_flower_wandb_runs_to_csv(entity=WANDB_ENTITY, project=WANDB_PROJECT_FLOWER_MAIN, output_path=DATA_SUBDIR_MAIN)
-#
-# # Export mia wandb runs to CSV
-# export_mia_wandb_runs_to_csv(entity=WANDB_ENTITY, project=WANDB_PROJECT_MIA_MAIN, output_path=DATA_SUBDIR_MAIN)
-#
-# # Merge both CSVs
-# merge_flower_mia_wandb_runs_to_csv(
-#     mia_data_path=MIA_DATA_PATH,
-#     flower_data_path=FLOWER_DATA_PATH,
-#     output_path=DATA_SUBDIR_MAIN,
-# )
+# Export flower wandb runs to CSV
+export_flower_wandb_runs_to_csv(entity=WANDB_ENTITY, project=WANDB_PROJECT_FLOWER_MAIN, output_path=DATA_SUBDIR_MAIN)
+
+# Export mia wandb runs to CSV
+export_mia_wandb_runs_to_csv(entity=WANDB_ENTITY, project=WANDB_PROJECT_MIA_MAIN, output_path=DATA_SUBDIR_MAIN)
+
+# Merge both CSVs
+merge_flower_mia_wandb_runs_to_csv(
+    mia_data_path=MIA_DATA_PATH,
+    flower_data_path=FLOWER_DATA_PATH,
+    output_path=DATA_SUBDIR_MAIN,
+)
 
 # create figures
 create_analysis_figures(data_path=MERGED_DATA_FILE_PATH, figures_dir=FIGURES_DIR_MAIN)
