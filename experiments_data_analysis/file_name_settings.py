@@ -4,6 +4,7 @@ from pathlib import Path
 ANALYSIS_ROOT_DIR = Path(__file__).resolve().parent
 DATA_DIR = ANALYSIS_ROOT_DIR / "data"
 FIGURES_DIR = ANALYSIS_ROOT_DIR / "figures"
+METRICS_ANALYSIS = ANALYSIS_ROOT_DIR / "metrics"
 
 # shared
 WANDB_ENTITY = "kizaru-university-leipzig"
