@@ -40,21 +40,7 @@ def create_analysis_figures(
     plt.savefig(figures_dir / "data_distribution_influence.png", dpi=300)
     plt.close()
 
-    # --- 4 Interaction: Architecture × Data Distribution ---
-    g = sns.catplot(
-        data=merged,
-        x=Col.DATA_DISTRIBUTION,
-        y=Col.METRICS_AUC,
-        hue=Col.MODEL,
-        kind="bar",
-        height=5, aspect=1.2
-    )
-    g.figure.suptitle("MIA AUC: Architektur × Datenverteilung", y=1.02)
-    g.set_axis_labels(Col.DATA_DISTRIBUTION, Col.METRICS_AUC)
-    g.savefig(figures_dir / "interaction_architecture_data.png", dpi=300)
-    plt.close()
-
-    # --- 5 Regularization Influence ---
+    # --- 4 Regularization Influence ---
     merged[Col.REGULARIZATION] = merged[Col.REGULARIZATION].apply(map_regularization_diagram)
     plt.figure(figsize=(6, 4))
     sns.boxplot(data=merged, x=Col.REGULARIZATION, y=Col.METRICS_AUC)
@@ -64,7 +50,7 @@ def create_analysis_figures(
     plt.savefig(figures_dir / "regularization_influence.png", dpi=300)
     plt.close()
 
-    # --- 6 Regularization per Model Architecture ---
+    # --- 5 Regularization per Model Architecture ---
     plt.figure(figsize=(10, 4))
     g = sns.catplot(
         data=merged,
