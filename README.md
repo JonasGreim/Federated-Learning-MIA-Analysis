@@ -224,6 +224,8 @@ explain hpc logging:
 - for every flower.sbatch all flower runs in one folder -> flower_${SLURM_JOB_ID} + flower_%j.out /.err (everything from all runs is written there)
 - → logs alle in einen folder → nur umgehbar mit sh script das folder erstellt und dann output festlegt
 
+explain path_settings.py for hpc experiments -> per new experiment -> different folder names for checkpoints, logs and metrics
+
 
 explain experiments data analysis:
 - set wandb entity and wandb project names in file_name_settings.py
