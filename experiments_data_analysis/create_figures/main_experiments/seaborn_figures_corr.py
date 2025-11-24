@@ -39,4 +39,6 @@ def create_analysis_figures_corr(
     #  --- 3 Pairplot Overfitting Gap Accuracy vs MIA AUC
     create_analysis_figures_correlation(dataset=merged, x_value=Col.METRICS_AUC,
                                         x_label="MIA AUC", y_value=Col.OVERFITTING_GAP_ACC_CLIENTS,
-                                        y_label="Overfitting Gap Acc.", figures_dir=figures_dir)
+                                        y_label="Overfitting Gap Acc. (Clients)", figures_dir=figures_dir)
+
+    print("✅ Correlation figures created successfully.")

@@ -58,7 +58,8 @@ def create_analysis_figures_correlation(dataset: pd.DataFrame, x_value: Col, x_l
     axes[1, 0].set_ylabel(y_label)
     axes[1, 1].set_xlabel(y_label)
     g.figure.subplots_adjust(top=0.95)  # increase or decrease top margin
-    g.savefig(figures_dir / f"pairplot_overfitting_auc_{y_label.replace(" ", "_")}.png", dpi=300)
+    y_label = y_label.replace(" ", "_").replace(".", "")
+    g.savefig(figures_dir / f"pairplot_overfitting_auc_{y_label}.png", dpi=300)
     plt.close()
 
 

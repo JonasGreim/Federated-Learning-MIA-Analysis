@@ -53,4 +53,4 @@ def create_overview_table_shadow_experiments(
     with open(file_name_text, "w") as f:
         f.write(latex_table)
 
-
+    print("✅ Figures (shadow model number) created successfully.")

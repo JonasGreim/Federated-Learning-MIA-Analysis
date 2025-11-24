@@ -59,3 +59,5 @@ def create_shadow_model_number_figures(data_path: Path, figures_dir: Path):
     plt.tight_layout()
     plt.savefig(figures_dir / "auc_per_shadow_model_number_per_model.png", dpi=300)
     plt.close()
+
+    print("✅ Overview table (shadow model number) created successfully.")

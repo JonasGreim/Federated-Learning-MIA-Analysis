@@ -58,5 +58,6 @@ def merge_flower_mia_wandb_runs_to_csv(
     file_name = output_path / FILE_NAME_MERGED
     merged.to_csv(file_name, index=False)
 
+    print("✅ Merged flower and MIA data successfully.")
     print(merged.columns.tolist())
     print("Merged shape:", merged.shape)

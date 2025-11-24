@@ -38,3 +38,5 @@ def create_analysis_figures(
                              figures_dir=figures_dir)
     plot_parameter_per_model(dataset=merged, x_value=Col.DATA_DISTRIBUTION, x_label="Datenverteilung",
                              figures_dir=figures_dir, order=["IID", "semi-non-IID", "non-IID"])
+
+    print("✅ Figures created successfully.")

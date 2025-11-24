@@ -31,3 +31,5 @@ def create_client_num_figures(
 
     plt.savefig(figures_dir / "auc_per_client_number_per_model.png", dpi=300)
     plt.close()
+
+    print("✅ Figures (client number) created successfully.")

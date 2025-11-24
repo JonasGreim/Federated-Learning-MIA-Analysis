@@ -58,3 +58,5 @@ def create_overview_table(
     file_name_text = figures_dir / "table_latex.tex"
     with open(file_name_text, "w") as f:
         f.write(latex_table)
+
+    print("✅ Overview Tables created successfully.")
