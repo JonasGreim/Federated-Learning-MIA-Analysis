@@ -25,8 +25,7 @@ def create_client_num_figures(
 
     plt.xlabel("Anzahl der Clients")
     plt.ylabel("MIA AUC")
-    plt.title("MIA AUC bei variierender Client-Anzahl")
-    plt.legend(title="Model")
+    plt.legend(title="Modell")
     plt.grid(True)
     plt.tight_layout()
 

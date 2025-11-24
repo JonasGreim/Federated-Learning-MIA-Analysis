@@ -16,7 +16,6 @@ def create_analysis_figures(
     # --- 1 Effect of Local Epochs ---
     plt.figure(figsize=(6, 4))
     sns.boxplot(data=merged, x=Col.LOCAL_EPOCHS, y=Col.METRICS_AUC)
-    plt.title("Einfluss der lokaler Epochen auf die MIA AUC")
     plt.xlabel("Lokale Epochen")
     plt.ylabel("MIA AUC")
     plt.tight_layout()
@@ -26,7 +25,6 @@ def create_analysis_figures(
     # --- 2 Architecture Influence ---
     plt.figure(figsize=(6, 4))
     sns.boxplot(data=merged, x=Col.MODEL, y=Col.METRICS_AUC)
-    plt.title("Architektonischer Einfluss auf die MIA AUC")
     plt.xlabel("Modellarchitektur")
     plt.ylabel("MIA AUC")
     plt.tight_layout()
@@ -36,7 +34,6 @@ def create_analysis_figures(
     # --- 3 Data Distribution Influence ---
     plt.figure(figsize=(6, 4))
     sns.boxplot(data=merged, x=Col.DATA_DISTRIBUTION, y=Col.METRICS_AUC, order=["IID", "semi-non-IID", "non-IID"])
-    plt.title("Einfluss der Datenverteilung auf die MIA AUC")
     plt.xlabel("Datenverteilung")
     plt.ylabel("MIA AUC")
     plt.tight_layout()
@@ -61,7 +58,6 @@ def create_analysis_figures(
     merged[Col.REGULARIZATION] = merged[Col.REGULARIZATION].apply(map_regularization_diagram)
     plt.figure(figsize=(6, 4))
     sns.boxplot(data=merged, x=Col.REGULARIZATION, y=Col.METRICS_AUC)
-    plt.title("Einfluss von Regularisierung auf die MIA AUC")
     plt.xlabel("Regularisierung")
     plt.ylabel("MIA AUC")
     plt.tight_layout()
@@ -90,6 +86,5 @@ def create_analysis_figures(
     for ax, model_name in zip(g.axes.flat, g.col_names):
         nice_title = new_titles.get(model_name, model_name)
         ax.set_title(nice_title)
-    g.figure.suptitle("Einfluss der Regularisierung getrennt nach Modellarchitektur", y=1.05)
     plt.savefig(figures_dir / "regularization_per_model.png", dpi=300)
     plt.close()

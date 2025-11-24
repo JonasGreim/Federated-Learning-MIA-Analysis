@@ -45,7 +45,6 @@ def create_analysis_figures_corr(
         "Overfitting Gap Loss (Clients)",
         "Overfitting Gap Acc. (Clients)"
     ], rotation=0)
-    plt.title("Korrelation von Overfitting Gaps und MIA AUC", pad=20)
     plt.tight_layout()
     plt.savefig(figures_dir / "correlation_overfitting_auc.png", dpi=300)
     plt.close()
@@ -66,7 +65,6 @@ def create_analysis_figures_corr(
     axes[1, 0].set_ylabel("Overfitting Gap Loss")
     axes[1, 1].set_xlabel("Overfitting Gap Loss")
 
-    g.figure.suptitle("Korrelation von Overfitting Gap Loss und MIA AUC", y=1.03)
     g.figure.subplots_adjust(top=0.95)  # increase or decrease top margin
     g.savefig(figures_dir / "pairplot_overfitting_auc.png", dpi=300)
     plt.close()
@@ -86,7 +84,6 @@ def create_analysis_figures_corr(
     axes[1, 0].set_xlabel("MIA AUC")
     axes[1, 0].set_ylabel("Overfitting Gap Acc.")
     axes[1, 1].set_xlabel("Overfitting Gap Acc.")
-    g.figure.suptitle("Korrelation von Overfitting Gap Accuracy und MIA AUC", y=1.03)
     g.figure.subplots_adjust(top=0.95)  # increase or decrease top margin
     g.savefig(figures_dir / "pairplot_overfitting_auc_acc.png", dpi=300)
     plt.close()

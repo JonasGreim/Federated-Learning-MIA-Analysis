@@ -39,7 +39,6 @@ def create_shadow_model_number_figures(data_path: Path, figures_dir: Path):
 
     plt.xlabel("Anzahl der Shadow Models")
     plt.ylabel("MIA AUC")
-    plt.title("Einfluss der Anzahl von Shadow Models auf die MIA AUC", pad=20)
     plt.xticks([1, 3, 10, 20])
 
     legend_labels = {
