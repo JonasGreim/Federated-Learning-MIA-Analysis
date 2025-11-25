@@ -42,7 +42,7 @@ def load_data(config: MiaConfig, metric_save_folder: Path) -> tuple[Dataset, Dat
     except Exception as e:
         raise RuntimeError(f"MIA: Failed to load datasets from disk: {e}, please run split_cifar10_mia.py") from e
 
-    log_class_distribution(hf_dataset=target_train_hf, wandb_cluster_name="shadow_train_distribution",
+    log_class_distribution(hf_dataset=shadow_train_hf, wandb_cluster_name="shadow_train_distribution",
                            wandb_plot_prefix="Datenpools", class_names=class_names, metric_save_folder=metric_save_folder)
 
     return shadow_train_hf, shadow_test_hf, target_train_hf, target_test_hf
