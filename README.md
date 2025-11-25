@@ -256,3 +256,5 @@ TODO later:
 - better run script for multiple simulation experiments, too many run scripts in root
 
 - split mia_shokri.py in smaller files 
+
+- change run-name flower and especially mia contains "/" creates auto. subfolder
