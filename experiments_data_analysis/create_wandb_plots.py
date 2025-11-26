@@ -23,6 +23,8 @@ def download_and_plot_flower_metrics(entity: str, project: str, output_dir: Path
         # Load history
         df = run.history(samples=None)
 
+        df.save_csv(run_folder / "wandb_history.csv")
+
         # x-axis selection
         if ColFlower.STEP.value in df.columns:
             x = df[ColFlower.STEP.value]
@@ -49,11 +51,35 @@ def download_and_plot_flower_metrics(entity: str, project: str, output_dir: Path
             y = df[metric_name]
 
             # create plot
-            fig, ax = plt.subplots()
-            ax.plot(x, y)
-            ax.set_xlabel("Serverrunde")
-            a: str = Col[metric.name].value
-            ax.set_ylabel(a)
+            fig, ax = plt.subplots(figsize=(8, 6))
+
+            # Line with same color and thicker width
+            ax.plot(x, y, color='#1f77b4', linewidth=2.2)
+
+            # Axis style like your bar plots
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+
+            metrics_from_0_to_1 = {
+                ColFlower.VALIDIERUNGS_ACCURACY_CLIENTS_AGGREGIERT,
+                ColFlower.TRAININGS_ACCURACY_CLIENTS_AGGREGIERT,
+                ColFlower.TEST_ACCURACY_SERVER,
+                ColFlower.OVERFITTING_GAP_ACC,
+                ColFlower.OVERFITTING_GAP_ACC_CLIENTS,
+            }
+            if metric in metrics_from_0_to_1:
+                plt.ylim(0, 1.02)  # small margin above 1
+
+            # labels
+            ax.set_xlabel("Serverrunde", fontsize=12)
+            ylabel = Col[metric.name].value
+            ax.set_ylabel(ylabel, fontsize=12)
+
+            # grid & tick styling
+            ax.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
+            ax.tick_params(axis='both', labelsize=11)
+
+            # layout
             fig.tight_layout()
 
             # safe filename

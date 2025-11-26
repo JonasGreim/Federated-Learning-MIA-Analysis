@@ -7,7 +7,7 @@ from pathlib import Path
 
 def plot_parameter_per_model(dataset: pd.DataFrame, x_value: Col, x_label: str, figures_dir: Path,
                              order: list[str] = None) -> None:
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(12, 5))
     g = sns.catplot(
         data=dataset,
         x=x_value,
