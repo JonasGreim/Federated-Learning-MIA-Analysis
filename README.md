@@ -258,3 +258,6 @@ TODO later:
 - split mia_shokri.py in smaller files 
 
 - change run-name flower and especially mia contains "/" creates auto. subfolder
+
+- data analysis data interface for flower and mia table
+  - integrate interface also in the experiments

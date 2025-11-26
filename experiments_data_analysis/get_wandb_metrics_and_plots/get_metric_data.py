@@ -1,13 +1,14 @@
 import wandb
 import os
 from pathlib import Path
-import shutil
+from experiments_data_analysis.utils.wandb_metrics_plots_helper import process_run_files, generate_flower_plots_for_run
 
 
-def get_wandb_metrics_data(
+def get_wandb_metrics_and_plots(
         entity: str,
         project: str,
-        output_path: Path
+        output_path: Path,
+        generate_wandb_plots: bool = False,
 ):
     api = wandb.Api()
 
@@ -26,43 +27,17 @@ def get_wandb_metrics_data(
         images_folder = run_folder / "images"
         images_folder.mkdir(exist_ok=True)
 
-        for f in run.files():
-            is_metric_file = f.name.startswith("run") and f.name.endswith(".json")
-            is_image_file = (
-                    f.name.startswith("media/images/")
-                    and f.name.lower().endswith((".png", ".jpg", ".jpeg"))
-            )
+        # -----------------------------
+        # 1) Download files from wandb
+        # -----------------------------
+        process_run_files(run, run_folder, images_folder)
 
-            if not (is_metric_file or is_image_file):
-                continue
+        # ----------------------------------
+        # 2) Load wandb history and generate plots
+        # ----------------------------------
+        if generate_wandb_plots:
+            generate_flower_plots_for_run(run, run_folder, images_folder)
 
-            print(f"Downloading: {f.name}")
 
-            f.download(root=run_folder, replace=True)
-            downloaded_path = run_folder / f.name
-
-            if is_image_file:
-                final_dir = images_folder
-            else:
-                final_dir = run_folder
-
-            final_path = final_dir / os.path.basename(f.name)
-
-            if final_path.exists():
-                base, ext = os.path.splitext(final_path.name)
-                i = 1
-                while (final_dir / f"{base}_{i}{ext}").exists():
-                    i += 1
-                final_path = final_dir / f"{base}_{i}{ext}"
-
-            shutil.move(str(downloaded_path), str(final_path))
-
-        for dirpath, dirnames, filenames in os.walk(run_folder, topdown=False):
-            if Path(dirpath) == run_folder:
-                continue
-            try:
-                os.rmdir(dirpath)
-            except OSError:
-                pass
 
     print("\nDone!")
