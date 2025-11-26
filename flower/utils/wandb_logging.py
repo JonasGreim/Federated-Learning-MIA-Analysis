@@ -57,7 +57,7 @@ def visualize_label_distribution(partitioner, output_dir: Path = METRICS_DIR):
         size_unit="absolute",
         partition_id_axis="x",
         verbose_labels=True,
-        title="Verteilung der Klassen pro Client",
+        title="",
     )
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
@@ -73,7 +73,6 @@ def visualize_label_distribution(partitioner, output_dir: Path = METRICS_DIR):
     )
     fig_bar.subplots_adjust(right=0.70)
 
-
     fig_heatmap, ax_hm, _ = plot_label_distributions(
         partitioner,
         label_name="label",
@@ -82,7 +81,7 @@ def visualize_label_distribution(partitioner, output_dir: Path = METRICS_DIR):
         partition_id_axis="x",
         legend=True,
         verbose_labels=True,
-        title="Verteilung der Klassen pro Client",
+        title="",
         plot_kwargs={
             "annot": True,
         },
@@ -105,7 +104,8 @@ def initialize_wandb_run(project_name: str, run_name: str, config: dict = None, 
     if not wandb.run:
         disable_unnecessary_warnings()
         timestamp = datetime.now(UTC).strftime("%Y-%m-%d_%H-%M")
-        wandb.init(project=project_name, name=f"{run_name}-{timestamp}", config=config, dir=directory, settings=wandb.Settings(init_timeout=240, start_method="thread"))
+        wandb.init(project=project_name, name=f"{run_name}-{timestamp}", config=config, dir=directory,
+                   settings=wandb.Settings(init_timeout=240, start_method="thread"))
 
 
 def wandb_log_metrics(metrics: dict, step: int):
@@ -133,6 +133,7 @@ def disable_unnecessary_warnings():
         module=r"^google\.protobuf\.internal\.well_known_types$",
         message=r".*datetime\.datetime\.utcnow\(\).*",
     )
+
 
 def wandb_save_file(path: Path):
     wandb.save(str(path))

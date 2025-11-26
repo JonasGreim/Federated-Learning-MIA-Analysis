@@ -50,7 +50,6 @@ def log_class_distribution(
     ax.spines['top'].set_visible(False)
     plt.xlabel("Klasse")
     plt.ylabel("Anzahl der Stichproben")
-    plt.title(f"Klassenhäufigkeit des {wandb_plot_prefix}")
     plt.xticks(rotation=45)
     plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
     plt.tight_layout()
@@ -86,7 +85,6 @@ def log_per_class_metrics(per_class_metrics: dict, class_names: list = None,
         plt.xlabel("Klasse")
         plt.ylabel(metric)
         plt.xticks(rotation=45)
-        plt.title(f"Pro-Klassen {metric} des Angriffsmodells")
         plt.ylim(0, 1.0)
         plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
 
@@ -133,7 +131,6 @@ def log_overall_metrics_with_error_bars(
     ax.spines['top'].set_visible(False)
     plt.ylabel("Metrikwert")
     plt.xlabel("Angriffsmetrik")
-    plt.title("Gesamtmetriken des Angriffs mit Standardabweichung")
     plt.ylim(0, 1.0)
     plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
 
