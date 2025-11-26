@@ -58,7 +58,7 @@ def download_and_plot_flower_metrics(entity: str, project: str, output_dir: Path
 
             # safe filename
             filename = f"{metric.name.lower()}.png"
-            fig.savefig(run_folder / filename, dpi=200)
+            fig.savefig(run_folder / filename, dpi=300)
             plt.close(fig)
 
             print(f"Saved plot: {filename}")
