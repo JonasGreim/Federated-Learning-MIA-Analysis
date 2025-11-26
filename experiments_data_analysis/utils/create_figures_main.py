@@ -7,7 +7,7 @@ from pathlib import Path
 
 def plot_parameter_per_model(dataset: pd.DataFrame, x_value: Col, x_label: str, figures_dir: Path,
                              order: list[str] = None) -> None:
-    plt.figure(figsize=(10, 4))
+    plt.figure(figsize=(8, 6))
     g = sns.catplot(
         data=dataset,
         x=x_value,
@@ -34,7 +34,7 @@ def plot_parameter_per_model(dataset: pd.DataFrame, x_value: Col, x_label: str, 
 
 def create_analysis_figures_both_models(dataset: pd.DataFrame, x_value: Col, x_label: str, figures_dir: Path,
                                         order: list[str] = None) -> None:
-    plt.figure(figsize=(6, 4))
+    plt.figure(figsize=(8, 6))
     sns.boxplot(data=dataset, x=x_value, y=Col.METRICS_AUC, order=order)
     plt.xlabel(x_label)
     plt.ylabel("MIA AUC")
@@ -65,7 +65,7 @@ def create_analysis_figures_correlation(dataset: pd.DataFrame, x_value: Col, x_l
 
 def create_heatmap(dataset: pd.DataFrame, col_names: list[Col], labels: list[str], figures_dir: Path) -> None:
     corr = dataset[col_names].corr()
-    plt.figure(figsize=(7, 5))
+    plt.figure(figsize=(8, 6))
     ax = sns.heatmap(corr, annot=True, cmap="coolwarm", fmt=".2f")
     ax.set_xticklabels(labels, rotation=45, ha="right")
 

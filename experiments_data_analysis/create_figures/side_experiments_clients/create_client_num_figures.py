@@ -13,7 +13,7 @@ def create_client_num_figures(
     # Filter for the two models you want
     df_plot = df[df['model'].isin(['Shokri-CNN', 'ResNet-18'])]
 
-    plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(8, 6))
 
     sns.lineplot(
         data=df_plot,

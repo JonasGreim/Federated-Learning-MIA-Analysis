@@ -78,7 +78,7 @@ def log_per_class_metrics(per_class_metrics: dict, class_names: list = None,
     for metric in metrics:
         values = [per_class_metrics[cls].get(metric, 0.0) for cls in class_keys]
 
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(8, 6))
         plt.bar(class_names, values, color='#1f77b4', edgecolor='black', alpha=1.0)
         ax = plt.gca()
         ax.spines['right'].set_visible(False)
@@ -126,7 +126,7 @@ def log_overall_metrics_with_error_bars(
     wandb_save_file(json_data_path)
 
     # Create the plot
-    plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(8, 6))
     bars = plt.bar(metrics_names, means, yerr=stds, capsize=6, color='#1f77b4', edgecolor='black', alpha=1.0)
     ax = plt.gca()
     ax.spines['right'].set_visible(False)
