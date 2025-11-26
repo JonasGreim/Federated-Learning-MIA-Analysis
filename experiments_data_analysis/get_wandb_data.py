@@ -1,3 +1,4 @@
+from experiments_data_analysis.create_wandb_plots import download_and_plot_flower_metrics
 from experiments_data_analysis.file_name_settings import WANDB_ENTITY, WANDB_PROJECT_MIA_SIDE_SHADOW_MODELS, \
     METRICS_ANALYSIS, WANDB_PROJECT_FLOWER_SIDE_CLIENTS, WANDB_PROJECT_MIA_SIDE_CLIENTS, WANDB_PROJECT_MIA_MAIN, \
     WANDB_PROJECT_FLOWER_MAIN
@@ -33,3 +34,6 @@ get_wandb_metrics_data(
         project=WANDB_PROJECT_MIA_SIDE_CLIENTS,
         output_path=METRICS_ANALYSIS / "side_experiments_clients" / "mia"
 )
+
+
+download_and_plot_flower_metrics(entity=WANDB_ENTITY, project=WANDB_PROJECT_FLOWER_SIDE_CLIENTS, output_dir=METRICS_ANALYSIS)
