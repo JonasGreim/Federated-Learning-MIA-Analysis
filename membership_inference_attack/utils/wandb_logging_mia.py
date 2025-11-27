@@ -88,6 +88,7 @@ def log_per_class_metrics(per_class_metrics: dict, class_names: list = None,
         plt.ylim(0, 1.0)
         plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
 
+        plt.tight_layout()
         plt.savefig(metric_save_folder / f"per_class_{metric}_metrics.png", dpi=300, bbox_inches="tight")
         wandb.log({f"attack_eval/per_class_{metric}_vertical": wandb.Image(plt)})
         plt.close()
