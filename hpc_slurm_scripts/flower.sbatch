@@ -89,9 +89,21 @@ srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
     > ${LOG_DIR}/superlink.log 2>&1
 " &
 echo "SuperLink started on ${SERVER_NODE}"
-sleep 3  # give it time to bind
 
-# 2) Start ALL SuperNodes in ONE srun (one task per client node)
+# 2) Wait until SuperLink Fleet API (9092) is reachable
+python - <<PY
+import socket, time, sys
+host="${SERVER_NODE}"; port=${PORT_FLEET}
+for _ in range(180):
+    try:
+        with socket.create_connection((host, port), timeout=2):
+            print("SuperLink Fleet API reachable at %s:%s" % (host, port)); sys.exit(0)
+    except OSError:
+        time.sleep(1)
+print("ERROR: SuperLink Fleet API NOT reachable"); sys.exit(1)
+PY
+
+# 3) Start ALL SuperNodes in ONE srun (one task per client node)
 #    Each task gets a unique PARTITION_ID via SLURM_PROCID (0..NUM_CLIENTS-1)
 srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 \
      --nodelist="$CLIENT_HOSTS" --exclusive --kill-on-bad-exit=1 bash -lc "
@@ -101,14 +113,14 @@ srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 \
   flower-supernode \
     --insecure \
     --superlink ${SERVER_NODE}:${PORT_FLEET} \
-    --max-retries 0 \
+    --max-retries 2 \
     --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\" \
     > ${LOG_DIR}/supernode_\${SLURMD_NODENAME}.log 2>&1
 " &
 
 echo "SuperNodes started on client nodes: ${CLIENTS[*]}"
 
-# 3) Wait until SuperLink Exec API is reachable
+# 4) Wait until SuperLink EXEC API (9093) is reachable for flwr run
 python - <<PY
 import socket, time, sys
 host="${SERVER_NODE}"; port=${PORT_CTRL}
@@ -121,8 +133,7 @@ for _ in range(180):
 print("ERROR: SuperLink Exec API NOT reachable"); sys.exit(1)
 PY
 
-
-# 4) Trigger the run from the server node (non-interactive)
+# 5) Trigger the run from the server node (non-interactive)
 SERVER_ADDRESS="${SERVER_NODE}:${PORT_CTRL}"
 
 echo "🌼 Starting multiple Flower runs sequentially on $SERVER_NODE"
