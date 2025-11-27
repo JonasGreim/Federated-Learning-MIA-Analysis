@@ -24,14 +24,14 @@ get_wandb_metrics_and_plots(
 )
 
 # --- side experiments - clients ---
-get_wandb_metrics_and_plots(
-    entity=WANDB_ENTITY,
-    project=WANDB_PROJECT_FLOWER_SIDE_CLIENTS,
-    output_path=METRICS_ANALYSIS / "side_experiments_clients" / "flower",
-    generate_wandb_plots=True
-)
-get_wandb_metrics_and_plots(
-    entity=WANDB_ENTITY,
-    project=WANDB_PROJECT_MIA_SIDE_CLIENTS,
-    output_path=METRICS_ANALYSIS / "side_experiments_clients" / "mia"
-)
+# get_wandb_metrics_and_plots(
+#     entity=WANDB_ENTITY,
+#     project=WANDB_PROJECT_FLOWER_SIDE_CLIENTS,
+#     output_path=METRICS_ANALYSIS / "side_experiments_clients" / "flower",
+#     generate_wandb_plots=True
+# )
+# get_wandb_metrics_and_plots(
+#     entity=WANDB_ENTITY,
+#     project=WANDB_PROJECT_MIA_SIDE_CLIENTS,
+#     output_path=METRICS_ANALYSIS / "side_experiments_clients" / "mia"
+# )
