@@ -35,7 +35,7 @@ MIA_SIDE_SHADOW_DATA_OVERVIEW = DATA_SUBDIR_SHADOW / "overview.csv"
 
 # --- clients experiments ---
 WANDB_PROJECT_FLOWER_SIDE_CLIENTS = "flower_complete_side_experiments_clients_re_run"
-WANDB_PROJECT_MIA_SIDE_CLIENTS = "flower_complete_side_experiments_clients_re_run"
+WANDB_PROJECT_MIA_SIDE_CLIENTS = "mia_complete_side_experiments_clients_re_run"
 DATA_SUBDIR_CLIENTS = DATA_DIR / "side_experiments_clients"
 FIGURES_DIR_CLIENTS = FIGURES_DIR / "side_experiments_clients"
 

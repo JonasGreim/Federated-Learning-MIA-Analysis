@@ -1,7 +1,7 @@
 Model,Client Number,MIA AUC,Overfitting Gap Loss,Overfitting Gap Acc
-Shokri-CNN,2,0.71,1.55,0.35
-Shokri-CNN,5,0.66,1.0,0.31
-Shokri-CNN,10,0.56,0.23,0.1
-ResNet-18,2,0.81,1.85,0.38
-ResNet-18,5,0.81,2.1,0.45
-ResNet-18,10,0.61,2.06,0.53
+Shokri-CNN,2,0.71,1.5,0.35
+Shokri-CNN,5,0.66,1.01,0.33
+Shokri-CNN,10,0.55,0.21,0.09
+ResNet-18,2,0.81,1.84,0.38
+ResNet-18,5,0.82,2.13,0.45
+ResNet-18,10,0.81,2.12,0.47

@@ -1,7 +1,7 @@
 run-name,_runtime,"Overfitting-Gap (Clients aggregiert, Accuracy)","Overfitting-Gap (Clients aggregiert, Loss)","Overfitting-Gap (Server, Accuracy)","Overfitting-Gap (Server, Loss)",Test-Accuracy (Server),Test-Loss (Server),Trainings-Accuracy (Clients aggregiert),Trainings-Loss (Clients aggregiert),Validierungs-Accuracy (Clients aggregiert),Validierungs-Loss (Clients aggregiert),model,local-epochs,weight-decay,dirichlet-alpha,num-server-rounds,iid-data-distribution,num-clients
-run36,2078.24,0.36,1.58,0.35,1.55,0.65,1.55,1.0,0.01,0.64,1.59,simple_model,1,0,0,100,True,2
-run37,2305.96,0.31,0.96,0.31,1.0,0.65,1.18,0.97,0.18,0.66,1.14,simple_model,1,0,0,100,True,5
-run38,2223.4,0.12,0.28,0.1,0.23,0.64,1.01,0.74,0.79,0.62,1.06,simple_model,1,0,0,100,True,10
-run39,2464.36,0.38,1.85,0.38,1.85,0.62,1.85,1.0,0.0,0.62,1.85,complex_model,1,0,0,100,True,2
-run40,2547.54,0.44,2.06,0.45,2.1,0.55,2.1,1.0,0.0,0.56,2.06,complex_model,1,0,0,100,True,5
-run41,3164.88,0.54,2.06,0.53,2.06,0.47,2.06,1.0,0.0,0.46,2.06,complex_model,1,0,0,100,True,10
+run36,2052.63,0.36,1.54,0.35,1.5,0.65,1.51,1.0,0.01,0.64,1.55,simple_model,1,0,0,100,True,2
+run37,2040.34,0.32,1.0,0.33,1.01,0.64,1.19,0.97,0.17,0.65,1.18,simple_model,1,0,0,100,True,5
+run38,2136.57,0.09,0.2,0.09,0.21,0.64,1.02,0.73,0.81,0.64,1.0,simple_model,1,0,0,100,True,10
+run39,2338.71,0.39,1.89,0.38,1.84,0.62,1.84,1.0,0.0,0.61,1.89,complex_model,1,0,0,100,True,2
+run40,2488.82,0.44,2.02,0.45,2.13,0.55,2.13,1.0,0.0,0.56,2.02,complex_model,1,0,0,100,True,5
+run41,2758.65,0.46,2.06,0.47,2.12,0.53,2.12,1.0,0.0,0.54,2.06,complex_model,1,0,0,100,True,10
