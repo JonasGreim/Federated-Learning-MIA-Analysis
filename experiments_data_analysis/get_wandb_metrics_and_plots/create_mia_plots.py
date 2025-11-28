@@ -2,13 +2,15 @@ import matplotlib.pyplot as plt
 import matplotlib
 from pathlib import Path
 import json
-from experiments_data_analysis.file_name_settings import METRICS_ANALYSIS
 
 matplotlib.use("Agg")
 
-def log_per_class_metrics(per_class_metrics: dict,  images_folder: Path, class_names: list = None):
 
-    metrics = ['Accuracy', 'Precision', 'Recall', 'F1-Score', 'AUC', 'FAR']
+def log_per_class_metrics2(run_folder: Path, images_folder: Path, class_names: list = None):
+    with open(run_folder / "mia_per_class.json", "r") as f:
+        per_class_metrics = json.load(f)
+
+    metrics = list(next(iter(per_class_metrics.values())).keys())
 
     class_keys = sorted(per_class_metrics.keys())
     if class_names is None:
@@ -32,23 +34,26 @@ def log_per_class_metrics(per_class_metrics: dict,  images_folder: Path, class_n
         plt.close()
 
 
-path = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0" / "images"
-per_class_metrics_path = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0" / "mia_per_class.json"
-with open(per_class_metrics_path, "r") as f:
-    per_class_metrics = json.load(f)
-class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+# path = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0" / "images"
+# per_class_metrics_path = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0" / "mia_per_class.json"
+# with open(per_class_metrics_path, "r") as f:
+#     per_class_metrics = json.load(f)
+# class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+#
+# log_per_class_metrics2(per_class_metrics=per_class_metrics, images_folder=path, class_names=class_names)
 
-log_per_class_metrics(per_class_metrics=per_class_metrics, images_folder=path, class_names=class_names)
 
-
-def log_overall_metrics_with_error_bars(
-        metrics_dict: dict,
+def log_overall_metrics_with_error_bars2(
+        run_folder: Path,
         images_folder: Path
 ):
+    with open(run_folder / "mia_summary.json", "r") as f:
+        metrics_summary = json.load(f)
+
     # Extract names, means, and stds from the dict
-    metrics_names = list(metrics_dict.keys())
-    means = [metrics_dict[m]["mean"] for m in metrics_names]
-    stds = [metrics_dict[m]["std"] for m in metrics_names]
+    metrics_names = list(metrics_summary.keys())
+    means = [metrics_summary[m]["mean"] for m in metrics_names]
+    stds = [metrics_summary[m]["std"] for m in metrics_names]
 
     # Create the plot
     plt.figure(figsize=(8, 6))
@@ -81,12 +86,12 @@ def log_overall_metrics_with_error_bars(
     plt.savefig(images_folder / "overall_metrics_with_error_bars2.png", dpi=300)
     plt.close()
 
-path2 = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0" / "images"
-mia_summary_metrics_path = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0" / "mia_summary.json"
-with open(mia_summary_metrics_path, "r") as f:
-    metrics = json.load(f)
-
-log_overall_metrics_with_error_bars(
-    metrics,
-    images_folder=path2
-)
+# path2 = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0" / "images"
+# mia_summary_metrics_path = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0" / "mia_summary.json"
+# with open(mia_summary_metrics_path, "r") as f:
+#     metrics = json.load(f)
+#
+# log_overall_metrics_with_error_bars2(
+#     metrics,
+#     images_folder=path2
+# )

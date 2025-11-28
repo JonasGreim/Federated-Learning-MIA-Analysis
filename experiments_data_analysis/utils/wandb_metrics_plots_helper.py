@@ -11,8 +11,10 @@ def process_run_files(run, run_folder: Path, images_folder: Path) -> None:
     for f in run.files():
         is_metric_file = f.name.startswith("run") and f.name.endswith(".json")
         is_image_file = (
-            f.name.startswith("media/images/")
-            and f.name.lower().endswith((".png", ".jpg", ".jpeg"))
+                f.name.startswith("media/images/")
+                and "per_class" not in f.name
+                and "overall_metrics" not in f.name
+                and f.name.lower().endswith((".png", ".jpg", ".jpeg"))
         )
 
         if not (is_metric_file or is_image_file):
@@ -42,8 +44,6 @@ def process_run_files(run, run_folder: Path, images_folder: Path) -> None:
             os.rmdir(dirpath)
         except OSError:
             pass
-
-
 
 
 def generate_flower_plots_for_run(run, run_folder: Path, images_folder: Path) -> None:

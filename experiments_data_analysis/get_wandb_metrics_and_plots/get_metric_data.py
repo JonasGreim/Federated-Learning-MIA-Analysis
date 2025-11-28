@@ -1,6 +1,8 @@
 import wandb
 import os
 from pathlib import Path
+from experiments_data_analysis.get_wandb_metrics_and_plots.create_mia_plots import log_per_class_metrics2, \
+    log_overall_metrics_with_error_bars2
 from experiments_data_analysis.utils.wandb_metrics_plots_helper import process_run_files, generate_flower_plots_for_run
 
 
@@ -8,7 +10,7 @@ def get_wandb_metrics_and_plots(
         entity: str,
         project: str,
         output_path: Path,
-        generate_wandb_plots: bool = False,
+        flower_run: bool = False,
 ):
     api = wandb.Api()
 
@@ -35,9 +37,11 @@ def get_wandb_metrics_and_plots(
         # ----------------------------------
         # 2) Load wandb history and generate plots
         # ----------------------------------
-        if generate_wandb_plots:
+        if flower_run:
             generate_flower_plots_for_run(run, run_folder, images_folder)
-
-
+        else:
+            log_per_class_metrics2(run_folder=run_folder, images_folder=images_folder,
+                                   class_names=run.config.parameters.class_names)
+            log_overall_metrics_with_error_bars2(run_folder=run_folder, images_folder=images_folder)
 
     print("\nDone!")

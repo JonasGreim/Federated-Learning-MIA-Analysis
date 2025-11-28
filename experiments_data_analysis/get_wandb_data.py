@@ -8,7 +8,7 @@ get_wandb_metrics_and_plots(
     entity=WANDB_ENTITY,
     project=WANDB_PROJECT_FLOWER_MAIN,
     output_path=METRICS_ANALYSIS / "main_experiments" / "flower",
-    generate_wandb_plots=True
+    flower_run=True
 )
 get_wandb_metrics_and_plots(
     entity=WANDB_ENTITY,
@@ -28,7 +28,7 @@ get_wandb_metrics_and_plots(
     entity=WANDB_ENTITY,
     project=WANDB_PROJECT_FLOWER_SIDE_CLIENTS,
     output_path=METRICS_ANALYSIS / "side_experiments_clients" / "flower",
-    generate_wandb_plots=True
+    flower_run=True
 )
 get_wandb_metrics_and_plots(
     entity=WANDB_ENTITY,
