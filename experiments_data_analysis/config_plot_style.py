@@ -1,5 +1,6 @@
 import matplotlib as mpl
 import seaborn as sns
+from cycler import cycler
 
 COLOR_PALETTE = [
     "#1f77b4",  # blue (main color)
@@ -40,7 +41,7 @@ def use_thesis_style():
         # Lines & Colors
         "lines.linewidth": 2.0,
         "lines.markersize": 6,
-        "axes.prop_cycle": mpl.cycler(color=COLOR_PALETTE),
+        "axes.prop_cycle": cycler(color=COLOR_PALETTE),
 
         # Text Sizes
         "font.size": 11,
