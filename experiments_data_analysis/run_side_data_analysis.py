@@ -14,6 +14,10 @@ from experiments_data_analysis.file_name_settings import WANDB_ENTITY, FIGURES_D
     WANDB_PROJECT_MIA_SIDE_CLIENTS, DATA_SUBDIR_CLIENTS, WANDB_PROJECT_FLOWER_SIDE_CLIENTS, MIA_SIDE_CLIENTS_DATA_PATH, \
     FLOWER_SIDE_CLIENTS_DATA_PATH, MERGED_SIDE_CLIENTS_DATA_FILE_PATH, FIGURES_DIR_CLIENTS, MIA_SIDE_SHADOW_DATA_PATH, \
     FIGURES_DIR_SHADOW, MIA_SIDE_SHADOW_DATA_OVERVIEW
+from plot_style import use_thesis_style
+
+use_thesis_style()
+
 
 # Ensure figures directory exists
 os.makedirs(DATA_SUBDIR_SHADOW, exist_ok=True)

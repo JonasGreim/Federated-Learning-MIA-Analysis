@@ -8,6 +8,9 @@ from experiments_data_analysis.create_figures.main_experiments.seaborn_figures_c
 from experiments_data_analysis.file_name_settings import WANDB_ENTITY, WANDB_PROJECT_MIA_MAIN
 from experiments_data_analysis.file_name_settings import WANDB_PROJECT_FLOWER_MAIN, DATA_SUBDIR_MAIN, FIGURES_DIR, \
     FLOWER_DATA_PATH, MIA_DATA_PATH, MERGED_DATA_FILE_PATH, FIGURES_DIR_MAIN
+from experiments_data_analysis.plot_style import use_thesis_style
+
+use_thesis_style()
 
 # Ensure figures directory exists
 os.makedirs(DATA_SUBDIR_MAIN, exist_ok=True)

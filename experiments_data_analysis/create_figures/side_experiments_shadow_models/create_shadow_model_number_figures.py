@@ -7,7 +7,7 @@ import pandas as pd
 def create_shadow_model_number_figures(data_path: Path, figures_dir: Path):
     overview_table = pd.read_csv(data_path)
 
-    plt.figure(figsize=(8, 6))
+    plt.figure()
 
     # Ensure numeric x-axis
     overview_table[Col.NUM_SHADOW_MODELS] = overview_table[Col.NUM_SHADOW_MODELS].astype(int)
@@ -36,7 +36,15 @@ def create_shadow_model_number_figures(data_path: Path, figures_dir: Path):
                 marker="o",
                 label=label,
             )
-
+    ax = plt.gca()
+    ax.grid(
+        True,
+        which="major",
+        axis="both",
+        linestyle="-",
+        linewidth=0.6,
+        alpha=0.4,
+    )
     plt.xlabel("Anzahl der Shadow Models")
     plt.ylabel("MIA AUC")
     plt.xticks([1, 3, 10, 20])

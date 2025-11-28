@@ -42,8 +42,9 @@ def get_wandb_metrics_and_plots(
         if flower_run:
             generate_flower_plots_for_run(run, run_folder, images_folder)
         else:
+            class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
             log_per_class_metrics2(run_folder=run_folder, images_folder=images_folder,
-                                   class_names=run.config.parameters.class_names)
+                                   class_names=class_names)
             log_overall_metrics_with_error_bars2(run_folder=run_folder, images_folder=images_folder)
 
     print("\nDone!")

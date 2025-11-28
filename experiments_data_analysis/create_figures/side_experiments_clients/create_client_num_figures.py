@@ -13,7 +13,7 @@ def create_client_num_figures(
     # Filter for the two models you want
     df_plot = df[df['model'].isin(['Shokri-CNN', 'ResNet-18'])]
 
-    plt.figure(figsize=(8, 6))
+    plt.figure()
 
     sns.lineplot(
         data=df_plot,
@@ -25,7 +25,7 @@ def create_client_num_figures(
 
     plt.xlabel("Anzahl der Clients")
     plt.ylabel("MIA AUC")
-    plt.legend(title="Modell")
+    plt.legend(title="Modell", loc="center left", bbox_to_anchor=(1.02, 0.5))
     plt.grid(True)
     plt.tight_layout()
 

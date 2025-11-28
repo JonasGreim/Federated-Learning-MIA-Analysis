@@ -20,16 +20,15 @@ def log_per_class_metrics2(run_folder: Path, images_folder: Path, class_names: l
     for metric in metrics:
         values = [per_class_metrics[cls].get(metric, 0.0) for cls in class_keys]
 
-        plt.figure(figsize=(8, 6))
-        plt.bar(class_names, values, color='#1f77b4', edgecolor='black', alpha=1.0)
-        ax = plt.gca()
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
+        plt.figure()
+        plt.bar(class_names, values)
+
         plt.xlabel("Klasse")
         plt.ylabel(metric)
         plt.xticks(rotation=45)
         plt.ylim(0, 1.0)
         plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
+
         plt.tight_layout()
         plt.savefig(images_folder / f"per_class_{metric}_metrics2.png", dpi=300, bbox_inches="tight")
         plt.close()
@@ -55,16 +54,12 @@ def log_overall_metrics_with_error_bars2(
     stds = [metrics_summary[m]["std"] for m in metrics_names]
 
     # Create the plot
-    plt.figure(figsize=(8, 6))
+    plt.figure()
     bars = plt.bar(
         metrics_names, means,
         yerr=stds, capsize=6,
-        color='#1f77b4', edgecolor='black', alpha=1.0
+        edgecolor='black', alpha=1.0
     )
-
-    ax = plt.gca()
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
 
     plt.ylabel("Metrikwert")
     plt.xlabel("Angriffsmetrik")
@@ -82,6 +77,7 @@ def log_overall_metrics_with_error_bars2(
             ha='center', va='bottom', fontsize=9
         )
 
+    plt.tight_layout()
     plt.savefig(images_folder / "overall_metrics_with_error_bars2.png", dpi=300)
     plt.close()
 

@@ -42,22 +42,17 @@ def generate_flower_plots_for_run(run, run_folder: Path, images_folder: Path) ->
 
         y = df[metric_name]
 
-        fig, ax = plt.subplots(figsize=(8, 6))
-
-        ax.plot(x, y, color="#1f77b4", linewidth=2.2)
-
-        # Achsen-Stil
-        ax.spines["right"].set_visible(False)
-        ax.spines["top"].set_visible(False)
+        fig, ax = plt.subplots()
+        ax.plot(x, y)
 
         # y-Limit für Metriken in [0, 1]
         if metric in metrics_from_0_to_1:
             ax.set_ylim(0, 1.02)
 
         # Beschriftungen
-        ax.set_xlabel(x_label, fontsize=12)
+        ax.set_xlabel(x_label)
         ylabel = Col[metric.name].value
-        ax.set_ylabel(ylabel, fontsize=12)
+        ax.set_ylabel(ylabel)
 
         # Grid + Ticks
         ax.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
