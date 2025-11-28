@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from pathlib import Path
 import json
+from experiments_data_analysis.file_name_settings import METRICS_ANALYSIS
 
 matplotlib.use("Agg")
 
@@ -35,12 +36,10 @@ def log_per_class_metrics2(run_folder: Path, images_folder: Path, class_names: l
 
 
 # path = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0" / "images"
-# per_class_metrics_path = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0" / "mia_per_class.json"
-# with open(per_class_metrics_path, "r") as f:
-#     per_class_metrics = json.load(f)
+# run_folder2 = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0"
 # class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 #
-# log_per_class_metrics2(per_class_metrics=per_class_metrics, images_folder=path, class_names=class_names)
+# log_per_class_metrics2(run_folder=run_folder2, images_folder=path, class_names=class_names)
 
 
 def log_overall_metrics_with_error_bars2(
@@ -87,11 +86,9 @@ def log_overall_metrics_with_error_bars2(
     plt.close()
 
 # path2 = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0" / "images"
-# mia_summary_metrics_path = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0" / "mia_summary.json"
-# with open(mia_summary_metrics_path, "r") as f:
-#     metrics = json.load(f)
+# mia_summary_metrics_path = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0"
 #
 # log_overall_metrics_with_error_bars2(
-#     metrics,
+#     run_folder=mia_summary_metrics_path,
 #     images_folder=path2
 # )
