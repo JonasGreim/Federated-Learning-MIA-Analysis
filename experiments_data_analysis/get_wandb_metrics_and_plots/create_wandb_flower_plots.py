@@ -55,7 +55,7 @@ def generate_flower_plots_for_run(run, run_folder: Path, images_folder: Path) ->
         ax.set_ylabel(ylabel)
 
         # Grid + Ticks
-        ax.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
+        ax.grid(axis="y")
         ax.tick_params(axis="both", labelsize=11)
 
         fig.tight_layout()

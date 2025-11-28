@@ -12,7 +12,11 @@ COLOR_PALETTE = [
 
 def use_thesis_style():
     mpl.rcParams.update({
-        # Size & Borders
+        # Font
+        "font.family": "sans-serif",
+        "font.sans-serif": ["Arial"],
+
+        # Size & Resolution
         "figure.figsize": (8, 6),
         "figure.dpi": 300,
 
@@ -20,7 +24,7 @@ def use_thesis_style():
         "axes.spines.top": False,
         "axes.spines.right": False,
 
-        # Axes Ticks
+        # Ticks
         "xtick.major.size": 6,
         "xtick.major.width": 1.0,
         "ytick.major.size": 6,
@@ -30,21 +34,21 @@ def use_thesis_style():
         "axes.grid": True,
         "axes.grid.axis": "y",
         "grid.linestyle": "-",
-        "grid.linewidth": 0.6,
-        "grid.alpha": 0.3,
+        "grid.linewidth": 0.5,
+        "grid.alpha": 0.2,
 
-        # Lines and Markers
+        # Lines & Colors
         "lines.linewidth": 2.0,
         "lines.markersize": 6,
         "axes.prop_cycle": mpl.cycler(color=COLOR_PALETTE),
 
-        # Fonts
+        # Text Sizes
         "font.size": 11,
         "axes.labelsize": 12,
         "xtick.labelsize": 11,
         "ytick.labelsize": 11,
 
-        # Save
+        # Saving
         "savefig.bbox": "tight",
     })
 

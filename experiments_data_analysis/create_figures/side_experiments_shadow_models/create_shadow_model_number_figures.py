@@ -37,14 +37,7 @@ def create_shadow_model_number_figures(data_path: Path, figures_dir: Path):
                 label=label,
             )
     ax = plt.gca()
-    ax.grid(
-        True,
-        which="major",
-        axis="both",
-        linestyle="-",
-        linewidth=0.6,
-        alpha=0.4,
-    )
+    ax.grid(axis="y")
     plt.xlabel("Anzahl der Shadow Models")
     plt.ylabel("MIA AUC")
     plt.xticks([1, 3, 10, 20])

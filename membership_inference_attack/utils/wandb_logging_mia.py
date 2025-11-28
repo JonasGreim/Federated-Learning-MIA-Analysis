@@ -51,7 +51,7 @@ def log_class_distribution(
     plt.xlabel("Klasse")
     plt.ylabel("Anzahl der Stichproben")
     plt.xticks(rotation=45)
-    plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
+    plt.grid(axis="y")
     plt.tight_layout()
     metric_save_file = metric_save_folder / f"histogram_class_distribution_train_{wandb_plot_prefix}.png"
     plt.savefig(metric_save_file, dpi=300, bbox_inches="tight")
@@ -86,7 +86,7 @@ def log_per_class_metrics(per_class_metrics: dict, class_names: list = None,
         plt.ylabel(metric)
         plt.xticks(rotation=45)
         plt.ylim(0, 1.0)
-        plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
+        plt.grid(axis="y")
 
         plt.tight_layout()
         plt.savefig(metric_save_folder / f"per_class_{metric}_metrics.png", dpi=300, bbox_inches="tight")
@@ -133,7 +133,7 @@ def log_overall_metrics_with_error_bars(
     plt.ylabel("Metrikwert")
     plt.xlabel("Angriffsmetrik")
     plt.ylim(0, 1.0)
-    plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
+    plt.grid(axis="y")
 
     # Add numeric labels slightly above the error bars
     for bar, mean, std in zip(bars, means, stds):

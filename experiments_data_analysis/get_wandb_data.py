@@ -2,7 +2,7 @@ from experiments_data_analysis.file_name_settings import WANDB_ENTITY, WANDB_PRO
     METRICS_ANALYSIS, WANDB_PROJECT_FLOWER_SIDE_CLIENTS, WANDB_PROJECT_MIA_SIDE_CLIENTS, WANDB_PROJECT_MIA_MAIN, \
     WANDB_PROJECT_FLOWER_MAIN
 from experiments_data_analysis.get_wandb_metrics_and_plots.get_metric_data import get_wandb_metrics_and_plots
-from plot_style import use_thesis_style
+from config_plot_style import use_thesis_style
 
 use_thesis_style()
 
@@ -33,8 +33,8 @@ get_wandb_metrics_and_plots(
     output_path=METRICS_ANALYSIS / "side_experiments_clients" / "flower",
     flower_run=True
 )
-get_wandb_metrics_and_plots(
-    entity=WANDB_ENTITY,
-    project=WANDB_PROJECT_MIA_SIDE_CLIENTS,
-    output_path=METRICS_ANALYSIS / "side_experiments_clients" / "mia"
-)
+# get_wandb_metrics_and_plots(
+#     entity=WANDB_ENTITY,
+#     project=WANDB_PROJECT_MIA_SIDE_CLIENTS,
+#     output_path=METRICS_ANALYSIS / "side_experiments_clients" / "mia"
+# )

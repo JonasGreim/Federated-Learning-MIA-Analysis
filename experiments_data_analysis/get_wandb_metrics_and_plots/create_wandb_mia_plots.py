@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import matplotlib
 from pathlib import Path
 import json
-from experiments_data_analysis.file_name_settings import METRICS_ANALYSIS
 
 matplotlib.use("Agg")
 
@@ -21,24 +20,19 @@ def log_per_class_metrics2(run_folder: Path, images_folder: Path, class_names: l
         values = [per_class_metrics[cls].get(metric, 0.0) for cls in class_keys]
 
         plt.figure()
-        plt.bar(class_names, values)
-
+        plt.bar(class_names, values, edgecolor="black", linewidth=1.0)
         plt.xlabel("Klasse")
         plt.ylabel(metric)
         plt.xticks(rotation=45)
         plt.ylim(0, 1.0)
-        plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
+        plt.grid(axis="y")
+
+        ax = plt.gca()
+        ax.set_axisbelow(False)
 
         plt.tight_layout()
         plt.savefig(images_folder / f"per_class_{metric}_metrics2.png", dpi=300, bbox_inches="tight")
         plt.close()
-
-
-# path = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0" / "images"
-# run_folder2 = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0"
-# class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
-#
-# log_per_class_metrics2(run_folder=run_folder2, images_folder=path, class_names=class_names)
 
 
 def log_overall_metrics_with_error_bars2(
@@ -64,7 +58,10 @@ def log_overall_metrics_with_error_bars2(
     plt.ylabel("Metrikwert")
     plt.xlabel("Angriffsmetrik")
     plt.ylim(0, 1.0)
-    plt.grid(axis="y", linestyle="-", linewidth=0.6, alpha=0.3)
+    plt.grid(axis="y")
+
+    ax = plt.gca()
+    ax.set_axisbelow(False)
 
     # Add numeric labels
     for bar, mean, std in zip(bars, means, stds):
@@ -80,11 +77,3 @@ def log_overall_metrics_with_error_bars2(
     plt.tight_layout()
     plt.savefig(images_folder / "overall_metrics_with_error_bars2.png", dpi=300)
     plt.close()
-
-# path2 = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0" / "images"
-# mia_summary_metrics_path = METRICS_ANALYSIS / "side_experiments_clients" / "mia" / "run36-model_ckp:0"
-#
-# log_overall_metrics_with_error_bars2(
-#     run_folder=mia_summary_metrics_path,
-#     images_folder=path2
-# )

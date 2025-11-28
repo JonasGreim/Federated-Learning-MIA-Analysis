@@ -26,7 +26,7 @@ def create_client_num_figures(
     plt.xlabel("Anzahl der Clients")
     plt.ylabel("MIA AUC")
     plt.legend(title="Modell", loc="center left", bbox_to_anchor=(1.02, 0.5))
-    plt.grid(True)
+    plt.grid(axis="y")
     plt.tight_layout()
 
     plt.savefig(figures_dir / "auc_per_client_number_per_model.png", dpi=300)
