@@ -1,7 +1,7 @@
 import pandas as pd
 from experiments_data_analysis.data_interface.column_names_merged_table import Col
 from pathlib import Path
-from experiments_data_analysis.utils.create_figures_main import create_analysis_figures_correlation, create_heatmap
+from experiments_data_analysis.create_figures.main_experiments.create_figures_utils import create_analysis_figures_correlation, create_heatmap
 
 
 def create_analysis_figures_corr(

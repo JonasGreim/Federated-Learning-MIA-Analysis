@@ -1,9 +1,11 @@
 import wandb
 import os
 from pathlib import Path
-from experiments_data_analysis.get_wandb_metrics_and_plots.create_mia_plots import log_per_class_metrics2, \
+from experiments_data_analysis.get_wandb_metrics_and_plots.create_wandb_flower_plots import \
+    generate_flower_plots_for_run
+from experiments_data_analysis.get_wandb_metrics_and_plots.create_wandb_mia_plots import log_per_class_metrics2, \
     log_overall_metrics_with_error_bars2
-from experiments_data_analysis.utils.wandb_metrics_plots_helper import process_run_files, generate_flower_plots_for_run
+from experiments_data_analysis.get_wandb_metrics_and_plots.process_wandb_metric_files import process_run_files
 
 
 def get_wandb_metrics_and_plots(

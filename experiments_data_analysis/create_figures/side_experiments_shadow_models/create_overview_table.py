@@ -1,8 +1,8 @@
 import pandas as pd
 from experiments_data_analysis.data_interface.column_names_merged_table import Col
 from pathlib import Path
-from experiments_data_analysis.utils.merge_utils import map_model_name
-from experiments_data_analysis.utils.shadow_models import map_run_name
+from experiments_data_analysis.create_dataset.merge_utils import map_model_name
+from experiments_data_analysis.create_figures.side_experiments_shadow_models.shadow_models_utils import map_run_name
 
 
 def create_overview_table_shadow_experiments(

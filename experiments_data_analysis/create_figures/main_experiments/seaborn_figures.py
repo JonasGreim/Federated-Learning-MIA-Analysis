@@ -1,8 +1,8 @@
 import pandas as pd
 from experiments_data_analysis.data_interface.column_names_merged_table import Col
-from experiments_data_analysis.utils.create_figures_main import plot_parameter_per_model, \
+from experiments_data_analysis.create_figures.main_experiments.create_figures_utils import plot_parameter_per_model, \
     create_analysis_figures_both_models
-from experiments_data_analysis.utils.merge_utils import map_regularization_diagram
+from experiments_data_analysis.create_dataset.merge_utils import map_regularization_diagram
 from pathlib import Path
 
 

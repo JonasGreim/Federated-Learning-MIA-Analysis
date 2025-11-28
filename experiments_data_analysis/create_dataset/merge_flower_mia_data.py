@@ -1,6 +1,6 @@
 import pandas as pd
 from experiments_data_analysis.file_name_settings import FILE_NAME_MERGED
-from experiments_data_analysis.utils.merge_utils import map_regularization, map_model_name, map_distribution
+from experiments_data_analysis.create_dataset.merge_utils import map_regularization, map_model_name, map_distribution
 from pathlib import Path
 
 
