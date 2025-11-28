@@ -48,6 +48,11 @@ def use_thesis_style():
         "xtick.labelsize": 11,
         "ytick.labelsize": 11,
 
+        # Legend
+        "legend.fontsize": 10,
+        "legend.title_fontsize": 11,
+        "legend.frameon": True,
+
         # Saving
         "savefig.bbox": "tight",
     })
