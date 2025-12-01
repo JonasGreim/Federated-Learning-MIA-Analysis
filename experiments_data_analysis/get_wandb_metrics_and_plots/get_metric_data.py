@@ -41,7 +41,7 @@ def get_wandb_metrics_and_plots(
         # ----------------------------------
         if flower_run:
             generate_flower_plots_for_run(run, run_folder, images_folder)
-        else:
+        else: # MIA run
             class_names: list[str] = run.config["parameters_static"]["class_names"]
             log_per_class_metrics2(run_folder=run_folder, images_folder=images_folder,
                                    class_names=class_names)
