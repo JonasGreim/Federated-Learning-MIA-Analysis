@@ -1,22 +1,22 @@
-\begin{longtable}{llllrrr}
+\begin{longtable}{llllSSS}
 \caption{Übersicht über alle Experimente.} \label{tab:experiment_overview} \\
 \toprule
-Model & Reg. & Data Dist. & Epochs & OGL & OGA & AUC \\
+Modell & Reg. & Datenverteilung & Epochen & OGL & OGA & AUC \\
 \midrule
 \endfirsthead
 \caption[]{Übersicht über alle Experimente.} \\
 \toprule
-Model & Reg. & Data Dist. & Epochs & OGL & OGA & AUC \\
+Modell & Reg. & Datenverteilung & Epochen & OGL & OGA & AUC \\
 \midrule
 \endhead
 
 \midrule
-\multicolumn{7}{r}{Fortsetzung auf der nächsten Seite} \\
+\multicolumn{7}{r}{Fortsetzung auf der nächsten Seite.} \\
 \midrule
 \endfoot
 \bottomrule
 \endlastfoot
-\multirow[t]{18}{*}{Shokri-CNN} & \multirow[t]{9}{*}{False} & \multirow[t]{3}{*}{IID} & 1 & 1.01 & 0.33 & 0.66 \\
+\multirow[t]{18}{*}{Shokri-CNN} & \multirow[t]{9}{*}{Ohne} & \multirow[t]{3}{*}{IID} & 1 & 1.01 & 0.33 & 0.66 \\
  &  &  & 5 & 1.30 & 0.35 & 0.67 \\
  &  &  & 10 & 1.31 & 0.35 & 0.64 \\
 \cline{3-7}
@@ -28,7 +28,7 @@ Model & Reg. & Data Dist. & Epochs & OGL & OGA & AUC \\
  &  &  & 5 & 1.50 & 0.40 & 0.64 \\
  &  &  & 10 & 1.54 & 0.41 & 0.63 \\
 \cline{2-7} \cline{3-7}
- & \multirow[t]{9}{*}{True} & \multirow[t]{3}{*}{IID} & 1 & 1.18 & 0.37 & 0.59 \\
+ & \multirow[t]{9}{*}{Mit} & \multirow[t]{3}{*}{IID} & 1 & 1.18 & 0.37 & 0.59 \\
  &  &  & 5 & 1.37 & 0.36 & 0.64 \\
  &  &  & 10 & 1.38 & 0.34 & 0.63 \\
 \cline{3-7}
@@ -40,7 +40,7 @@ Model & Reg. & Data Dist. & Epochs & OGL & OGA & AUC \\
  &  &  & 5 & 1.55 & 0.40 & 0.62 \\
  &  &  & 10 & 1.65 & 0.42 & 0.63 \\
 \cline{1-7} \cline{2-7} \cline{3-7}
-\multirow[t]{18}{*}{ResNet-18} & \multirow[t]{9}{*}{False} & \multirow[t]{3}{*}{IID} & 1 & 2.12 & 0.46 & 0.81 \\
+\multirow[t]{18}{*}{ResNet-18} & \multirow[t]{9}{*}{Ohne} & \multirow[t]{3}{*}{IID} & 1 & 2.12 & 0.46 & 0.81 \\
  &  &  & 5 & 2.10 & 0.42 & 0.81 \\
  &  &  & 10 & 2.02 & 0.43 & 0.79 \\
 \cline{3-7}
@@ -52,7 +52,7 @@ Model & Reg. & Data Dist. & Epochs & OGL & OGA & AUC \\
  &  &  & 5 & 2.28 & 0.49 & 0.77 \\
  &  &  & 10 & 1.94 & 0.48 & 0.74 \\
 \cline{2-7} \cline{3-7}
- & \multirow[t]{9}{*}{True} & \multirow[t]{3}{*}{IID} & 1 & 1.98 & 0.45 & 0.78 \\
+ & \multirow[t]{9}{*}{Mit} & \multirow[t]{3}{*}{IID} & 1 & 1.98 & 0.45 & 0.78 \\
  &  &  & 5 & 1.83 & 0.40 & 0.80 \\
  &  &  & 10 & 1.86 & 0.40 & 0.79 \\
 \cline{3-7}
@@ -65,3 +65,5 @@ Model & Reg. & Data Dist. & Epochs & OGL & OGA & AUC \\
  &  &  & 10 & 1.62 & 0.46 & 0.75 \\
 \cline{1-7} \cline{2-7} \cline{3-7}
 \end{longtable}
+\footnotesize{\textbf{Reg.}: Regularisierung, \textbf{OGL}: Overfitting Gap Loss, \textbf{OGA}: Overfitting Gap Accuracy, \textbf{AUC}: Area Under the Attack ROC Curve.}
+
