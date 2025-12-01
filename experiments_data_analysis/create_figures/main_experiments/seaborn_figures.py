@@ -24,7 +24,7 @@ def create_analysis_figures(
     # --- 3 Data Distribution Influence ---
     create_analysis_figures_both_models(dataset=merged, x_value=Col.DATA_DISTRIBUTION, x_label="Datenverteilung",
                                         figures_dir=figures_dir,
-                                        order=["IID", "Semi-non-IID", "Non-IID"])
+                                        order=["iID", "semi-non-IID", "non-IID"])
 
     # --- 4 Regularization Influence ---
     merged[Col.REGULARIZATION] = merged[Col.REGULARIZATION].apply(map_regularization_diagram)
