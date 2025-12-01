@@ -261,3 +261,8 @@ TODO later:
 
 - data analysis data interface for flower and mia table
   - integrate interface also in the experiments
+
+- integrate config_plot_style.py to wandb logging flower and mia
+  - check if seaborn settings also could be loaded if not separate
+  - pass into log_overall_metrics_with_error_bars only a dict
+  - new name: metrics -> run_time_figures, figures -> aggregated_figures
