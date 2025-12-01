@@ -31,6 +31,6 @@ def map_model_name(model):
 
 def map_regularization_diagram(regularization):
     if regularization:
-        return "Ja"
+        return "Mit"
     else:
-        return "Nein"
+        return "Ohne"

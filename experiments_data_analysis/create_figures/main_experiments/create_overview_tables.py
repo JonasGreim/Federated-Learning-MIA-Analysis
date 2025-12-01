@@ -18,11 +18,6 @@ def create_overview_table(
 
     overview_table = full_data_tables[keep_columns]
 
-    # Map regularization from bool to German labels (Ohne / Mit)
-    overview_table[Col.REGULARIZATION] = overview_table[Col.REGULARIZATION].map(
-        {False: "Ohne", True: "Mit"}
-    )
-
     # Rename columns to (mostly) German headers
     overview_table = overview_table.rename(columns={
         Col.MODEL: "Modell",
