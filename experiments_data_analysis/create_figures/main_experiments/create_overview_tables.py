@@ -1,4 +1,5 @@
 import pandas as pd
+from experiments_data_analysis.create_dataset.merge_utils import map_regularization_diagram
 from experiments_data_analysis.data_interface.column_names_merged_table import Col
 from pathlib import Path
 
@@ -16,7 +17,12 @@ def create_overview_table(
         Col.OVERFITTING_GAP_LOSS, Col.OVERFITTING_GAP_ACC, Col.METRICS_AUC
     ]
 
-    overview_table = full_data_tables[keep_columns]
+    overview_table = full_data_tables[keep_columns].copy()
+
+    # Map regularization from bool to German labels (Ohne / Mit)
+    overview_table[Col.REGULARIZATION] = overview_table[Col.REGULARIZATION].map(
+        {False: "Ohne", True: "Mit"}
+    )
 
     # Rename columns to (mostly) German headers
     overview_table = overview_table.rename(columns={
@@ -26,7 +32,7 @@ def create_overview_table(
         Col.LOCAL_EPOCHS: "Epochen",
         Col.OVERFITTING_GAP_LOSS: "OGL",
         Col.OVERFITTING_GAP_ACC: "OGA",
-        Col.METRICS_AUC: "AUC",
+        Col.METRICS_AUC: "MIA AUC",
     })
 
     # Ensure categorical sorting
@@ -74,12 +80,12 @@ def create_overview_table(
     # ---------- Custom header (German, with all column names) ----------
     correct_header = (
         "\\toprule\n"
-        "Modell & Reg. & Datenverteilung & Epochen & OGL & OGA & AUC \\\\\n"
+        "Modell & Reg. & Datenverteilung & Epochen & OGL & OGA & MIA AUC \\\\\n"
         "\\midrule\n"
         "\\endfirsthead\n"
         "\\caption[]{Übersicht über alle Experimente.} \\\\\n"
         "\\toprule\n"
-        "Modell & Reg. & Datenverteilung & Epochen & OGL & OGA & AUC \\\\\n"
+        "Modell & Reg. & Datenverteilung & Epochen & OGL & OGA & MIA AUC \\\\\n"
         "\\midrule\n"
         "\\endhead\n"
     )
@@ -110,7 +116,7 @@ def create_overview_table(
         "\\textbf{Reg.}: Regularisierung, "
         "\\textbf{OGL}: Overfitting Gap Loss, "
         "\\textbf{OGA}: Overfitting Gap Accuracy, "
-        "\\textbf{AUC}: Area Under the Attack ROC Curve."
+        "\\textbf{MIA AUC}: Area Under the ROC Curve of the Membership-Inference Attack."
         "}\n"
     )
 
