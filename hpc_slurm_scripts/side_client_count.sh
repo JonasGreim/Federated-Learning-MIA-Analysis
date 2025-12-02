@@ -23,9 +23,9 @@ set -euo pipefail
 # Get the directory of the current script
 SCRIPT_DIR="$(dirname "$0")"
 
-jid1_simple_model=$(sbatch --parsable -N 3  -t 00:45:00 --export=ALL,SEQ_START=36,SEQ_END=36,FLOWER_RUN_CONFIG_FOLDER=client_number_mia_experiments "$SCRIPT_DIR/flower.sbatch")
-jid2_simple_model=$(sbatch --parsable --dependency=afterok:${jid1_simple_model} -N 6  -t 00:45:00 --export=ALL,SEQ_START=37,SEQ_END=37,FLOWER_RUN_CONFIG_FOLDER=client_number_mia_experiments "$SCRIPT_DIR/flower.sbatch")
-jid3_simple_model=$(sbatch --parsable --dependency=afterok:${jid2_simple_model} -N 11 -t 00:45:00 --export=ALL,SEQ_START=38,SEQ_END=38,FLOWER_RUN_CONFIG_FOLDER=client_number_mia_experiments "$SCRIPT_DIR/flower.sbatch")
+jid1_simple_model=$(sbatch --parsable -N 3  -t 00:50:00 --export=ALL,SEQ_START=36,SEQ_END=36,FLOWER_RUN_CONFIG_FOLDER=client_number_mia_experiments "$SCRIPT_DIR/flower.sbatch")
+jid2_simple_model=$(sbatch --parsable --dependency=afterok:${jid1_simple_model} -N 6  -t 00:50:00 --export=ALL,SEQ_START=37,SEQ_END=37,FLOWER_RUN_CONFIG_FOLDER=client_number_mia_experiments "$SCRIPT_DIR/flower.sbatch")
+jid3_simple_model=$(sbatch --parsable --dependency=afterok:${jid2_simple_model} -N 11 -t 00:50:00 --export=ALL,SEQ_START=38,SEQ_END=38,FLOWER_RUN_CONFIG_FOLDER=client_number_mia_experiments "$SCRIPT_DIR/flower.sbatch")
 jid4_simple_model_mia=$(sbatch --parsable --dependency=afterok:${jid3_simple_model} -t 00:10:00 --array=36-38%3 --export=ALL,MIA_RUN_CONFIG_FOLDER=client_number_mia_experiments "$SCRIPT_DIR/mia.sbatch")
 
 jid1_complex_model=$(sbatch --parsable --dependency=afterok:${jid4_simple_model_mia} -N 3  -t 00:50:00 --export=ALL,SEQ_START=39,SEQ_END=39,FLOWER_RUN_CONFIG_FOLDER=client_number_mia_experiments "$SCRIPT_DIR/flower.sbatch")
