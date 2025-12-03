@@ -30,9 +30,10 @@ python -V
 
 # check wandb login
 python - <<'PY'
-import wandb
+import os, wandb
 print("wandb version:", wandb.__version__)
-print("WANDB_API_KEY found:", bool(wandb.util.get_api_key()))
+key = os.getenv("WANDB_API_KEY")
+print("WANDB_API_KEY found (env):", bool(key))
 PY
 
 # nvidia-smi  # shows Driver Version and “CUDA Version”
