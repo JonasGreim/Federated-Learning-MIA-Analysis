@@ -79,40 +79,44 @@ PY
 fi
 
 # 1) Start SuperLink on server node (background)
-srun --nodes=1 --nodelist="$SERVER_NODE" --ntasks=1 bash -lc "
-  set -xe
-  cd '$PROJECT_DIR'
+flower-superlink \
+  --insecure \
+  --fleet-api-type grpc-rere \
+  --fleet-api-address 0.0.0.0:${PORT_FLEET} \
+  --control-api-address 0.0.0.0:${PORT_CTRL} \
+  --fleet-api-num-workers 8 \
+  > "${LOG_DIR}/superlink.log" 2>&1 &
 
-  echo 'Environment on server node:'
-  which python
-  which flower-superlink || echo 'flower-superlink NOT found'
-  python -c 'import flwr; print(\"Flower version on server node:\", flwr.__version__)'
+SUPERLINK_PID=$!
 
-  echo 'Starting flower-superlink...'
-  flower-superlink \
-    --insecure \
-    --fleet-api-type grpc-rere \
-    --fleet-api-address 0.0.0.0:${PORT_FLEET} \
-    --control-api-address 0.0.0.0:${PORT_CTRL} \
-    --fleet-api-num-workers 8 \
-    > ${LOG_DIR}/superlink.log 2>&1
-" &
 
-echo 'SuperLink spawned, waiting 3 seconds...'
-sleep 3
+sleep 2
+if ! kill -0 "$SUPERLINK_PID" 2>/dev/null; then
+  echo "❌ SuperLink exited immediately. Dumping its log:"
+  if [[ -s "${LOG_DIR}/superlink.log" ]]; then
+    sed -n '1,80p' "${LOG_DIR}/superlink.log"
+  else
+    echo "(superlink.log is empty)"
+  fi
+  exit 1
+fi
 
+echo "✅ SuperLink process started with PID ${SUPERLINK_PID}"
 
 # 2) Wait until SuperLink Fleet API (9092) is reachable
 python - <<PY
 import socket, time, sys
 host="${SERVER_NODE}"; port=${PORT_FLEET}
-for _ in range(360):
+for i in range(60):
     try:
         with socket.create_connection((host, port), timeout=2):
-            print("SuperLink Fleet API reachable at %s:%s" % (host, port)); sys.exit(0)
-    except OSError:
+            print(f"SuperLink Fleet API reachable at {host}:{port}")
+            sys.exit(0)
+    except OSError as e:
+        print(f"[{i}] connect failed: {e!r}")
         time.sleep(1)
-print("ERROR: SuperLink Fleet API NOT reachable"); sys.exit(1)
+print("ERROR: SuperLink Fleet API NOT reachable")
+sys.exit(1)
 PY
 
 # 3) Start ALL SuperNodes in ONE srun (one task per client node)
