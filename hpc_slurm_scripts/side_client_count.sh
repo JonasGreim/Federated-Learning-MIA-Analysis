@@ -16,6 +16,8 @@
 #       - FLOWER_RUN_CONFIG_FOLDER: config folder for Flower runs
 #       - MIA_RUN_CONFIG_FOLDER: config folder for MIA runs
 #       - ALL: pass all current environment variables
+#
+#   Set client number parameter also in experiments_conf for plot generation
 # -------------------------------------------------------------
 
 set -euo pipefail

@@ -16,6 +16,8 @@
 #   --export        → pass environment variables into the job
 #       - MIA_RUN_CONFIG_FOLDER: config folder for MIA runs
 #       - ALL: pass all current environment variables
+#
+#   Set client number parameter also in experiments_conf for plot generation
 # -------------------------------------------------------------
 
 # Note use main experiment flower checkpoints folder

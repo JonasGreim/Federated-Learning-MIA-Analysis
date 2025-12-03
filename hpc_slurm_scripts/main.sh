@@ -16,6 +16,7 @@
 #       - ALL: pass all current environment variables
 #   --array=0-35%5 → array job with 36 tasks (0–35), max 5 running concurrently
 #
+#   Set client number parameter also in experiments_conf for plot generation
 # -------------------------------------------------------------
 
 set -euo pipefail
