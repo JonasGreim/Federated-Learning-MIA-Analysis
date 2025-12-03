@@ -79,16 +79,34 @@ PY
 fi
 
 # 1) Start SuperLink on server node (background)
-srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
+#srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
+#  cd '$PROJECT_DIR'
+#  flower-superlink \
+#    --insecure \
+#    --fleet-api-address 0.0.0.0:${PORT_FLEET} \
+#    --control-api-address 0.0.0.0:${PORT_CTRL} \
+#    --fleet-api-num-workers 8 \
+#    > ${LOG_DIR}/superlink.log 2>&1
+#" &
+#echo "SuperLink started on ${SERVER_NODE}"
+
+srun --nodes=1 --nodelist="$SERVER_NODE" --ntasks=1 bash -lc "
+  set -xe
   cd '$PROJECT_DIR'
+  echo 'Environment on server node:'
+  which python
+  which flower-superlink || echo 'flower-superlink NOT found'
+  python -c 'import flwr; print(\"Flower version on server node:\", flwr.__version__)'
+  echo 'Starting flower-superlink...'
   flower-superlink \
     --insecure \
     --fleet-api-address 0.0.0.0:${PORT_FLEET} \
     --control-api-address 0.0.0.0:${PORT_CTRL} \
-    --fleet-api-num-workers 8 \
-    > ${LOG_DIR}/superlink.log 2>&1
-" &
-echo "SuperLink started on ${SERVER_NODE}"
+    --fleet-api-num-workers 8
+"
+
+echo "SuperLink exited on ${SERVER_NODE}"
+exit 0
 
 # 2) Wait until SuperLink Fleet API (9092) is reachable
 python - <<PY
