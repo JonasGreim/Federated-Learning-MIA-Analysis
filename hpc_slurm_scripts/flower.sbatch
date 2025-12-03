@@ -32,7 +32,7 @@ python -V
 python - <<'PY'
 import wandb
 print("wandb version:", wandb.__version__)
-print("login ok:", wandb.login(relogin=False))  # uses saved key; returns True if configured
+print("WANDB_API_KEY found:", bool(wandb.util.get_api_key()))
 PY
 
 # nvidia-smi  # shows Driver Version and “CUDA Version”
@@ -95,11 +95,11 @@ srun --nodes=1 --nodelist="$SERVER_NODE" --ntasks=1 bash -lc "
     --fleet-api-address 0.0.0.0:${PORT_FLEET} \
     --control-api-address 0.0.0.0:${PORT_CTRL} \
     --fleet-api-num-workers 8 \
-    > ${LOG_DIR}/superlink.log 2>&1 &
+    > ${LOG_DIR}/superlink.log 2>&1
+" &
 
-  echo 'SuperLink spawned, waiting 3 seconds...'
-  sleep 3
-"
+echo 'SuperLink spawned, waiting 3 seconds...'
+sleep 3
 
 
 # 2) Wait until SuperLink Fleet API (9092) is reachable
