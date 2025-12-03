@@ -79,40 +79,34 @@ PY
 fi
 
 # 1) Start SuperLink on server node (background)
-#srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
-#  cd '$PROJECT_DIR'
-#  flower-superlink \
-#    --insecure \
-#    --fleet-api-address 0.0.0.0:${PORT_FLEET} \
-#    --control-api-address 0.0.0.0:${PORT_CTRL} \
-#    --fleet-api-num-workers 8 \
-#    > ${LOG_DIR}/superlink.log 2>&1
-#" &
-#echo "SuperLink started on ${SERVER_NODE}"
-
 srun --nodes=1 --nodelist="$SERVER_NODE" --ntasks=1 bash -lc "
   set -xe
   cd '$PROJECT_DIR'
+
   echo 'Environment on server node:'
   which python
   which flower-superlink || echo 'flower-superlink NOT found'
   python -c 'import flwr; print(\"Flower version on server node:\", flwr.__version__)'
+
   echo 'Starting flower-superlink...'
   flower-superlink \
     --insecure \
+    --fleet-api-type grpc-rere \
     --fleet-api-address 0.0.0.0:${PORT_FLEET} \
     --control-api-address 0.0.0.0:${PORT_CTRL} \
-    --fleet-api-num-workers 8
+    --fleet-api-num-workers 8 \
+    > ${LOG_DIR}/superlink.log 2>&1 &
+
+  echo 'SuperLink spawned, waiting 3 seconds...'
+  sleep 3
 "
 
-echo "SuperLink exited on ${SERVER_NODE}"
-exit 0
 
 # 2) Wait until SuperLink Fleet API (9092) is reachable
 python - <<PY
 import socket, time, sys
 host="${SERVER_NODE}"; port=${PORT_FLEET}
-for _ in range(180):
+for _ in range(360):
     try:
         with socket.create_connection((host, port), timeout=2):
             print("SuperLink Fleet API reachable at %s:%s" % (host, port)); sys.exit(0)
@@ -142,7 +136,7 @@ echo "SuperNodes started on client nodes: ${CLIENTS[*]}"
 python - <<PY
 import socket, time, sys
 host="${SERVER_NODE}"; port=${PORT_CTRL}
-for _ in range(180):
+for _ in range(360):
     try:
         with socket.create_connection((host, port), timeout=2):
             print("SuperLink Exec API reachable at %s:%s" % (host, port)); sys.exit(0)
