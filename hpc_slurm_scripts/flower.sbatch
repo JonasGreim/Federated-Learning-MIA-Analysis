@@ -17,27 +17,34 @@ LOG_DIR="logs/flower_${SLURM_JOB_ID}"
 mkdir -p "$LOG_DIR"
 echo "Logs will be saved in: $LOG_DIR"
 
-# --- Conda / env ---
+
+# activate conda environment
 module load Anaconda3/2024.02-1
 eval "$(conda shell.bash hook)"
 conda activate ~/conda/envs/flwr
 
+# check python
 which python
 python -V
 
+# check wandb login
 python - <<'PY'
 import wandb
 print("wandb version:", wandb.__version__)
-print("login ok:", wandb.login(relogin=False))
+print("login ok:", wandb.login(relogin=False))  # uses saved key; returns True if configured
 PY
 
+# nvidia-smi  # shows Driver Version and “CUDA Version”
+
+# --- Distribute Flower ---
+# Node 0 = Server, Nodes 1-9 = Clients
 echo "SLURM_JOB_ID: $SLURM_JOB_ID"
 echo "Running on nodes:"
-scontrol show hostnames "$SLURM_JOB_NODELIST"
+scontrol show hostnames $SLURM_JOB_NODELIST
 
-# --- Cluster layout ---
+# --- Define Variables ---
 PROJECT_DIR="$HOME/masterarbeit/Flower2"
-NODES=($(scontrol show hostnames "$SLURM_JOB_NODELIST"))
+NODES=($(scontrol show hostnames $SLURM_JOB_NODELIST))
 SERVER_NODE=${NODES[0]}
 CLIENTS=("${NODES[@]:1}")
 NUM_CLIENTS=${#CLIENTS[@]}
@@ -48,6 +55,7 @@ SEQ_START="${SEQ_START:-0}"
 SEQ_END="${SEQ_END:-35}"
 FLOWER_RUN_CONFIG_FOLDER="${FLOWER_RUN_CONFIG_FOLDER:-main_mia_experiments}"
 
+
 echo "Server node: $SERVER_NODE  Fleet:${PORT_FLEET}  CTRL:${PORT_CTRL}"
 echo "Client nodes: ${CLIENTS[*]}"
 echo "Project dir: $PROJECT_DIR"
@@ -56,6 +64,7 @@ echo "Project dir: $PROJECT_DIR"
 SHARED_SPLITS_PATH="/work/hi85udaj-flower/dataset_splits"
 mkdir -p "$SHARED_SPLITS_PATH"
 
+# Generate splits only if missing to fast hpc working dir
 echo "Creating Splits: $SHARED_SPLITS_PATH"
 if [ ! -d "$SHARED_SPLITS_PATH/D1" ]; then
   python - <<PY
@@ -68,126 +77,56 @@ print("✅ Wrote splits to:", target)
 PY
 fi
 
-############################################
-# Helper functions: SuperLink + port waits
-############################################
+# 1) Start SuperLink on server node (background)
+srun --nodes=1 --nodelist="$SERVER_NODE" bash -lc "
+  cd '$PROJECT_DIR'
+  flower-superlink \
+    --insecure \
+    --fleet-api-address 0.0.0.0:${PORT_FLEET} \
+    --control-api-address 0.0.0.0:${PORT_CTRL} \
+    --fleet-api-num-workers 8 \
+    > ${LOG_DIR}/superlink.log 2>&1
+" &
+echo "SuperLink started on ${SERVER_NODE}"
+sleep 30  # give it time to bind
 
-start_superlink() {
-  echo "🔧 Starting SuperLink on ${SERVER_NODE}..."
-
-  srun --nodes=1 --nodelist="$SERVER_NODE" --ntasks=1 bash -lc "
-    set -e
-    cd '$PROJECT_DIR'
-    echo 'Using python: ' \$(which python)
-    echo 'Starting flower-superlink...'
-    flower-superlink \
-      --insecure \
-      --fleet-api-address 0.0.0.0:${PORT_FLEET} \
-      --control-api-address 0.0.0.0:${PORT_CTRL} \
-      --fleet-api-num-workers 8 \
-      > ${LOG_DIR}/superlink.log 2>&1
-  " &
-}
-
-wait_for_port() {
-  local host="$1"
-  local port="$2"
-  local name="$3"
-  local seconds="${4:-180}"
-
-  echo "⏳ Waiting for $name on ${host}:${port} (up to ${seconds}s)..."
-  python - <<PY
-import socket, time, sys
-host = "${host}"
-port = ${port}
-seconds = ${seconds}
-for _ in range(seconds):
-    try:
-        with socket.create_connection((host, port), timeout=2):
-            print(f"✅ {name} reachable at {host}:{port}")
-            sys.exit(0)
-    except OSError:
-        time.sleep(1)
-print(f"ERROR: {name} NOT reachable at {host}:{port}")
-sys.exit(1)
-PY
-}
-
-############################################
-# 1) Start SuperLink with retry logic
-############################################
-
-MAX_ATTEMPTS=3
-attempt=1
-success=0
-
-while [ "$attempt" -le "$MAX_ATTEMPTS" ]; do
-  echo "🔁 SuperLink start attempt ${attempt}/${MAX_ATTEMPTS}..."
-  # just in case something leftover is running
-  pkill -u "$USER" -f "flower-superlink" || true
-
-  start_superlink
-
-  if wait_for_port "$SERVER_NODE" "$PORT_FLEET" "SuperLink Fleet API" 60; then
-    success=1
-    break
-  else
-    echo "⚠️ SuperLink Fleet API not reachable on attempt $attempt."
-    echo "   See ${LOG_DIR}/superlink.log for details."
-  fi
-
-  attempt=$((attempt + 1))
-  sleep 5
-done
-
-if [ "$success" -ne 1 ]; then
-  echo "❌ SuperLink failed to start after ${MAX_ATTEMPTS} attempts. Exiting."
-  exit 1
-fi
-
-echo "SuperLink started successfully on ${SERVER_NODE}."
-
-############################################
-# 2) Start ALL SuperNodes in ONE srun (bg)
-############################################
-
-if [ "$NUM_CLIENTS" -eq 0 ]; then
-  echo "❌ No client nodes available (NUM_CLIENTS=0). Did you request at least 2 nodes?"
-  exit 1
-fi
-
+# 2) Start ALL SuperNodes in ONE srun (one task per client node)
+#    Each task gets a unique PARTITION_ID via SLURM_PROCID (0..NUM_CLIENTS-1)
 srun --nodes="$NUM_CLIENTS" --ntasks="$NUM_CLIENTS" --ntasks-per-node=1 \
      --nodelist="$CLIENT_HOSTS" --exclusive --kill-on-bad-exit=1 bash -lc "
-  set -e
   cd '$PROJECT_DIR'
   PARTITION_ID=\$SLURM_PROCID
 
-  echo 'Starting supernode on' \${HOSTNAME} 'with PARTITION_ID=' \${PARTITION_ID}
   flower-supernode \
     --insecure \
     --superlink ${SERVER_NODE}:${PORT_FLEET} \
-    --max-retries 2 \
+    --max-retries 0 \
     --node-config \"partition-id=\${PARTITION_ID} num-partitions=${NUM_CLIENTS}\" \
     > ${LOG_DIR}/supernode_\${SLURMD_NODENAME}.log 2>&1
 " &
+
 echo "SuperNodes started on client nodes: ${CLIENTS[*]}"
 
-############################################
-# 3) Wait until SuperLink Exec API (9093)
-############################################
+# 3) Wait until SuperLink Exec API is reachable
+python - <<PY
+import socket, time, sys
+host="${SERVER_NODE}"; port=${PORT_CTRL}
+for _ in range(180):
+    try:
+        with socket.create_connection((host, port), timeout=2):
+            print("SuperLink Exec API reachable at %s:%s" % (host, port)); sys.exit(0)
+    except OSError:
+        time.sleep(1)
+print("ERROR: SuperLink Exec API NOT reachable"); sys.exit(1)
+PY
 
-wait_for_port "$SERVER_NODE" "$PORT_CTRL" "SuperLink Exec API" 180
 
-############################################
-# 4) Trigger the Flower runs from server
-############################################
-
+# 4) Trigger the run from the server node (non-interactive)
 SERVER_ADDRESS="${SERVER_NODE}:${PORT_CTRL}"
 
 echo "🌼 Starting multiple Flower runs sequentially on $SERVER_NODE"
 
 srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overlap bash -lc "
-  set -e
   cd '$PROJECT_DIR'
 
   # Inject correct server address into pyproject.toml
@@ -201,6 +140,7 @@ srun --nodes=1 --ntasks=1 --ntasks-per-node=1 --nodelist="$SERVER_NODE" --overla
     python -u run_flower_hpc.py \"flower=${FLOWER_RUN_CONFIG_FOLDER}/run\${run_id}\" 2>&1 | tee \"${LOG_DIR}/flwr_run\${run_id}.log\"
     echo \"✅ Finished Flower run\${run_id}\"
     echo
+    # optional small pause for W&B sync or disk I/O
     sleep 10
   done
 
