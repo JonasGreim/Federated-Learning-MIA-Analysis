@@ -8,6 +8,7 @@
 #SBATCH --cpus-per-task=8          # adjust to your Python workload
 #SBATCH --gres=gpu:1               # one GPU per run
 #SBATCH --mem=16G                  # memory per run
+#SBATCH --exclude=paula05
 
 # 0-35: main experiments
 # 36-41: clients experiments (same save folder + change wandb run)
