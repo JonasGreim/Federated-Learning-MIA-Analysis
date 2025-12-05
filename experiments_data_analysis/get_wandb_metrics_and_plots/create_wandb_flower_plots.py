@@ -4,8 +4,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from experiments_data_analysis.data_interface.column_names_merged_table import Col
 from experiments_data_analysis.data_interface.wandb_flower_table import ColFlower
-from experiments_data_analysis.file_name_settings import METRICS_ANALYSIS, FIGURES_DIR
-
 
 def generate_flower_plots_for_run(run, run_folder: Path, images_folder: Path) -> None:
     """Load W&B history for a run and generate Flower metric plots into images/."""
@@ -81,8 +79,6 @@ def generate_flower_compare_runs_same_metric_from_csv(
     Assumes all runs share the same x-index or STEP/RUNTIME.
     """
 
-    # TODO add config_plot styles
-
     if len(run_csv_paths) != len(run_labels):
         raise ValueError("run_csv_paths and run_labels must have same length")
 
@@ -153,23 +149,5 @@ def generate_flower_compare_runs_same_metric_from_csv(
     print(f"Saved multi-run comparison plot: images/{filename}")
 
 
-
-metric_experiment = METRICS_ANALYSIS / "main_experiments" / "flower"
-path1 = metric_experiment / "run0-simple_model-100-0.0-2025-11-26_19-56" / "wandb_history.csv"
-path2 = metric_experiment / "run1-complex_model-100-0.0-2025-11-26_20-32" / "wandb_history.csv"
-
-run_csv_paths = [
-    path1,
-    path2,
-]
-
-run_labels = ["run1", "run2"]
-
-generate_flower_compare_runs_same_metric_from_csv(
-    run_csv_paths=run_csv_paths,
-    run_labels=run_labels,
-    images_folder=FIGURES_DIR,
-    metric=ColFlower.TEST_ACCURACY_SERVER,
-)
 
 

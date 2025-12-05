@@ -1,8 +1,12 @@
 from experiments_data_analysis.file_name_settings import WANDB_ENTITY, WANDB_PROJECT_MIA_SIDE_SHADOW_MODELS, \
-    METRICS_ANALYSIS, WANDB_PROJECT_FLOWER_SIDE_CLIENTS, WANDB_PROJECT_MIA_SIDE_CLIENTS, WANDB_PROJECT_MIA_MAIN, \
+    WANDB_PROJECT_FLOWER_SIDE_CLIENTS, WANDB_PROJECT_MIA_SIDE_CLIENTS, WANDB_PROJECT_MIA_MAIN, \
     WANDB_PROJECT_FLOWER_MAIN
+from experiments_data_analysis.get_wandb_metrics_and_plots.create_wandb_flower_plots import \
+    generate_flower_compare_runs_same_metric_from_csv
 from experiments_data_analysis.get_wandb_metrics_and_plots.get_metric_data import get_wandb_metrics_and_plots
 from config_plot_style import use_thesis_style
+from experiments_data_analysis.file_name_settings import METRICS_ANALYSIS, COMPARE_FLOWER_FIGURES_DIR
+import os
 
 use_thesis_style()
 
@@ -37,4 +41,26 @@ get_wandb_metrics_and_plots(
     entity=WANDB_ENTITY,
     project=WANDB_PROJECT_MIA_SIDE_CLIENTS,
     output_path=METRICS_ANALYSIS / "side_experiments_clients" / "mia"
+)
+
+# ----------------------------------
+# Generate comparison flower plots
+# ----------------------------------
+os.makedirs(COMPARE_FLOWER_FIGURES_DIR, exist_ok=True)
+
+metric_experiment = METRICS_ANALYSIS / "main_experiments" / "flower"
+path1 = metric_experiment / "run0-simple_model-100-0.0-2025-11-26_19-56" / "wandb_history.csv"
+path2 = metric_experiment / "run1-complex_model-100-0.0-2025-11-26_20-32" / "wandb_history.csv"
+
+run_csv_paths = [
+    path1,
+    path2,
+]
+
+run_labels = ["run1", "run2"]
+generate_flower_compare_runs_same_metric_from_csv(
+    run_csv_paths=run_csv_paths,
+    run_labels=run_labels,
+    images_folder=COMPARE_FLOWER_FIGURES_DIR,
+    metric=metric_experiment,
 )

@@ -18,6 +18,7 @@ WANDB_PROJECT_MIA_MAIN = "mia_complete_main_experiments_re_run"
 
 DATA_SUBDIR_MAIN = DATA_DIR / "main_experiments"
 FIGURES_DIR_MAIN = FIGURES_DIR / "main_experiments"
+COMPARE_FLOWER_FIGURES_DIR = FIGURES_DIR_MAIN / "compare_main_flower_models"
 
 # data file paths
 FLOWER_DATA_PATH = DATA_SUBDIR_MAIN / FILE_NAME_FLOWER
