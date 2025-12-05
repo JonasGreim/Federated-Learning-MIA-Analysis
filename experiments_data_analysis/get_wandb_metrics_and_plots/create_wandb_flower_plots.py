@@ -72,7 +72,7 @@ def generate_flower_compare_runs_same_metric_from_csv(
     run_csv_paths: List[Path],
     run_labels: List[str],
     images_folder: Path,
-    metric: ColFlower,
+    metric_column_name: ColFlower,
 ) -> None:
     """
     Plot the same metric from multiple runs (CSV history files) in a single figure.
@@ -102,7 +102,7 @@ def generate_flower_compare_runs_same_metric_from_csv(
     x_label = "Serverrunde"
 
     # Which column to plot
-    metric_col = metric.value
+    metric_col = metric_column_name.value
 
     # Validate column exists
     for df, label in zip(dfs, run_labels):
@@ -128,12 +128,12 @@ def generate_flower_compare_runs_same_metric_from_csv(
         ColFlower.OVERFITTING_GAP_ACC_CLIENTS,
     }
 
-    if metric in metrics_from_0_to_1:
+    if metric_column_name in metrics_from_0_to_1:
         ax.set_ylim(0, 1.02)
 
     # Labels
     ax.set_xlabel(x_label)
-    ax.set_ylabel(Col[metric.name].value)
+    ax.set_ylabel(Col[metric_column_name.name].value)
 
     # Legend + Grid
     ax.legend()
@@ -142,7 +142,7 @@ def generate_flower_compare_runs_same_metric_from_csv(
 
     fig.tight_layout()
 
-    filename = f"compare_runs_{metric.name.lower()}.png"
+    filename = f"compare_runs_{metric_column_name.name.lower()}.png"
     fig.savefig(images_folder / filename, dpi=300, bbox_inches="tight")
     plt.close(fig)
 

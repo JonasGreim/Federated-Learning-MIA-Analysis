@@ -1,3 +1,5 @@
+from experiments_data_analysis.data_interface.column_names_merged_table import Col
+from experiments_data_analysis.data_interface.wandb_flower_table import ColFlower
 from experiments_data_analysis.file_name_settings import WANDB_ENTITY, WANDB_PROJECT_MIA_SIDE_SHADOW_MODELS, \
     WANDB_PROJECT_FLOWER_SIDE_CLIENTS, WANDB_PROJECT_MIA_SIDE_CLIENTS, WANDB_PROJECT_MIA_MAIN, \
     WANDB_PROJECT_FLOWER_MAIN
@@ -62,5 +64,5 @@ generate_flower_compare_runs_same_metric_from_csv(
     run_csv_paths=run_csv_paths,
     run_labels=run_labels,
     images_folder=COMPARE_FLOWER_FIGURES_DIR,
-    metric=metric_experiment,
+    metric_column_name=ColFlower.TEST_ACCURACY_SERVER,
 )
