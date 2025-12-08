@@ -12,38 +12,38 @@ import os
 
 use_thesis_style()
 
-# --- main experiments ---
-get_wandb_metrics_and_plots(
-    entity=WANDB_ENTITY,
-    project=WANDB_PROJECT_FLOWER_MAIN,
-    output_path=METRICS_ANALYSIS / "main_experiments" / "flower",
-    flower_run=True
-)
-get_wandb_metrics_and_plots(
-    entity=WANDB_ENTITY,
-    project=WANDB_PROJECT_MIA_MAIN,
-    output_path=METRICS_ANALYSIS / "main_experiments" / "mia"
-)
-
-# --- side experiments - shadow models ---
-get_wandb_metrics_and_plots(
-    entity=WANDB_ENTITY,
-    project=WANDB_PROJECT_MIA_SIDE_SHADOW_MODELS,
-    output_path=METRICS_ANALYSIS / "side_experiments_shadow_models" / "mia"
-)
-
-# --- side experiments - clients ---
-get_wandb_metrics_and_plots(
-    entity=WANDB_ENTITY,
-    project=WANDB_PROJECT_FLOWER_SIDE_CLIENTS,
-    output_path=METRICS_ANALYSIS / "side_experiments_clients" / "flower",
-    flower_run=True
-)
-get_wandb_metrics_and_plots(
-    entity=WANDB_ENTITY,
-    project=WANDB_PROJECT_MIA_SIDE_CLIENTS,
-    output_path=METRICS_ANALYSIS / "side_experiments_clients" / "mia"
-)
+# # --- main experiments ---
+# get_wandb_metrics_and_plots(
+#     entity=WANDB_ENTITY,
+#     project=WANDB_PROJECT_FLOWER_MAIN,
+#     output_path=METRICS_ANALYSIS / "main_experiments" / "flower",
+#     flower_run=True
+# )
+# get_wandb_metrics_and_plots(
+#     entity=WANDB_ENTITY,
+#     project=WANDB_PROJECT_MIA_MAIN,
+#     output_path=METRICS_ANALYSIS / "main_experiments" / "mia"
+# )
+#
+# # --- side experiments - shadow models ---
+# get_wandb_metrics_and_plots(
+#     entity=WANDB_ENTITY,
+#     project=WANDB_PROJECT_MIA_SIDE_SHADOW_MODELS,
+#     output_path=METRICS_ANALYSIS / "side_experiments_shadow_models" / "mia"
+# )
+#
+# # --- side experiments - clients ---
+# get_wandb_metrics_and_plots(
+#     entity=WANDB_ENTITY,
+#     project=WANDB_PROJECT_FLOWER_SIDE_CLIENTS,
+#     output_path=METRICS_ANALYSIS / "side_experiments_clients" / "flower",
+#     flower_run=True
+# )
+# get_wandb_metrics_and_plots(
+#     entity=WANDB_ENTITY,
+#     project=WANDB_PROJECT_MIA_SIDE_CLIENTS,
+#     output_path=METRICS_ANALYSIS / "side_experiments_clients" / "mia"
+# )
 
 # ----------------------------------
 # Generate comparison flower plots
