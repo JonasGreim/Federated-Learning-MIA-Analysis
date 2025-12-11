@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --gres=gpu:1
-#SBATCH --include=paula05
+#SBATCH --nodelist=paula05,paula10,paula11
 
 # --- Environment Setup ---
 # --nodes=3 -> set client number(nodes-1) also in the experiment_config.flower.base.yaml
