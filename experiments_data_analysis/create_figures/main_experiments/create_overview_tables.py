@@ -1,5 +1,4 @@
 import pandas as pd
-from experiments_data_analysis.create_dataset.merge_utils import map_regularization_diagram
 from experiments_data_analysis.data_interface.column_names_merged_table import Col
 from pathlib import Path
 
@@ -14,7 +13,7 @@ def create_overview_table(
 
     keep_columns = [
         Col.MODEL, Col.REGULARIZATION, Col.DATA_DISTRIBUTION, Col.LOCAL_EPOCHS,
-        Col.OVERFITTING_GAP_LOSS, Col.OVERFITTING_GAP_ACC, Col.METRICS_AUC
+        Col.OVERFITTING_GAP_LOSS, Col.METRICS_AUC
     ]
 
     overview_table = full_data_tables[keep_columns].copy()
@@ -31,7 +30,6 @@ def create_overview_table(
         Col.DATA_DISTRIBUTION: "Datenverteilung",
         Col.LOCAL_EPOCHS: "Epochen",
         Col.OVERFITTING_GAP_LOSS: "OGL",
-        Col.OVERFITTING_GAP_ACC: "OGA",
         Col.METRICS_AUC: "MIA AUC",
     })
 
@@ -70,7 +68,7 @@ def create_overview_table(
         multirow=True,
         multicolumn=False,
         index_names=False,
-        column_format="llllSSS",   # siunitx S columns for numeric values
+        column_format="llllSS",   # siunitx S columns for numeric values
         float_format="%.2f",
         caption="Übersicht über alle Experimente.",
         label="tab:experiment_overview",
@@ -80,12 +78,12 @@ def create_overview_table(
     # ---------- Custom header (German, with all column names) ----------
     correct_header = (
         "\\toprule\n"
-        "Modell & Reg. & Datenverteilung & Epochen & OGL & OGA & MIA AUC \\\\\n"
+        "Modell & Reg. & Datenverteilung & Epochen & OGL & MIA AUC \\\\\n"
         "\\midrule\n"
         "\\endfirsthead\n"
         "\\caption[]{Übersicht über alle Experimente.} \\\\\n"
         "\\toprule\n"
-        "Modell & Reg. & Datenverteilung & Epochen & OGL & OGA & MIA AUC \\\\\n"
+        "Modell & Reg. & Datenverteilung & Epochen & OGL & MIA AUC \\\\\n"
         "\\midrule\n"
         "\\endhead\n"
     )
@@ -115,7 +113,6 @@ def create_overview_table(
         "\\footnotesize{"
         "\\textbf{Reg.}: Regularisierung, "
         "\\textbf{OGL}: Overfitting Gap Loss, "
-        "\\textbf{OGA}: Overfitting Gap Accuracy, "
         "\\textbf{MIA AUC}: Area Under the ROC Curve of the Membership-Inference Attack."
         "}\n"
     )
