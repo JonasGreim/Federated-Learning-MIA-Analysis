@@ -2,7 +2,8 @@ import os
 from experiments_data_analysis.create_dataset.merge_flower_mia_data import merge_flower_mia_wandb_runs_to_csv
 from experiments_data_analysis.create_dataset.wandb_get_flower_data import export_flower_wandb_runs_to_csv
 from experiments_data_analysis.create_dataset.wandb_get_mia_data import export_mia_wandb_runs_to_csv
-from experiments_data_analysis.create_figures.main_experiments.create_overview_tables import create_overview_table
+from experiments_data_analysis.create_figures.main_experiments.create_overview_tables import create_overview_table, \
+    create_overview_table_all_metrics
 from experiments_data_analysis.create_figures.main_experiments.seaborn_figures import create_analysis_figures
 from experiments_data_analysis.create_figures.main_experiments.seaborn_figures_corr import create_analysis_figures_corr
 from experiments_data_analysis.file_name_settings import WANDB_ENTITY, WANDB_PROJECT_MIA_MAIN
@@ -36,3 +37,4 @@ create_analysis_figures_corr(data_path=MERGED_DATA_FILE_PATH, figures_dir=FIGURE
 
 # create overview table
 create_overview_table(data_path=MERGED_DATA_FILE_PATH, output_path=DATA_SUBDIR_MAIN, figures_dir=FIGURES_DIR_MAIN)
+create_overview_table_all_metrics(data_path=MERGED_DATA_FILE_PATH, output_path=DATA_SUBDIR_MAIN, figures_dir=FIGURES_DIR_MAIN)
