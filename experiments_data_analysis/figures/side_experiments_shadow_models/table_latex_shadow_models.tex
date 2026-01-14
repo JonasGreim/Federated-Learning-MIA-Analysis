@@ -1,0 +1,41 @@
+\begin{longtable}{lllrr}
+\caption{Übersicht der Shadow-Model-Experimente.} \label{tab:experiment_overview_shadow_models} \\
+\toprule
+Mod & Dist & Nsh & Ntr & AUC \\
+\midrule
+\endfirsthead
+\caption[]{Übersicht der Shadow-Model-Experimente.} \\
+\toprule
+Mod & Dist & Nsh & Ntr & AUC \\
+\midrule
+\endhead
+
+\midrule
+\multicolumn{5}{r}{Fortsetzung auf der nächsten Seite.} \\
+\midrule
+\endfoot
+\bottomrule
+\endlastfoot
+\multirow[t]{8}{*}{Shokri-CNN} & \multirow[t]{4}{*}{IID} & 1 & 15000 & 0.66 \\
+ &  & 3 & 10000 & 0.66 \\
+ &  & 10 & 10000 & 0.66 \\
+ &  & 20 & 10000 & 0.66 \\
+\cline{2-5}
+ & \multirow[t]{4}{*}{NaN} & 1 & 15000 & 0.65 \\
+ &  & 3 & 10000 & 0.65 \\
+ &  & 10 & 10000 & 0.65 \\
+ &  & 20 & 10000 & 0.65 \\
+\cline{1-5} \cline{2-5}
+\multirow[t]{8}{*}{ResNet-18} & \multirow[t]{4}{*}{IID} & 1 & 15000 & 0.81 \\
+ &  & 3 & 10000 & 0.81 \\
+ &  & 10 & 10000 & 0.81 \\
+ &  & 20 & 10000 & 0.81 \\
+\cline{2-5}
+ & \multirow[t]{4}{*}{NaN} & 1 & 15000 & 0.79 \\
+ &  & 3 & 10000 & 0.79 \\
+ &  & 10 & 10000 & 0.78 \\
+ &  & 20 & 10000 & 0.78 \\
+\cline{1-5} \cline{2-5}
+\end{longtable}
+\footnotesize{\textbf{AUC}: Area Under the ROC Curve (Membership-Inference Attack). \textbf{Ntr}: Trainingsgröße pro Shadow Model, \textbf{Nsh}: Anzahl Shadow-Modelle.}
+
