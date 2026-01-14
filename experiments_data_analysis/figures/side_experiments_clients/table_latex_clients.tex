@@ -1,0 +1,29 @@
+\begin{longtable}{llSS}
+\caption{Übersicht der Experimente mit variierender Client-Anzahl.} \label{tab:experiment_overview_clients} \\
+\toprule
+Modell & Anzahl Clients & OGL & MIA AUC \\
+\midrule
+\endfirsthead
+\caption[]{Übersicht der Experimente mit variierender Client-Anzahl.} \\
+\toprule
+Modell & Anzahl Clients & OGL & MIA AUC \\
+\midrule
+\endhead
+
+\midrule
+\multicolumn{4}{r}{Fortsetzung auf der nächsten Seite.} \\
+\midrule
+\endfoot
+\bottomrule
+\endlastfoot
+\multirow[t]{3}{*}{Shokri-CNN} & 2 & 1.50 & 0.71 \\
+ & 5 & 1.01 & 0.66 \\
+ & 10 & 0.21 & 0.55 \\
+\cline{1-4}
+\multirow[t]{3}{*}{ResNet-18} & 2 & 1.84 & 0.81 \\
+ & 5 & 2.13 & 0.82 \\
+ & 10 & 2.12 & 0.81 \\
+\cline{1-4}
+\end{longtable}
+\footnotesize{\textbf{OGL}: Overfitting Gap Loss, \textbf{MIA AUC}: Area Under the ROC Curve of the Membership-Inference Attack.}
+
