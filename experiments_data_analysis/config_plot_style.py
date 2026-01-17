@@ -1,6 +1,7 @@
 import matplotlib as mpl
 import seaborn as sns
 from cycler import cycler
+import locale
 
 COLOR_PALETTE = [
     "#1f77b4",  # blue (main color)
@@ -11,8 +12,15 @@ COLOR_PALETTE = [
     "#333333",  # dark grey
 ]
 
+
 def use_thesis_style():
+    # set german locale for number formatting
+    locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
+
     mpl.rcParams.update({
+        # german math notiation
+        "axes.formatter.use_locale": True,
+
         # Font
         "font.family": "sans-serif",
         "font.sans-serif": ["Arial"],

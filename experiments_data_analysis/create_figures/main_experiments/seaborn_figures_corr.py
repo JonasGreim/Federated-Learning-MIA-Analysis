@@ -22,7 +22,7 @@ def create_analysis_figures_corr(
     ]
 
     labels = [
-        "MIA AUC",
+        "MIA-AUC",
         "Overfitting Gap Loss",
         "Overfitting Gap Acc.",
         "Overfitting Gap Loss (Clients)",
@@ -31,14 +31,14 @@ def create_analysis_figures_corr(
 
     create_heatmap(dataset=merged, col_names=cols_names, labels=labels, figures_dir=figures_dir)
 
-    #  --- 2 Pairplot Overfitting Gap Loss vs MIA AUC
+    #  --- 2 Pairplot Overfitting Gap Loss vs MIA-AUC
     create_analysis_figures_correlation(dataset=merged, x_value=Col.METRICS_AUC,
-                                        x_label="MIA AUC", y_value=Col.OVERFITTING_GAP_LOSS,
+                                        x_label="MIA-AUC", y_value=Col.OVERFITTING_GAP_LOSS,
                                         y_label="Overfitting Gap Loss", figures_dir=figures_dir)
 
     #  --- 3 Pairplot Overfitting Gap Accuracy vs MIA AUC
     create_analysis_figures_correlation(dataset=merged, x_value=Col.METRICS_AUC,
-                                        x_label="MIA AUC", y_value=Col.OVERFITTING_GAP_ACC_CLIENTS,
+                                        x_label="MIA-AUC", y_value=Col.OVERFITTING_GAP_ACC_CLIENTS,
                                         y_label="Overfitting Gap Acc. (Clients)", figures_dir=figures_dir)
 
     print("✅ Correlation figures created successfully.")

@@ -24,7 +24,7 @@ def create_client_num_figures(
     )
 
     plt.xlabel("Anzahl der Clients")
-    plt.ylabel("MIA AUC")
+    plt.ylabel("MIA-AUC")
     plt.legend(title="Modell", loc="center left", bbox_to_anchor=(1.02, 0.5))
     plt.grid(axis="y")
     plt.tight_layout()

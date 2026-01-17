@@ -3,6 +3,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from experiments_data_analysis.data_interface.column_names_merged_table import Col
 from pathlib import Path
+import locale
 
 
 def plot_parameter_per_model(dataset: pd.DataFrame, x_value: Col, x_label: str, figures_dir: Path,
@@ -19,7 +20,7 @@ def plot_parameter_per_model(dataset: pd.DataFrame, x_value: Col, x_label: str, 
         order=order,
         showfliers=False,
     )
-    g.set_axis_labels(x_var=x_label, y_var="MIA AUC")
+    g.set_axis_labels(x_var=x_label, y_var="MIA-AUC")
     new_titles = {
         "Shokri-CNN": "Shokri CNN",
         "ResNet-18": "ResNet-18",
@@ -33,19 +34,22 @@ def plot_parameter_per_model(dataset: pd.DataFrame, x_value: Col, x_label: str, 
     g.figure.savefig(figures_dir / f"per_model_{x_value.value}.png", dpi=300)
     plt.close()
 
+
 def create_analysis_figures_both_models(dataset: pd.DataFrame, x_value: Col, x_label: str, figures_dir: Path,
                                         order: list[str] = None) -> None:
     plt.figure()
     sns.boxplot(data=dataset, x=x_value, y=Col.METRICS_AUC, order=order)
     plt.xlabel(x_label)
-    plt.ylabel("MIA AUC")
+    plt.ylabel("MIA-AUC")
     ax = plt.gca()
     ax.grid(axis="y")
     plt.tight_layout()
     plt.savefig(figures_dir / f"both_models_effect_{x_value.value}.png", dpi=300)
     plt.close()
 
-def create_analysis_figures_correlation(dataset: pd.DataFrame, x_value: Col, x_label: str, y_value: Col ,y_label: str, figures_dir: Path) -> None:
+
+def create_analysis_figures_correlation(dataset: pd.DataFrame, x_value: Col, x_label: str, y_value: Col, y_label: str,
+                                        figures_dir: Path) -> None:
     g = sns.pairplot(
         dataset,
         vars=[
@@ -78,7 +82,7 @@ def create_analysis_figures_correlation(dataset: pd.DataFrame, x_value: Col, x_l
 def create_heatmap(dataset: pd.DataFrame, col_names: list[Col], labels: list[str], figures_dir: Path) -> None:
     corr = dataset[col_names].corr()
     plt.figure()
-    ax = sns.heatmap(corr, annot=True, cmap="coolwarm", fmt=".2f")
+    ax = sns.heatmap(corr, annot=True, cmap="coolwarm", fmt=".2n")
     ax.set_xticklabels(labels, rotation=45, ha="right")
     ax.set_yticklabels(labels, rotation=0, va="center")
     plt.xticks(rotation=45, ha="right", rotation_mode="anchor")

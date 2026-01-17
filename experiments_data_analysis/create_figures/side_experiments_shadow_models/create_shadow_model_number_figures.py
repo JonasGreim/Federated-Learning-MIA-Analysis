@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-from experiments_data_analysis.data_interface.column_names_merged_table import Col
 from pathlib import Path
 import pandas as pd
 
@@ -10,36 +9,37 @@ def create_shadow_model_number_figures(data_path: Path, figures_dir: Path):
     plt.figure()
 
     # Ensure numeric x-axis
-    overview_table[Col.NUM_SHADOW_MODELS] = overview_table[Col.NUM_SHADOW_MODELS].astype(int)
+    overview_table["Nsh"] = overview_table["Nsh"].astype(int)
 
     # Expected categories (ensure consistent spelling)
     models = ["Shokri-CNN", "ResNet-18"]
-    distributions = ["IID", "non_IID"]
+    distributions = ["IID", "non-IID"]
 
     for model in models:
         for dist in distributions:
             subset = overview_table[
-                (overview_table[Col.MODEL] == model) &
-                (overview_table[Col.DATA_DISTRIBUTION] == dist)
+                (overview_table["Mod"] == model) &
+                (overview_table["Dist"] == dist)
                 ]
-
+            print("Dist unique:", overview_table["Dist"].unique())
+            print(overview_table["Dist"].value_counts(dropna=False))
             if subset.empty:
                 print(f"WARNING: Missing data for {model} + {dist}")
                 continue
 
-            subset = subset.sort_values(by=Col.NUM_SHADOW_MODELS)
+            subset = subset.sort_values(by="Nsh")
 
             label = f"{model} ({dist})"
             plt.plot(
-                subset[Col.NUM_SHADOW_MODELS],
-                subset[Col.METRICS_AUC],
+                subset["Nsh"],
+                subset["AUC"],
                 marker="o",
                 label=label,
             )
     ax = plt.gca()
     ax.grid(axis="y")
     plt.xlabel("Anzahl der Shadow Models")
-    plt.ylabel("MIA AUC")
+    plt.ylabel("MIA-AUC")
     plt.xticks([1, 3, 10, 20])
 
     legend_labels = {
