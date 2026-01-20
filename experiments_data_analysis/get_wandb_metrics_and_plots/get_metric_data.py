@@ -6,7 +6,7 @@ from experiments_data_analysis.get_wandb_metrics_and_plots.create_wandb_flower_p
 from experiments_data_analysis.get_wandb_metrics_and_plots.create_wandb_mia_plots import log_per_class_metrics2, \
     log_overall_metrics_with_error_bars2
 from experiments_data_analysis.get_wandb_metrics_and_plots.process_wandb_metric_files import process_run_files
-
+from experiments_data_analysis.get_wandb_metrics_and_plots.aggregate_per_class_auc import append_mia_auc_jsonl
 
 def get_wandb_metrics_and_plots(
         entity: str,
@@ -34,7 +34,7 @@ def get_wandb_metrics_and_plots(
         # -----------------------------
         # 1) Download files from wandb
         # -----------------------------
-        process_run_files(run, run_folder, images_folder)
+        # process_run_files(run, run_folder, images_folder)
 
         # ----------------------------------
         # 2) Load wandb history and generate plots
@@ -43,8 +43,13 @@ def get_wandb_metrics_and_plots(
             generate_flower_plots_for_run(run, run_folder, images_folder)
         else: # MIA run
             class_names: list[str] = run.config["parameters_static"]["class_names"]
-            log_per_class_metrics2(run_folder=run_folder, images_folder=images_folder,
-                                   class_names=class_names)
-            log_overall_metrics_with_error_bars2(run_folder=run_folder, images_folder=images_folder)
+            append_mia_auc_jsonl(
+                run_name=run_name,
+                mia_path=run_folder / "mia_per_class.json",
+                out_path=output_path / "mia_auc_all_runs.jsonl",
+            )
+            # log_per_class_metrics2(run_folder=run_folder, images_folder=images_folder,
+            #                        class_names=class_names)
+            # log_overall_metrics_with_error_bars2(run_folder=run_folder, images_folder=images_folder)
 
     print("\nDone!")
