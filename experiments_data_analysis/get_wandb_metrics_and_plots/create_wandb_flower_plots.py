@@ -99,7 +99,7 @@ def generate_flower_compare_runs_same_metric_from_csv(
     else:
         x = df0.index
 
-    x_label = "Serverrunde"
+    x_label = "Kommunikationsrunde"
 
     # Which column to plot
     metric_col = metric_column_name.value
@@ -116,9 +116,6 @@ def generate_flower_compare_runs_same_metric_from_csv(
     # Plot
     fig, ax = plt.subplots()
 
-    for label, y in zip(run_labels, ys):
-        ax.plot(x, y, label=label)
-
     # y-limit for metrics in range [0,1]
     metrics_from_0_to_1 = {
         ColFlower.VALIDIERUNGS_ACCURACY_CLIENTS_AGGREGIERT,
@@ -133,10 +130,18 @@ def generate_flower_compare_runs_same_metric_from_csv(
 
     # Labels
     ax.set_xlabel(x_label)
-    ax.set_ylabel(Col[metric_column_name.name].value)
+    # ax.set_ylabel(Col[metric_column_name.name].value)
+    ax.set_ylabel("OGL")
 
     # Legend + Grid
-    ax.legend()
+    for label, y in zip(run_labels, ys):
+        ax.plot(x, y, label=label)
+
+    ax.legend(
+        loc="center left",
+        bbox_to_anchor=(1.02, 0.5),
+        title="Modell (Datenverteilung)",
+    )
     ax.grid(axis="y")
     ax.tick_params(axis="both", labelsize=11)
 

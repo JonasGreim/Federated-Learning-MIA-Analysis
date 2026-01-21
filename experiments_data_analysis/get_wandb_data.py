@@ -10,63 +10,67 @@ from config_plot_style import use_thesis_style
 from experiments_data_analysis.file_name_settings import METRICS_ANALYSIS, COMPARE_FLOWER_FIGURES_DIR
 import os
 
-# use_thesis_style()
+use_thesis_style()
 
 # --- main experiments ---
-# get_wandb_metrics_and_plots(
-#     entity=WANDB_ENTITY,
-#     project=WANDB_PROJECT_FLOWER_MAIN,
-#     output_path=METRICS_ANALYSIS / "main_experiments" / "flower",
-#     flower_run=True
-# )
+get_wandb_metrics_and_plots(
+    entity=WANDB_ENTITY,
+    project=WANDB_PROJECT_FLOWER_MAIN,
+    output_path=METRICS_ANALYSIS / "main_experiments" / "flower",
+    flower_run=True
+)
 get_wandb_metrics_and_plots(
     entity=WANDB_ENTITY,
     project=WANDB_PROJECT_MIA_MAIN,
     output_path=METRICS_ANALYSIS / "main_experiments" / "mia"
 )
 
-# # --- side experiments - shadow models ---
-# get_wandb_metrics_and_plots(
-#     entity=WANDB_ENTITY,
-#     project=WANDB_PROJECT_MIA_SIDE_SHADOW_MODELS,
-#     output_path=METRICS_ANALYSIS / "side_experiments_shadow_models" / "mia"
-# )
-#
-# # --- side experiments - clients ---
-# get_wandb_metrics_and_plots(
-#     entity=WANDB_ENTITY,
-#     project=WANDB_PROJECT_FLOWER_SIDE_CLIENTS,
-#     output_path=METRICS_ANALYSIS / "side_experiments_clients" / "flower",
-#     flower_run=True
-# )
-# get_wandb_metrics_and_plots(
-#     entity=WANDB_ENTITY,
-#     project=WANDB_PROJECT_MIA_SIDE_CLIENTS,
-#     output_path=METRICS_ANALYSIS / "side_experiments_clients" / "mia"
-# )
+# --- side experiments - shadow models ---
+get_wandb_metrics_and_plots(
+    entity=WANDB_ENTITY,
+    project=WANDB_PROJECT_MIA_SIDE_SHADOW_MODELS,
+    output_path=METRICS_ANALYSIS / "side_experiments_shadow_models" / "mia"
+)
 
-# # ----------------------------------
-# # Generate comparison flower plots
-# # ----------------------------------
-# os.makedirs(COMPARE_FLOWER_FIGURES_DIR, exist_ok=True)
-#
-# metric_experiment = METRICS_ANALYSIS / "main_experiments" / "flower"
-# path1 = metric_experiment / "run0-simple_model-100-0.0-2025-11-26_19-56" / "wandb_history.csv"
-# path2 = metric_experiment / "run1-complex_model-100-0.0-2025-11-26_20-32" / "wandb_history.csv"
-# path3 = metric_experiment / "run2-simple_model_with_dropout-100-0.0-2025-11-26_21-13" / "wandb_history.csv"
-# path4 = metric_experiment / "run3-complex_model_with_dropout-100-0.0-2025-11-26_21-50" / "wandb_history.csv"
-#
-# run_csv_paths = [
-#     path1,
-#     path2,
-#     path3,
-#     path4,
-# ]
-#
-# run_labels = ["run1", "run2", "run3", "run4"]
-# generate_flower_compare_runs_same_metric_from_csv(
-#     run_csv_paths=run_csv_paths,
-#     run_labels=run_labels,
-#     images_folder=COMPARE_FLOWER_FIGURES_DIR,
-#     metric_column_name=ColFlower.OVERFITTING_GAP_LOSS_CLIENTS,
-# )
+# --- side experiments - clients ---
+get_wandb_metrics_and_plots(
+    entity=WANDB_ENTITY,
+    project=WANDB_PROJECT_FLOWER_SIDE_CLIENTS,
+    output_path=METRICS_ANALYSIS / "side_experiments_clients" / "flower",
+    flower_run=True
+)
+get_wandb_metrics_and_plots(
+    entity=WANDB_ENTITY,
+    project=WANDB_PROJECT_MIA_SIDE_CLIENTS,
+    output_path=METRICS_ANALYSIS / "side_experiments_clients" / "mia"
+)
+
+# ----------------------------------
+# Generate comparison flower plots
+# ----------------------------------
+os.makedirs(COMPARE_FLOWER_FIGURES_DIR, exist_ok=True)
+
+metric_experiment = METRICS_ANALYSIS / "main_experiments" / "flower"
+# Shorki, 1 epoche, iid, no protection
+path1 = metric_experiment / "run0-simple_model-100-0.0-2025-11-26_19-56" / "wandb_history.csv"
+# resnet, 1 epoche, iid, no protection
+path2 = metric_experiment / "run1-complex_model-100-0.0-2025-11-26_20-32" / "wandb_history.csv"
+# Shorki, 1 epoche, non-iid, no protection
+path3 = metric_experiment / "run8-simple_model-100-0.5-2025-11-27_01-01" / "wandb_history.csv"
+# resnet, 1 epoche, non-iid, no protection
+path4 = metric_experiment / "run9-complex_model-100-0.5-2025-11-27_01-36" / "wandb_history.csv"
+
+run_csv_paths = [
+    path1,
+    path3,
+    path2,
+    path4,
+]
+
+run_labels = ["Shokri-CNN (IID)", "Shokri-CNN (non-IID)", "ResNet18 (IID)", "ResNet18 (non-IID)"]
+generate_flower_compare_runs_same_metric_from_csv(
+    run_csv_paths=run_csv_paths,
+    run_labels=run_labels,
+    images_folder=COMPARE_FLOWER_FIGURES_DIR,
+    metric_column_name=ColFlower.OVERFITTING_GAP_LOSS,
+)
