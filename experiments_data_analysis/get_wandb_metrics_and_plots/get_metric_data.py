@@ -48,8 +48,8 @@ def get_wandb_metrics_and_plots(
                 mia_path=run_folder / "mia_per_class.json",
                 out_path=output_path / "mia_auc_all_runs.jsonl",
             )
-            # log_per_class_metrics2(run_folder=run_folder, images_folder=images_folder,
-            #                        class_names=class_names)
-            # log_overall_metrics_with_error_bars2(run_folder=run_folder, images_folder=images_folder)
+            log_per_class_metrics2(run_folder=run_folder, images_folder=images_folder,
+                                   class_names=class_names)
+            log_overall_metrics_with_error_bars2(run_folder=run_folder, images_folder=images_folder)
 
     print("\nDone!")
