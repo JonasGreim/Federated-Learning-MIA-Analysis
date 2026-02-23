@@ -23,10 +23,10 @@ def create_analysis_figures_corr(
 
     labels = [
         "MIA-AUC",
-        "Overfitting Gap Loss",
-        "Overfitting Gap Acc.",
-        "Overfitting Gap Loss (Clients)",
-        "Overfitting Gap Acc. (Clients)"
+        "OGL (Server)",
+        "OGA (Server)",
+        "OGL (Clients)",
+        "OGA (Clients)"
     ]
 
     create_heatmap(dataset=merged, col_names=cols_names, labels=labels, figures_dir=figures_dir)
