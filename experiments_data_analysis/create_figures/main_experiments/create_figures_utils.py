@@ -22,7 +22,7 @@ def plot_parameter_per_model(dataset: pd.DataFrame, x_value: Col, x_label: str, 
     )
     g.set_axis_labels(x_var=x_label, y_var="MIA-AUC")
     new_titles = {
-        "Shokri-CNN": "Shokri CNN",
+        "Shokri-CNN": "Shokri-CNN",
         "ResNet-18": "ResNet-18",
     }
 
