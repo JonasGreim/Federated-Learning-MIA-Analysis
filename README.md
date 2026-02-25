@@ -1,5 +1,12 @@
 # Membership Inference Attack on Flower
 
+[Aggregated data](experiments_data_analysis/data)
+
+[Aggregated Figures and tables](experiments_data_analysis/figures)
+
+[Figures and raw data per experiment run](experiments_data_analysis/metrics)
+
+
 ## Install dependencies and project
 Use poetry as virtual env and package manager
 
@@ -15,6 +22,7 @@ After that login into wandb:
 ```
 wandb login
 ```
+
 
 ## Explain Configs
 ### . toml

@@ -62,7 +62,7 @@ def visualize_label_distribution(partitioner, output_dir: Path = METRICS_DIR):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.set_xlabel("Client")
-    ax.set_ylabel("Anzahl der Stichproben")
+    ax.set_ylabel("Anzahl der Datenpunkte")
     ax.legend(
         title="Klassen",
         bbox_to_anchor=(1.02, 1.0),  # x>1 puts it outside to the right
