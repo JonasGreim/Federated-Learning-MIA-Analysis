@@ -8,15 +8,15 @@ WANDB_PROJECT_NAME_FLOWER = "flower_complete_side_experiments_clients_re_run8"
 WANDB_PROJECT_NAME_MIA = "mia_complete_side_experiments_clients_re_run8"
 
 # HPC Configs
-PERSISTENT_MEMORY_DIR = Path("/work/hi85udaj-flower")
-SPLITS_DIR = PERSISTENT_MEMORY_DIR / "dataset_splits"
-CHECKPOINTS_DIR_TARGET = PERSISTENT_MEMORY_DIR / "all_models_full_side_experiments8"
-METRICS_DIR = PERSISTENT_MEMORY_DIR / "metrics5Clients_side_experiments_clients8"
+# PERSISTENT_MEMORY_DIR = Path("/work/hi85udaj-flower")
+# SPLITS_DIR = PERSISTENT_MEMORY_DIR / "dataset_splits"
+# CHECKPOINTS_DIR_TARGET = PERSISTENT_MEMORY_DIR / "all_models_full_side_experiments8"
+# METRICS_DIR = PERSISTENT_MEMORY_DIR / "metrics5Clients_side_experiments_clients8"
 
 # Local Simulation Configs
-# SPLITS_DIR = ROOT_DIR / "dataset_splits"
-# CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
-# METRICS_DIR = ROOT_DIR / "metrics"
+SPLITS_DIR = ROOT_DIR / "dataset_splits"
+CHECKPOINTS_DIR_TARGET = ROOT_DIR / "model_checkpoints_target"
+METRICS_DIR = ROOT_DIR / "metrics"
 
 # Subdirectories
 MY_APP_DIR = ROOT_DIR / "flower"
