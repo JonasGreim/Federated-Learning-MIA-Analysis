@@ -9,6 +9,7 @@ wandb
 outputs
 multirun
 dataset_splits
+masterarbeit.pdf
 
 # ignore model checkpoints except example folder and its contents
 model_checkpoints_target/*
@@ -170,4 +171,5 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
 
